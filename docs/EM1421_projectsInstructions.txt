@@ -1,0 +1,57 @@
+﻿Social Media and Web Analytics [EM1421] Instructions & Guidelines for the Project Activity 
+A.Y. 
+2026/2027
+
+
+AI Usage Policy 
+The use of AI generative systems, such as ChatGPT or similar platforms, to conceptualize, draft, or develop either project proposals or final projects is prohibited. Proposals that show clear evidence of relying on such systems for their core ideas or structure will not be accepted. AI tools can sometimes assist with brainstorming or refining ideas; however, excessive reliance on them undermines the originality of the analysis and limits the development of critical thinking skills. This project is designed to encourage independent engagement with the subject matter, foster creativity, and promote a deeper understanding of the research process. Students are expected to base their work on their own insights, supported by course materials and independent research, to maintain the integrity and originality of their proposals.
+	
+
+
+
+1 Goal 
+The goal of the project is to perform an original data analysis by applying tools, methods, and techniques addressed during the course. In particular, you are asked to: 
+1. Identify a research question and motivate the need for the analysis; 
+2. Support your work with appropriate references to scientific publications (minimum 5), which must be included in the bibliography; 
+3. Collect relevant data to address the research question; 
+4. Apply quantitative methods and techniques to analyze the data, paying particular attention to the visualization of the results: 
+5. Interpret and discuss the results; 
+6. Acknowledge the limitations and biases of the work (if any). 
+2 Data 
+1. You are free to use whatever data you want; 
+2. You can combine data from different sources; 
+3. You can rely on available datasets, provided that the research question underlying the analysis is original. 
+1 
+3 FURTHER SPECIFICATIONS 2 3 Further Specifications 
+1. The report must not contain (a description of) the code used to generate the results; 2. The topic of the project must be previously agreed with the instructor; 
+3. The entire analysis should be performed in R or Python; 
+4. The report may contain a maximum of 4 Figures/Tables in total; 
+5. Figures/Tables in the report must be adequately captioned. All the Figures/Tables should be referenced in the main text of the report; 
+6. The report must include a bibliography consisting mainly of scientific publications, appropriate for the report, with at least 5 references; 
+7. For groups formed by two students, the report should include a paragraph detailing the contribution of each student to the project; 
+8. The report should not exceed 12,000 characters in length (including spaces, min. 8,000). For groups formed by two students, the report should not exceed 20,000 characters in length (including spaces, min. 12,000). 
+4 Project Proposal Submission 
+All students must submit their project proposal through the form on Moodle. Please ensure youcomplete the form with all required information to finalize your submission. You will receive a confirmation of approval via email from the instructor. Please wait for approval before starting work on your project to ensure that your efforts align with the approved proposal. 
+5 Delivery 
+You are expected to produce the following documents: 
+1. Report in .pdf format. Ensure the report is fully compliant with the specifications outlined in Section 3. 
+2. Code & Data. The code must be adequately commented. 
+• Make sure to include all external files necessary to run the code. 
+• It is your responsibility to deliver a code that can be tested by the instructor. 
+All the required files must be uploaded to the designated section on the Moodle platform no later than 9:00 AM CET, two days before the official exam date (e.g., for an exam on 18/10, submit by 16/10, 9:00 AM CET). Please email the instructor to confirm your project submission. 
+Admission to the oral discussion is subject to compliance 
+with the project requirements outlined in this document.
+	
+
+
+
+6 Oral Discussion 
+The project discussion is conditional on passing the oral exam (theoretical questions on course content). For the discussion, you will have 5 minutes (7 minutes for groups of two) to present the goal and key findings of your work. Slides are optional but welcome. 
+7 GUIDELINES FOR GROUP WORKING 3 7 Guidelines for Group Working 
+1. You are expected to make a full and fair contribution to the work of the group; 
+2. Everyone in the group should ensure that they can be contacted easily by other members of the group by giving them adequate contact information; 
+3. Please treat other members of the group with courtesy and respect their opinions, even if you do not necessarily agree with them; 
+4. When you agree to undertake a task that has been assigned to you by the group you must try to work to the agreed deadline since failure to do so could impede the progress of the whole project; 
+5. It is your responsibility to attend all meetings arranged by the group to advance the project and to arrive at those meetings on time. 
+8 Any Questions? 
+Should you have any questions, do not hesitate to contact the instructor.

@@ -1,0 +1,224 @@
+﻿Introduction 
+EM1421 - Social media and web analytics {Slides courtesy of Prof. Fabiana Zollo} 
+Prof. Pierluigi Zama Ramirez 
+Ca’ Foscari University of Venice
+  
+
+About Me 
+▶ I am an Associate Professor of Computer Science in the Dept. of Environmental Sciences, Informatics and Statistics. ▶ Ca’ Foscari web page: 
+https://www.unive.it/data/persone/29529719 
+▶ Personal web page: https://pierlui92.github.io/ 
+▶ My research interests: Artificial Intelligence, Computer Vision
+About This Class 
+▶ Web page 
+▶ 30 hours of frontal lessons 
+▶ Class Hours: 
+▶ MON: 15:45 - 17:15, ROOM 2B, San Giobbe ▶ TUE: 12:15 - 13:45, ROOM 2B, San Giobbe ▶ WED: 12:15 - 13:45, ROOM 2B, San Giobbe ▶ The course material will be available on moodle
+Office hours 
+▶ When: Upon request by filling the Google form available on Moodle 
+▶ Where: Online (Preferred). In person at Scientific Campus  
+Main Referral Texts 
+▶ Networks, crowds, and markets. David Easley and Jon Kleinberg, Cambridge University Press, 2012 
+▶ The complete pre-publication draft of the book is available for free here 
+▶ Network Science. Albert-Laszlo Barabasi, Cambridge University Press, 2016 
+▶ Papers and other resources reported in class
+Course Requirements 
+▶ Oral exam 
+▶ Theoretical questions and exercises on topics covered during the course (30%) 
+▶ Discussion of the project previously agreed upon with the instructor (70%)
+About the Project 
+▶ Detailed guidelines & instructions are available on Moodle. ▶ Let’s review them together!
+  
+
+Any Questions?
+  
+
+About this Class 
+▶ Social media 
+▶ Graph Theory 
+▶ Social Network Analysis 
+▶ Information Networks 
+▶ Topic extraction 
+▶ Sentiment Analysis
+  
+
+Introduction 
+▶ This course is about social media and web analytics ▶ Understanding the digital environment is crucial before starting any kind of analysis..
+  
+
+Social Media and the Web
+  
+
+A New Information Space
+  
+
+A Shift of Paradigm
+  
+
+Information Processing
+  
+
+Biases
+  
+
+Algorithms
+  
+
+Polarization
+  
+
+Social Contagion
+  
+
+Group Polarization 
+▶ When like-minded people discuss, they reinforce their shared views thus ending up in a more extreme position (Sunstein, 1999) 
+▶ Asch Experiment, 1955
+  
+
+Echo Chambers
+
+Massive Digital Misinformation
+
+How Can we Analyze These Dynamics?
+
+Quantitative Analysis of Social Phenomena 
+▶ Social media and our digital lives contribute to the generation of huge amount of data 
+▶ This data can be analyzed 
+▶ To look for hidden patterns, trends or other insights 
+▶ To investigate the behavior of individuals and groups of individuals
+Social Networks 
+▶ In particular, we can pose questions, formulate, and validate theories about social networks 
+▶ What’s the first thing that comes to your mind when I say social network?
+
+Social Networks 
+▶ Let’s keep aside the term social for now.. 
+▶ What is a network?
+
+What is a Network? 
+▶ Networks form a very generic data model with extensive applications to a variety of fields
+What is a Network? 
+▶ Networks form a very generic data model with extensive applications to a variety of fields 
+▶ A network consists of a set of objects and a collection of links identifying some relationship between these pairs of objects
+What is a Network? 
+▶ Networks form a very generic data model with extensive applications to a variety of fields 
+▶ A network consists of a set of objects and a collection of links identifying some relationship between these pairs of objects ▶ The assumption is that a connection exists between these objects that will help us better understand what we are studying
+What is a Network? 
+▶ In mathematics, networks are called graphs, the set of objects are known as vertices or nodes, and the links between them are referred to as edges 
+▶ The study of these objects constitute a sub-field of mathematics known as graph theory
+Basic Notation of a Graph 
+▶ �� = (�� , ��) 
+▶ V: nodes or vertices 
+▶ E: links or edges 
+▶ |�� | = �� size of graph ▶ |��| = �� number of links
+Network Science 
+A definition from Wikipedia: 
+Network science is an academic field which studies com plex networks such as telecommunication networks, com puter networks, biological networks, cognitive and semantic networks, and social networks, considering distinct ele ments or actors represented by nodes and the connections between the elements or actors as links.
+Network Science 
+A definition from Wikipedia: 
+Network science is an academic field which studies com plex networks such as telecommunication networks, com puter networks, biological networks, cognitive and semantic networks, and social networks, considering distinct ele ments or actors represented by nodes and the connections between the elements or actors as links. The field draws on theories and methods including graph theory from mathe matics, statistical mechanics from physics, data mining and information visualization from computer science, in ferential modeling from statistics, and social structure from sociology.
+Network Science 
+A definition from Wikipedia: 
+Network science is an academic field which studies com plex networks such as telecommunication networks, com puter networks, biological networks, cognitive and semantic networks, and social networks, considering distinct ele ments or actors represented by nodes and the connections between the elements or actors as links. The field draws on theories and methods including graph theory from mathe matics, statistical mechanics from physics, data mining and information visualization from computer science, in ferential modeling from statistics, and social structure from sociology. A key discovery of network science is that the architectures of networks emerging in various domains of science, nature and technology are similar to each other, a consequence of being governed by the same orga nizing principles. - Barabasi, 2016
+Characteristics of Network Science 
+▶ Interdisciplinary:address problems from disciplines other than computer science 
+▶ Empirical and data-driven: based on the observation of networks 
+▶ Quantitative, mathematical, computational
+Social Networks
+
+Social Networks 
+▶ The collections of social ties among individuals have grown steadily over the course of human history 
+▶ Technological advances facilitated distant travels, global communication, digital interaction 
+▶ Networks can be used to study these interactions ▶ Nodes are individuals and links denote personal relationships
+Social Network Analysis - The first example 
+▶ Moreno’s sociograms are frequently considered as the first examples of social network analysis and visualization 
+▶ Mapping the social affinities of a group of individuals, Moreno’s first sociograms visualize the relationships between pupils in a classroom
+Moreno’s Sociograms 
+Who wants to be sitting next to whom? 
+Each child can choose two others, for results that suggest that sociabilities are changing over time 
+▶ The proportion of attractions between boys and girls decreases ▶ Community structures are formed and then disappear, etc. 
+Moreno, J. L. (1934). Who shall survive?: A new approach to the problem of human interrelations.
+Moreno’s Sociograms 
+
+Left: original network by Moreno. Center: redesigned network, indicating the number of incoming connections (dark blue=0, white=3 or more). Right: redesigned network, highlighting girls (orange) and boys (white). Source
+Zachary’s Karate Club 
+▶ Zachary’s karate club is a social network of a university karate club described in the paper Zachary W. (1977). An information flow model for conflict and fission in small groups. Journal of Anthropological Research, 33, 452-473 
+▶ Example of how social networks can capture the sources of conflict within a group
+Zachary’s Karate Club 
+▶ Zachary observed 34 members of a karate club over a period of 2 years 
+▶ During the course of the study, a disagreement developed between the administrator of the club and the club’s instructor ▶ In the end, the instructor left and started a new club, taking about a half of the original club’s members with him 
+▶ Zachary constructed a network of friendships between members of the club, using a variety of measures to estimate the strength of ties between individuals
+Zachary’s Karate Club 
+▶ The instructor (node 1) and the administrator (node 34) are not friends with each other 
+▶ Most people are only friends with one or the other (noninteracting clusters)
+
+Zachary’s Karate Club 
+▶ The network became a popular example of community structure in networks after its use in Girvan M. & Newman M.E.J. (2002). Community structure in social and biological networks. PNAS. 99:7821-7826 
+▶ In their article, Girvan & Newman highlight a property that is found in many networks, the property of community structure, in which network nodes are joined together in tightly knit groups, between which there are only looser connections, and propose a method for detecting such communities
+Zachary’s Karate Club 
+The Figure below shows the hierarchical tree of communities produced by Girvan & Newman’s method
+
+Zachary’s Karate Club 
+▶ The most fundamental split in the network is the first one at the top of the tree, which divides the network into two groups of roughly equal size 
+▶ This split corresponds almost perfectly with the actual division of the club members after the break-up 
+▶ Only one node, node 3, is classified incorrectly 
+▶ In other words, the application of the algorithm to the empirically observed network of friendships is a good predictor of the subsequent social evolution of the group
+Chains of Affection 
+▶ Bearman, P. S., Moody, J., & Stovel, K. (2004). Chains of affection: The structure of adolescent romantic and sexual networks. American journal of sociology, 110(1), 44-91 
+▶ Describe the structure of adolescent romantic and sexual networks in an American high school (in the past 18 months) ▶ Accounts for the emergence of this structure 
+▶ Links the observed structure to the diffusion dynamics of disease
+Chains of Affection
+
+Computational Social Science 
+▶ Sociology has developed fundamental insights into the structure of social networks.. 
+▶ ..but its network methodology was refined in the domains and scales where data collection was possible (lab experiments, focus-groups, surveys) 
+▶ The availability of (digital) data today offers great opportunities to pose/answer questions and formulate/validate theories about social networks
+Computational Social Science 
+Lazer et al. (2009) Computational Social Science, Science, 323:721-723
+
+Example: Dunbar’s number 
+▶ How big is a “typical” social network? 
+▶ By analyzing social networks in primates, Dunbar hypothesized that there are cognitive limits to the size of one’s social network: 
+▶ The limit imposed by neocortical processing capacity is simply on the number of individuals with whom a stable 
+inter-personal relationship can be maintained 
+▶ Dunbar estimated that the typical size of a human social network is 150 individuals
+Dunbar’s number 
+▶ Exchange of Christmas cards in a population of 43 families (surveys) 
+▶ Trajectories data of 2,984 cards
+
+Dunbar’s number 
+▶ The average number of cards sent is 68.19 (range 11-149) ▶ Since many cards were sent by couples/families, the average size of the network is 153.5 (+-84.5)
+
+Dunbar’s number on Twitter 
+▶ In Gonçalves, Perra, & Vespignani, 2011 the authors validated Dunbar’s number for Twitter
+Dunbar’s number on Twitter 
+▶ In Gonçalves, Perra, & Vespignani, 2011 the authors validated Dunbar’s number for Twitter 
+▶ We analyze a dataset of Twitter conversations collected across six months involving 1.7 million individuals and test the theoretical cognitive limit on the number of stable social relationships known as Dunbar’s number. We find that the data are in agreement with Dunbar’s result; users can entertain a maximum of 100–200 stable relationships. Thus, the ‘economy of attention’ is limited in the online world by cognitive and biological constraints as predicted by Dunbar’s theory.
+Dunbar’s number on Twitter 
+▶ On one hand, it can be argued that microblogging tools facilitate the way we handle social interactions and that this results in an online world where human social limits are finally lifted, making predictions such as the Dunbar’s number obsolete.
+Dunbar’s number on Twitter 
+▶ On one hand, it can be argued that microblogging tools facilitate the way we handle social interactions and that this results in an online world where human social limits are finally lifted, making predictions such as the Dunbar’s number obsolete. 
+▶ Microblogging and online tools, on the other hand, might be analogous to a pocket calculator that, while speeding up the way we can do simple math, does not improve our cognitive capabilities for mathematics.
+Information Networks
+
+Information Networks 
+▶ Information online has a fundamental network structure ▶ Example: Links among web pages can help us understand ▶ How these pages are related 
+▶ How they are grouped in different communities ▶ Which pages are the most important
+Information Networks: Divided they Blog 
+▶ In 2005 Adamic and Glance measured the degree of interaction between liberal and conservative blogs 
+▶ They wanted to uncover any differences in the structure of the two communities 
+▶ They analyzed the posts of 1,494 blogs over the period of 2 months before the 2004 Presidential Election 
+▶ They studied how often they referred to one another and quantify the overlap in the topics they discussed (intra and inter communities) 
+▶ They found differences in the behavior of liberal and conservative blogs 
+▶ Conservative blogs link to each other more frequently and in a denser pattern
+Information Networks: Divided they Blog 
+Image from Adamic and Glance, The Political Blogosphere and the 2004 U.S. Election: Divided They Blog, ACM 2005
+Information Networks: Divided they Blog 
+The network structure reveals two natural and well-separated clusters
+
+Information Networks: The Brexit Debate on Facebook 
+▶ UK news sources on Facebook 
+▶ We filtered the posts related to Brexit in the period Jan-Jul 2016 
+▶ We built a network involving more than 1M users 
+▶ Links among pages depend on users’ interaction with content (likes)
+Information Networks: The Brexit Debate on Facebook 
+Image from Del Vicario, Zollo, et al., Mapping social dynamics on Facebook: The Brexit debate. Social Networks, Vol. 50, 2017

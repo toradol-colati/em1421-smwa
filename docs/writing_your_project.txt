@@ -1,0 +1,195 @@
+﻿Writing your project 
+Social Media and Web Analytics — learning from good and weak examples
+01 
+Research question / aim 
+The requirement is to identify a research question and motivate it; it need not end  with a question mark. What matters is that the reader understands what is being  studied and what would count as an answer — an explicit question, a clear aim or  explicit hypotheses can all do this. 
+2
+Research question / aim 
+Falkenberg et al. — Patterns of partisan toxicity and engagement reveal the common structure of online political communication  across countries (Nature Communications, 2024) 
+“Here we investigate patterns of polarization online across nine  countries (Canada, France, Germany, Italy, Poland, Spain, Turkey, UK,  USA), focusing on the structure of political interaction networks, the  use of toxic language targeting out-groups, and how these factors  relate to user engagement.” 
+3
+Research question / aim 
+Student report — Polarisation on X during a US presidential debate 
+“How polarized is communication within X communities during the  first 2024 U.S. presidential television debate between Kamala Harris  and Donald Trump, and can text analysis reveal a clear political  orientation of these communities?” 
+4
+Research question / aim 
+Student report — Rewards and interactions in a Bitcoin-tipping forum 
+“Investigating the most rewarding behaviour and the social network  dynamics within the forum Staker News” […] “the investigation of the  most economically-rewarding behaviour inside the forum” […] “This  will test the hypothesis which can be summarised as ‘The more the  content (post or comment), the higher the earnings’.” 
+5
+Research question / aim 
+Student report — A rapper's lyrics 
+“The study aims to investigate emotional tone, topic occurs, and  similarity patterns across songs.” 
+6
+Research question / aim 
+Student report — Virality of YouTube videos 
+“How do engagement metrics (likes, views and comment sentiment)  influence the overall performance of a YouTube video in terms of  views and interaction rate?” 
+7
+Research question / aim 
+Student report — Music, mood and mental disorders 
+CONTEXT 
+“Nowadays everyone has access to many music libraries through applications such  as Spotify, SoundCloud, and Apple Music. And moreover, anyone can share their  thoughts on social networks such as Twitter/X.” 
+QUESTIONS 
+“But how do those people arrange around their favorite artists? Do mental  disorders have an influence on what people prefer? And how does all of this  translate into what they write on social networks? Are people that listen to sad  music also more sad on social platforms? Or, can at least other people sense this  sentiment?” 
+8
+Research question / aim 
+TAKEAWAYS 
+• The reader must understand what is being studied and what would count as an  answer; a question, an aim or hypotheses can all do this. 
+• Hypotheses make the work testable; a rejected hypothesis is a result, not a  failure. 
+• A variable cannot sit on both sides of the question. 
+• Several sub-questions are fine if one main thread ties them together. 9
+02 
+Motivation and related work 
+The introduction should lead from the literature to a gap and from the gap to the  question; references must be scientific, cited in the text and relevant to what the  report does. 
+10
+Motivation and related work 
+Falkenberg et al. — Patterns of partisan toxicity and engagement reveal the common structure of online political communication  across countries (Nature Communications, 2024) 
+MOTIVATION 
+“Despite this, the majority of studies, including in high impact factor  journals [13–23], still only consider polarization in the United States. […]  One of the reasons for the lack of cross-country studies on social media is  the difficulty acquiring sufficiently large datasets which are not keyword  specific [56].” 
+AIM 
+“Here we overcome this limitation by using a complete Twitter dataset  which includes all public interactions across a 24 h period [57].” 
+11
+Motivation and related work 
+Student report — Polarisation on X during a US presidential debate 
+MOTIVATION 
+“Homophily fosters connections among similar individuals, creating ideologically  homogeneous clusters known as echo chambers (Flaxman et al., 2016, p. 298). […]  Political interaction networks on X, such as retweets and mentions, reveal  clustering along ideological lines, allowing the measurement of community  alignment through network and linguistic indicators (Barberá, 2015).” 
+QUESTION 
+“How polarized is communication within X communities during the first 2024 U.S.  presidential television debate […], and can text analysis reveal a clear political  orientation of these communities?” 
+12
+Motivation and related work 
+Student report — Clickbait in YouTube news channels 
+CONTEXT 
+“BBC News and CNN generally adhere to institutional journalistic norms, while alternative  channels like The Young Turks and The Jimmy Dore Show adopt more opinionated and  polemical styles.” 
+MOTIVATION 
+“Prior research suggests that alternative media rely heavily on emotional framing to foster  ideological alignment and viral sharing (Boberg et al., 2020).” 
+HYPOTHESIS 
+“We hypothesize that alternative channels use stronger negative emotional framing (fear  and anger), generating higher but more volatile engagement […]” 
+13
+Motivation and related work 
+Student report — A rapper's lyrics 
+MOTIVATION 
+“Despite the fact that Eminem's songs and rap music are often  analyzed by academic researchers, there has been a gap in applying  NLP methods to his art [1], [2], [3].” 
+AIM 
+“The study aims to investigate emotional tone, topic occurs, and  similarity patterns across songs.” 
+14
+Motivation and related work 
+Student report — Virality of YouTube videos 
+MOTIVATION 
+“Have you ever wondered why some videos on YouTube go viral while others do  not? Views are only one aspect of the final product.” 
+QUESTION 
+“How do engagement metrics (likes, views and comment sentiment) influence the  overall performance of a YouTube video in terms of views and interaction rate?” 
+15
+Motivation and related work 
+TAKEAWAYS 
+• The literature should end where the question starts. 
+• A gap is something we do not know, not a method nobody has applied yet. • Start from what is known and cited. 
+• Cite what you use, use what you cite. 
+16
+03 
+Data 
+A reader should be able to rebuild the dataset from the report: source, collection  method, period, volumes, filters, and any sampling made for a specific analysis — with  numbers that agree with each other. 
+17
+Data 
+“We collected approximately 350K vaccine-related pieces of content  published on Facebook, Instagram, Twitter, and YouTube from almost  the entire universe of Italian news outlets in the 6-year period from  01/01/2016 to 31/12/2021. […] Specifically, we selected 96  newspapers, 462 online-only news outlets, 89 TV channels, and 35  radio channels.” 
+18
+Data 
+“Data were collected via the YouTube Data API v3 from four channels:  BBC News and CNN (mainstream), and The Young Turks and The  Jimmy Dore Show (alternative). The main dataset spans four months  (October 2025–January 2026) and includes 2,608 videos and 451,047  comments. […] Due to API limitations, network analysis focused on the  most recent 15 days (January 5–20, 2026). For each channel, replies  were retrieved for the top 1,500 comments ranked by likes (maximum  20 replies each), yielding 10,456 replies.” 
+19
+Data 
+REPORT A 
+“Data: https://www.kaggle.com/” 
+REPORT B 
+“The data that has been used for this research consist of 2 main dataset  sourced from kaggle [3].” — “[3] https://www.kaggle.com/” 
+20
+Data 
+TAKEAWAYS 
+• Reference the data precisely: dataset name, author, link and collection date. • If an analysis uses a subsample, say how it was drawn and why. 
+21
+04 
+Building the network 
+Every network needs four explicit choices — what a node is, what an edge is, whether  edges are directed, and what (if anything) weights them — and each choice should  make sense for the question. 
+22
+Building the network 
+AIM 
+“Investigating the most rewarding behaviour and the social network  dynamics within the forum Staker News” 
+NETWORK 
+“Thus, the edge A - B represents the situation in which the user A  commented an item of user B, being it a post item or a comment item.  Given this structure, the weight of the connection between two users is  computed as an integer that describes the number of the directed  connections between the users (3).” 
+23
+Building the network 
+QUESTION 
+“Do the top 500 most subscribed YouTube channels form distinct communities  based on shared thematic focus and which topics are dominant?” 
+NETWORK 
+“An edge exists between a YouTuber and a Category if the channel's main content  falls into that category.” […] “suggesting that the top 500 channels are not  uniformly distributed across all possible thematic areas but instead form clearly  defined communities based on shared content focus.” 
+NOTE 
+Each channel has one main content, so it is linked to one category only. 24
+Building the network   
+“Fig. 1 Bipartite Network: Top 500 YouTubers and Categories as Nodes of different type”
+25 
+Building the network 
+TAKEAWAYS 
+• Write the node, edge, direction and weight in one or two sentences before any  metric. 
+• Reason about why this network can answer your question. 
+• If the structure of the data already answers the question, the network adds  nothing. 
+26
+05 
+Choosing and justifying methods 
+Each method should answer one step of the question, with a one-line reason for  choosing it over the obvious alternative; parameters and quality metrics should be  read honestly. 
+27
+Choosing and justifying methods 
+PURPOSE 
+“Having found that affective polarization aligns with interactional  polarization, we now ask whether out-group interactions receive lower  engagement than in-group interactions.” 
+CHOICE 
+“Here, the mean is used rather than the median since the like-distribution is  fat-tailed, and between 66% (Poland) and 78% (United States) of all posts  receive 0 likes in the first 10 min after posting. The logarithm of the like count is used to avoid a small number of posts with very large engagement  dominating the mean; the +1 avoids errors due to posts with zero likes.” 
+28
+Choosing and justifying methods 
+DATA 
+“A total of 32 reports were collected from ReliefWeb and analyzed using  text-mining and sentiment analysis in R.” 
+METHODOLOGY 
+“The analysis used R and included several steps: 1. Text Vectorization – reports were converted to numerical form using TF–IDF. 2. Clustering – K means (k = 4) grouped reports into major themes.” 
+29
+Choosing and justifying methods 
+TAKEAWAYS 
+• State what you are looking for, then the method you use to find it. • Justify every choice you make. 
+30
+06 
+Method errors: results guaranteed by  construction 
+The most serious errors are not ugly figures but results that the method produces  whatever the data say. Look at each excerpt and ask: would this result appear anyway? 
+31
+Method errors: results guaranteed by construction 
+OUTCOME 
+“The virality threshold was defined using a hybrid statistical– behavioral approach combining view-based outliers and engagement  percentiles” 
+ENGAGEMENT METRIC 
+“Engagement Rate = (Likes + Total Comments) / Views” 
+PREDICTORS AND RESULT 
+“Selected Features: – Log likes – Engagement rate – Upload day of  week – overall Sentiment Score” […] “The Random Forest model  achieved an ROC–AUC score of 0.993” 
+32
+Method errors: results guaranteed by construction   
+Figure 2: ROC Curve Comparison
+33 
+Method errors: results guaranteed by construction 
+TAKEAWAYS 
+• Before modelling an index, check whether it is mostly a function of the  predictor. 
+• Never use as predictor a variable that enters the definition of the outcome. • If a model works almost perfectly, suspect leakage first. 
+• Ask: would I get this result even with random data? 
+34
+07 
+Results and statistics 
+A result is a number with its uncertainty and a comparison point; words like  “significant”, “strong” or “high” need a test or a baseline behind them. 
+35
+Results and statistics 
+“The global homophily of 0.113 indicated that 11% of co-purchase  links connect books within the same macro topic.” […] “Consumer  purchasing is not siloed by genre, as evidenced by low global  homophily (0.113)” 
+36
+Results and statistics 
+TAKEAWAYS 
+• Give a baseline: random, expected, or a comparison group. 
+37
+08 
+Limitations 
+Good limitations are specific to this study and say which result each one could affect;  generic sentences about “sample size” add nothing. 
+38
+Limitations 
+“Fourth, our study uses data gathered during a single 24 h observation  window. […] Specific observations in the current study which may be  explained by the short observation window include (1) that the  primary structural divide in Germany is between establishment and  populist parties, not between the political left and right, (2) the  observation of higher in-group toxicity than out-group toxicity on the  political right in the UK” 
+39
+Limitations 
+TAKEAWAYS 
+• Name the limitation, say which result it threatens, and in which direction if you  can. 
+40

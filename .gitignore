@@ -1,0 +1,11 @@
+# macOS
+.DS_Store
+
+# R
+.Rhistory
+.RData
+.Rproj.user/
+*.Rproj
+.Renviron
+
+# Niente ignore su data/: la consegna richiede i dati insieme al codice (§5).
