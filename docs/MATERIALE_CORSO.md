@@ -20,6 +20,7 @@ Indice:
 9. Data visualization: le regole
 10. Indice delle funzioni R insegnate
 11. Le sei implicazioni che contano per il progetto
+11-bis. Quanto codice si può scrivere oltre quello delle slide
 12. Cosa il corso NON copre
 13. Bibliografia citabile presente in docs/
 
@@ -43,7 +44,7 @@ Indice:
 | `EM1421_projectsInstructions.txt` | Regole formali del progetto | **Centrale** (vincoli) |
 | `Writing a scientific article...txt` | Ecarnot et al. 2015, guida IMRAD | Scrittura |
 | `extra-EM1421.txt` | Cinque esempi di progetto del corso | Riferimento |
-| `Exam guidelines.pptx` | Regole d'esame | Riferimento |
+| `Exam guidelines.pptx` | **Non è di questo corso**: è di "Digital HR & Organization", prof.ssa Annamaria Gimigliano. File finito in `docs/` per errore | No |
 | `Introduction - EM1421 ... .txt` | Trascrizione della lezione 1 | Duplicato |
 | `A review of sentiment computation methods with R packages.pdf` | Sentiment in R | No (altra lezione) |
 | `Topic Modeling with BERTopic.pdf` | Topic modeling | No (altra lezione) |
@@ -833,6 +834,78 @@ neighborhood overlap sono nel programma; i vincoli di Burt no. A parità di sign
 prima scelta costa meno da difendere.
 
 ---
+
+## 11-bis. Quanto codice si può scrivere oltre quello delle slide
+
+Domanda posta il 27/10: il codice nelle slide basta per fare il progetto, e si può scrivere
+altro? Verificato sulle fonti. Risposta: **il codice delle slide non basta, e scrivere altro
+è esplicitamente previsto.** Nessun documento del corso limita il codice a quello mostrato a
+lezione.
+
+### Cosa dicono i documenti
+
+- **Istruzioni, §1 Goal** (testuale): "The goal of the project is to perform an original data
+  analysis by **applying** tools, methods, and techniques addressed during the course."
+  Il vincolo è che il progetto **applichi** le tecniche del corso, non che usi soltanto quelle.
+- **Istruzioni, §3.3**: "The entire analysis should be performed in R or Python." Il solo
+  vincolo tecnico esplicito. Nessuna lista di pacchetti ammessi, nessun divieto.
+- **Istruzioni, §5**: il codice va commentato adeguatamente, con tutti i file esterni
+  necessari; "it is your responsibility to deliver a code that can be tested by the
+  instructor". Il criterio è che **giri**, non che assomigli alle slide.
+- **`extra-EM1421` (esempi di progetto)**: "Projects should align with the course framework
+  and apply the analytical skills covered in class" e, prima, "They are not meant to be
+  replicated but serve as inspiration for developing unique and creative projects."
+- **`writing_your_project`, criterio 05**, cita come esempio di buona metodologia un progetto
+  passato: "The analysis used R and included several steps: 1. Text Vectorization - reports
+  were converted to numerical form using TF-IDF. 2. Clustering - K means (k = 4) grouped
+  reports into major themes." **TF-IDF e k-means non sono nelle slide di rete.** È un progetto
+  accettato che usa metodi fuori dal codice mostrato a lezione.
+- Sempre nel criterio 05, un altro esempio citato giustifica l'uso della media invece della
+  mediana per una distribuzione a coda grassa e l'uso del logaritmo con il +1: ragionamento
+  statistico che nelle slide non c'è.
+
+### Quanto codice c'è davvero nelle slide
+
+Misurato: in tutte le lezioni l'unico pacchetto caricato è **`igraph`**, cinque volte.
+`library(ggplot2)` non appare mai; `ggplot` compare una sola volta in tutti i file di `docs/`,
+ed è **nel nostro brief**, non nelle slide. I grafici delle slide sono in R base
+(`plot.igraph`, `hist`, `heatmap`, `legend`, `pdf`/`dev.off`).
+
+Per la manipolazione dei dati le slide danno due cose sole: `read.csv()` per leggere nodi e
+archi da CSV, e il pattern `aggregate()` per collassare archi multipli in un peso
+(5a slide 53). Niente altro: nessun join, nessuna deduplica, nessun parsing di formati non
+tabellari, nessuna gestione di date.
+
+### Cosa serve al progetto e nelle slide non c'è
+
+| Serve | Nelle slide |
+|---|---|
+| Leggere un file a record di 7 righe `CAMPO:valore` da `.gz` (198.275 voti) | No: solo `read.csv` di CSV normali |
+| Deduplicare i voti, tenere l'ultimo per votante e tentativo | No |
+| Parsare date e ore, calcolare differenze in giorni, applicare la soglia dei 7 giorni | No |
+| Ricostruire i tentativi raggruppando per candidato / anno / esito | No: solo `aggregate` su un peso |
+| Parsare i blocchi di wiki-Elec (righe E, T, U, N, V) | No |
+| Unire tabelle (voti con tentativi, tentativi con esiti validati) | No |
+| Randomizzazione ripetuta per il modello nullo | No: il test di omofilia è spiegato a parole, senza codice |
+| Regressione logistica | No (vedi §12) |
+| `ggplot2`, promesso nel nostro brief | No |
+
+### Conclusione operativa
+
+1. Non c'è nessun macigno da temere: il vincolo è che l'analisi sia in R, che il codice giri
+   e sia commentato, e che le **tecniche di rete** del corso siano applicate e sapute spiegare.
+2. Il discrimine non è "quanto codice", è **l'orale**: la discussione del progetto vale il 70%
+   ed è subordinata al superamento della parte teorica sui contenuti del corso. Qualunque cosa
+   si scriva, va saputa difendere a voce. Una funzione fuori programma non è un problema se si
+   sa dire cosa calcola e perché quella e non un'alternativa (criterio 05: "a one-line
+   reason for choosing it over the obvious alternative").
+3. Ne segue il criterio pratico di scelta: a parità di risultato, preferire lo strumento
+   insegnato; quando non esiste, usare quello che serve e scrivere la riga di giustificazione.
+   Il codice di manipolazione dei dati è neutro - nessuno chiede che `aggregate` o
+   `data.table` siano "da programma", sono infrastruttura. La scelta che va difesa riguarda i
+   **metodi**: algoritmo di comunità, misura di brokerage, modello nullo, regressione.
+4. `ggplot2` è nel brief **approvato dal docente**: è coperto dall'approvazione, non va
+   rinegoziato.
 
 ## 12. Cosa il corso NON copre
 
