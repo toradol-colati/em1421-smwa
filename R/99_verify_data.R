@@ -40,8 +40,8 @@ chk("  of which collide with the clean form already present", sum(trimws(con_sp)
 chk("  reduction in distinct names", length(unique(all_names_raw)) - length(unique(trimws(all_names_raw))), 21)
 chk("voter-candidate pairs WITHOUT trimming (SNAP total)",
     nrow(unique(D[, c("SRC","TGT")])), 189004)
-# Dt: gli stessi dati con i names_all normalizzati come fa read_rfa(). D resta grezzo,
-# that both stages can be checked.
+# Dt: the same data with usernames normalised the way read_rfa() does. D stays
+# raw, so that both stages can be checked.
 Dt <- D; Dt$SRC <- clean_name(D$SRC); Dt$TGT <- clean_name(D$TGT)
 chk("voter-candidate pairs after normalisation", nrow(unique(Dt[, c("SRC","TGT")])), 189001)
 chk("distinct voters, normalised (empty node included)", length(unique(Dt$SRC)), 10416)

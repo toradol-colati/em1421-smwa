@@ -8,7 +8,8 @@
 *.Rproj
 .Renviron
 
-# Niente ignore su data/: la consegna richiede i dati insieme al codice (§5).
+# data/ is deliberately NOT ignored: the submission requires the data together
+# with the code (instructions, section 5).
 
-# intermedio rigenerabile da R/01_read_raw.R (14 MB)
+# Regenerable intermediate produced by R/01_read_raw.R (14 MB)
 data/processed/votes_raw.rds
