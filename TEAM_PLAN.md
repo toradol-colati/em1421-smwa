@@ -1,127 +1,58 @@
-# EM1421 Team Delivery Plan
+# EM1421 Project Handoff
 
-## Status
+## Context
 
-- Proposal question: approved.
-- Team: Umberto Toraldo and Mihretab Worku Morka.
-- Final project report length: 12,000-20,000 characters, including spaces.
-- Project submission deadline: 2 November 2026 at 09:00 CET.
-- The final report must be a PDF and must not contain code or a description of the code.
-- The final package must include the report, commented R code and all data needed to run it.
+The proposal question is approved. The project uses the two SNAP files `wiki-RfA.txt.gz` and `wikiElec.ElecBs3.txt.gz`. The final deliverable is a PDF report plus all R code and data needed to reproduce the analysis.
 
-## Roles
+Team:
 
-### Data member: Umberto
+- Umberto Toraldo, data member
+- Mihretab Worku Morka, network member
 
-Umberto is responsible for the data pipeline:
+## What the repository contains now
 
-1. Download and commit the two SNAP source files.
-2. Correct the raw RfA parser so every field is an ordinary column rather than a nested list column.
-3. Implement the `wikiElec` parser.
-4. Normalise usernames.
-5. Remove duplicate votes using a documented rule.
-6. Reconstruct candidate attempts and record their opening, closing and outcome.
-7. Validate outcomes against `wikiElec`.
-8. Audit votes without dates, contradictory outcomes and the previously successful repeat candidates.
-9. Produce documented, analysis-ready vote and attempt tables.
+```text
+em1421-smwa/
+  README.md
+  CLAUDE.md
+  TEAM_PLAN.md
+  docs/
+  data/raw/
+  data/processed/
+  R/00_paths.R
+  R/01_read_raw.R
+  R/02_build_attempts.R
+  R/03_validate_outcomes.R
+  R/04_build_networks.R
+  R/05_measure_change.R
+  R/06_model_outcome.R
+  R/07_figures.R
+  output/figures/
+  report/
+```
 
-Primary code responsibility: `01_prepare_data.R`.
+Umberto has created the repository structure, added the course materials and project notes, written the approved-question documentation and added the numbered R workflow.
 
-### Network member: Mihretab
+Current implementation status:
 
-Mihretab is responsible for the network and outcome analysis:
+- `R/00_paths.R` works.
+- `R/01_read_raw.R` runs, but its parsed columns are nested list columns and the result is not usable.
+- `R/02` to `R/07` contain only comments.
+- The two SNAP data files are not committed.
+- There are no cleaned datasets, network results, figures or report draft.
 
-1. Build the voter-to-candidate network.
-2. Build the voter-to-voter co-voting projection.
-3. Identify voter communities.
-4. Measure supporter overlap, community diversity, centrality and brokerage.
-5. Compare changes across consecutive candidate attempts.
-6. Run the leakage-safe outcome analysis using only information available before attempt t+1.
-7. Produce the numerical results and four report figures or tables.
+## What should change before submission
 
-Primary code responsibility: `02_analysis.R`.
+- Consolidate the eight script skeletons into two working scripts.
+- Put the two raw SNAP files in `data/raw/`.
+- Generate reproducible cleaned data and results.
+- Write the literature notes and report in Markdown, then export the report as PDF.
+- Include the contribution paragraph inside the report.
+- Keep only the report, code, required data and a short execution README in the final Moodle ZIP.
 
-### Joint responsibilities
+The course PDFs, the unrelated `Exam guidelines.pptx`, `CLAUDE.md` and the long internal context notes are working resources, not final submission files.
 
-- Agree on the table schemas before either script is finalised.
-- Agree on the definition of both networks before network metrics are calculated.
-- Maintain literature notes in Markdown and connect each source to the research question.
-- Interpret the results together.
-- Write the report source in Markdown, then export the final PDF.
-- Include the required paragraph describing each member's contribution.
-- Test the complete package from a clean checkout.
-
-Code review is internal quality control, not a separate course deliverable.
-The seven-minute project discussion is required, but presentation slides are optional and no slide deck needs to be submitted with the project.
-
-## Current repository state
-
-Completed by Umberto:
-
-- Created the private repository and directory structure.
-- Added the approved research question and the relevant course documents.
-- Added detailed course-material and coding notes.
-- Created the numbered R workflow.
-- Implemented shared paths and a first version of the raw RfA parser.
-- Invited Mihretab as a collaborator.
-
-Current blockers:
-
-- The SNAP data files are not committed.
-- `R/01_read_raw.R` runs but produces incorrect nested list columns.
-- The parser reports 11,402 users instead of the documented 11,381.
-- The `wikiElec` parser is not implemented.
-- `R/02` through `R/07` contain comments only.
-- No cleaned dataset, network results, model results or figures exist.
-- No report draft or contribution paragraph exists.
-- `igraph`, `ggplot2` and `data.table` are currently unavailable in the tested R installation.
-
-## Agreed code structure
-
-Use two scripts rather than the current eight-script skeleton:
-
-1. `01_prepare_data.R`
-   - Reads both raw files.
-   - Cleans votes.
-   - Reconstructs and validates attempts.
-   - Writes clean `votes` and `attempts` data.
-   - Fails clearly if an input or validation check fails.
-
-2. `02_analysis.R`
-   - Builds both networks.
-   - Calculates community, support coalition, centrality and brokerage measures.
-   - Runs the outcome analysis.
-   - Writes results tables and four report figures.
-
-All scripts must use relative repository paths and must not install packages or download data during execution.
-
-## Data handoff
-
-Umberto delivers:
-
-- `data/raw/wiki-RfA.txt.gz`
-- `data/raw/wikiElec.ElecBs3.txt.gz`
-- Clean vote-level data
-- One row per validated candidate attempt
-- An audit table containing rejected or ambiguous records
-
-Mihretab can begin only after the following are fixed:
-
-- Column types are ordinary vectors.
-- Duplicate rule is documented.
-- Attempt rule is documented.
-- Outcome validation is complete.
-- The final counts of repeat candidates are reported.
-
-## Literature-to-report workflow
-
-- Keep literature notes and source details in Markdown.
-- Link each reference to a specific claim in the research question, methods or discussion.
-- Include at least five scientific references in the final PDF.
-- Write the report in Markdown, then export and visually check the PDF.
-- Do not include Markdown working notes in the final Moodle ZIP unless needed to reproduce the project.
-
-## Final submission package
+## Proposed deliverable
 
 ```text
 EM1421_Submission/
@@ -138,24 +69,48 @@ EM1421_Submission/
     figures/
 ```
 
-The report must contain:
+`01_prepare_data.R` handles both raw files and creates clean vote and attempt tables.
 
-- The approved research question and motivation.
-- A precise data description.
-- Network and statistical methodology.
-- Results and interpretation.
-- Specific limitations and biases.
-- At least five scientific references.
-- No more than four captioned and referenced figures or tables.
-- A paragraph describing each member's contribution.
+`02_analysis.R` builds the network features, performs the outcome analysis and produces the four report figures or tables.
 
-## Next actions
+## Work division
 
-1. Record the agreed roles in the team communication.
-2. Freeze the schemas for `votes` and `attempts`.
-3. Freeze node, edge, direction, weight and time-window definitions for both networks.
-4. Umberto fixes and completes data preparation.
-5. Mihretab implements network and outcome analysis against the prepared data.
-6. Both members review results and limitations.
-7. Both members write and format the report.
-8. Run the package from a clean checkout and submit it before the deadline.
+### 1. Umberto - data workstream
+
+1. Fix the RfA parser and implement the `wikiElec` parser.
+2. Normalise usernames, define the duplicate rule, reconstruct candidate attempts and validate their outcomes.
+3. Deliver the raw data, clean `votes` and `attempts` tables, an audit of ambiguous records and a short data handoff note.
+
+Primary file: `R/01_prepare_data.R`.
+
+### 2. Mihretab - network workstream
+
+1. Define and build the voter-to-candidate network and the voter-to-voter co-voting network.
+2. Calculate voter communities, supporter overlap, community diversity, centrality and brokerage; compare consecutive attempts.
+3. Run the leakage-safe outcome analysis and produce the numerical results and four figures or tables for the report.
+
+Primary file: `R/02_analysis.R`.
+
+Only information available before attempt \(t+1\) may predict the outcome of \(t+1\). Measures using votes from \(t+1\) are descriptive comparisons only.
+
+### 3. Joint workstream
+
+1. Agree on the vote and attempt table schemas and on the definitions of both networks before coding is finalised.
+2. Maintain `report/literature.md` with references linked to specific claims, then write `report/report.md` and export the final PDF.
+3. Interpret results, write limitations, prepare the contribution paragraph, test the final package and submit.
+
+## Immediate next step
+
+Umberto fixes the data parser and freezes the two table schemas. Mihretab can then implement the network analysis against a small agreed example table while the full dataset is being validated.
+
+## Required report items
+
+- Approved research question and motivation
+- Data source, collection period, filtering and final sample
+- Network methods and statistical analysis
+- Results with uncertainty and comparison points
+- Interpretation, limitations and biases
+- At least five scientific references
+- No more than four captioned and referenced figures or tables
+- Paragraph describing each member's contribution
+- PDF length between 12,000 and 20,000 characters, including spaces
