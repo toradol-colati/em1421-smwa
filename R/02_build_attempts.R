@@ -58,7 +58,9 @@ d$dat <- dd
 d$dat_missing <- is.na(d$dat)
 nota("voti con DAT vuoto: ", attr(dd, "n_vuote"),
      sprintf("  (%.2f%%)", 100 * attr(dd, "n_vuote") / nrow(d)))
-nota("voti con DAT presente ma non interpretabile: ", attr(dd, "n_non_parsate"))
+nota("voti con DAT presente ma non interpretabile: ", attr(dd, "n_non_parsate"),
+     "  (formato non riconosciuto: ", attr(dd, "n_formato_non_valido"),
+     " | valore impossibile, es. ora 31: ", attr(dd, "n_valori_impossibili"), ")")
 
 
 # --- 1c. record senza votante ------------------------------------------------

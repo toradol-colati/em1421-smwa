@@ -12,7 +12,7 @@ j <- grep("^<!-- FINE APPENDICE GENERATA -->$", testo)
 stopifnot(length(i) == 1, length(j) == 1, j > i)
 blocchi <- unlist(lapply(FILES, function(f) {
   c(paste0("### `", f, "`"), "",
-    paste0("```r"), readLines(f, warn = FALSE), "```", "")
+    "````r", readLines(f, warn = FALSE), "````", "")
 }))
 out <- c(testo[seq_len(i)], "", blocchi, testo[j:length(testo)])
 writeLines(out, doc)

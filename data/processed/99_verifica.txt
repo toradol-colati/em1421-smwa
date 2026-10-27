@@ -30,7 +30,8 @@ voti neutri (VOT=0)                                                  12.648  att
 esito respinto (RES=-1)                                              74.987  atteso       74.987  OK
 esito approvato (RES=1)                                             123.288  atteso      123.288  OK
 DAT vuoto                                                             9.367  atteso        9.367  OK
-DAT presente ma non interpretabile                                        0  atteso            0  OK
+DAT con formato non riconosciuto                                          0  atteso            0  OK
+DAT con valore impossibile (ora 31)                                       1  atteso            1  OK
 voti con mese abbreviato (May esclusa: identica alla forma piena)        7.077  atteso        7.077  OK
   voti con mese 'May'                                                18.603  atteso       18.603  OK
 voti con mese scritto male nella fonte                                    3  atteso            3  OK

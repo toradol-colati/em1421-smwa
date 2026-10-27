@@ -28,8 +28,10 @@ n_voti   <- nrow(votes_raw)
 n_utenti <- length(unique(c(votes_raw$SRC, votes_raw$TGT)))
 cat("voti:                    ", n_voti,   " (SNAP: 198275)",
     if (n_voti == 198275) " OK" else " DIVERSO", "\n", sep = "")
-cat("utenti distinti:         ", n_utenti, " (SNAP: 11381)",
-    if (n_utenti == 11381) " OK" else " DIVERSO", "\n", sep = "")
+cat("utenti distinti:         ", n_utenti,
+    " (atteso 11380: SNAP ne dichiara 11381 perche non unifica uno spazio doppio",
+    " interno e un carattere invisibile, vedi NOTA 1)",
+    if (n_utenti == 11380) " OK" else " DIVERSO", "\n", sep = "")
 # NOTA 3 - le coppie distinte sono 189.003 col trim e 189.004 senza: una sola
 # coppia (December21st2012Freak -> Jeffrey Mall) compare con due grafie che
 # differiscono solo per gli spazi. Quindi i totali pubblicati da SNAP non sono

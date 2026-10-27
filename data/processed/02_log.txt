@@ -1,7 +1,7 @@
 voti in ingresso: 198275
 username: grafia SNAP conservata -> nodi distinti: 11380
 voti con DAT vuoto: 9367  (4.72%)
-voti con DAT presente ma non interpretabile: 0
+voti con DAT presente ma non interpretabile: 1  (formato non riconosciuto: 0 | valore impossibile, es. ora 31: 1)
 record con SRC vuoto (nessun votante), rimossi: 1661 su 198275  (0.84%)
   candidati toccati: 926 | elenco in record_senza_votante.csv
 voti con un votante identificabile: 196614

@@ -27,7 +27,8 @@ dipendenza. Eseguibili in quest'ordine dalla radice del repo.
   - [16. Divergenza dai numeri del brief](#16-divergenza-dai-numeri-del-brief)
   - [17. Errori miei, trovati rivedendo il lavoro](#17-errori-miei-trovati-rivedendo-il-lavoro)
   - [18. Le verifiche indipendenti, e i sei errori che hanno trovato](#18-la-verifica-indipendente-e-i-quattro-errori-che-ha-trovato)
-  - [19. Appendice: tutto il codice](#19-appendice-tutto-il-codice)
+  - [19. I risultati hanno senso? Analisi di merito](#19-i-risultati-hanno-senso-analisi-di-merito)
+  - [20. Appendice: tutto il codice](#20-appendice-tutto-il-codice)
 
 ---
 
@@ -418,8 +419,14 @@ per una ragione tipografica.
 ### (e) Voti senza data
 
 **Che cos'è.** 9.367 record su 198.275 hanno il campo `DAT` vuoto, ma **1.661 di questi sono i
-record fantasma del §7(j), che non sono voti**. I voti veri senza data sono **7.706 su 196.614,
-il 3,92%**. Toccano 2.154 candidati distinti. *In una versione precedente dichiaravo il 4,72%:
+record fantasma del §7(j), che non sono voti**. I voti veri senza data sono **7.707 su 196.614,
+il 3,92%**. Toccano **1.762 candidati** distinti (2.154 contando anche i fantasma).
+
+Dei 7.707, **7.706 hanno il campo letteralmente vuoto e uno ha una data impossibile**:
+`31:29, 24 May 2008`, con l'ora 31. Supera il controllo di formato — due cifre, due punti, due
+cifre — ma `as.POSIXct` la rifiuta. Per questo la diagnostica ora conta separatamente i formati
+non riconosciuti e i **valori impossibili**: contava solo i primi, e dichiarava «0 date non
+interpretabili» quando ce n'era una. *In una versione precedente dichiaravo il 4,72%:
 era gonfiato dai fantasma.*
 
 **Perché andava risolto.** La ricostruzione dei tentativi si basa sui salti temporali: un voto
@@ -461,7 +468,8 @@ costruzione della data in formato ISO, indipendente dal locale. In `parse_dat()`
 **Cosa sarebbe successo altrimenti.** **7.080 date** trasformate in `NA` **in silenzio**, cioè
 il **3,7%** dei voti datati. Quei voti sarebbero finiti fra i "senza data", l'attribuzione li
 avrebbe in parte dispersi, e la ricostruzione avrebbe lavorato su un file bucato senza che
-nessuno se ne accorgesse. Dopo la correzione: **0 date presenti e non interpretabili**.
+nessuno se ne accorgesse. Dopo la correzione resta **una sola** data non interpretabile, quella
+con l'ora 31.
 
 ### (g) `YEA` non è affidabile
 
@@ -490,8 +498,10 @@ sbagliato**. Non è eliminabile senza le date. È un'altra ragione per escludere
 ### (h) Righe identiche e voti ripetuti dello stesso votante
 
 **Che cos'è.** **595 righe interamente identiche** (stesso votante, candidato, voto, esito,
-anno, data). E, dopo la ricostruzione, **627 casi** in cui lo stesso votante compare più volte
-nello stesso tentativo.
+anno, data) sui 198.275 record grezzi — ma **549 di queste sono fra i record fantasma del
+§7(j)**, che sono tutti vuoti negli stessi campi e quindi identici fra loro. Fra i voti veri le
+righe identiche sono **46**. E, dopo la ricostruzione, ci sono **627 casi** in cui lo stesso
+votante compare più volte nello stesso tentativo.
 
 **Perché andava risolto.** Un votante che compare due volte conta due volte nel grado, nel
 numero di votanti e in `support_share`; e nella rete crea un arco multiplo che va collassato.
@@ -1118,7 +1128,130 @@ volta: se un giorno i dati o il parser cambiano, si rifà da sola.
 **Stato dopo le correzioni:** ronda 1 (affermazioni e igiene) **tutte le verifiche
 coincidono**; ronda 2 (invarianti interni e numeri derivati) **tutto coerente**.
 
-## 19. Appendice: tutto il codice
+## 19. I risultati hanno senso? Analisi di merito
+
+Le ronde del §18 verificano che i numeri siano giusti e coerenti. Non dicono se il risultato
+**somigli alla realtà che dovrebbe descrivere**. Questa sezione lo verifica, confrontando
+l'output con fatti noti sul processo RfA che nel codice non sono mai entrati.
+
+### 19.1 Riproducibilità: codice estratto dal documento, stanza pulita
+
+Il codice dell'appendice (§20) è stato estratto da questo documento, messo in una cartella
+vuota insieme ai soli due file di `data/raw/`, ed eseguito da zero. I sette file estratti
+risultano **byte-identici** a quelli in `R/`, e l'esecuzione riproduce **tutti** i numeri
+riportati qui. La procedura è quindi riproducibile da chiunque abbia i due file e questo
+documento.
+
+### 19.2 `support_share` separa approvati e respinti quasi perfettamente
+
+È il controllo più forte, perché **non dipende da wiki-Elec**: usa solo la ricostruzione. Se i
+voti finissero nei tentativi sbagliati, le due distribuzioni si confonderebbero.
+
+| Esito | n | 1° quartile | mediana | 3° quartile |
+|---|---|---|---|---|
+| Approvato | 1.917 | 0,921 | **0,978** | 1,000 |
+| Respinto | 2.162 | 0,000 | **0,240** | 0,537 |
+
+Solo lo **0,9%** degli approvati sta sotto il 70% di sostegno, e solo l'**1,7%** dei respinti
+sopra l'80%. L'**AUC è 0,989**: preso a caso un tentativo approvato e uno respinto, nel 98,9%
+dei casi il primo ha una quota di sostegno maggiore.
+
+### 19.3 La soglia di promozione emerge dai dati, e non l'abbiamo messa noi
+
+Raggruppando i tentativi per quota di sostegno e guardando la percentuale di promossi:
+
+| Quota di sostegno | n | Promossi |
+|---|---|---|
+| 0,60 – 0,65 | 138 | 2,2% |
+| 0,65 – 0,70 | 141 | 4,3% |
+| **0,70 – 0,75** | **120** | **20,0%** |
+| **0,75 – 0,80** | **88** | **89,8%** |
+| 0,80 – 0,85 | 124 | 92,7% |
+| 0,90 – 0,95 | 248 | 99,2% |
+
+C'è un **salto netto fra il 70-75% e il 75-80%**, da 20% a 90% di promozioni. È la zona di
+discrezionalità dei *bureaucrat* documentata per le RfA, e **nel nostro codice non c'è nessuna
+soglia**: `support_share` è calcolata dai voti, l'esito viene da `RES`, e i due non si parlano
+mai. Ritrovare una regola istituzionale nota, che non abbiamo imposto, è una prova forte che
+la ricostruzione sta mettendo insieme i voti giusti con l'esito giusto.
+
+### 19.4 Il successo cala con il numero del tentativo
+
+| Tentativo | n | Successo |
+|---|---|---|
+| 1° | 3.468 | 47,9% |
+| 2° | 484 | 45,0% |
+| 3° | 90 | 33,3% |
+| 4° | 27 | 18,5% |
+
+La direzione è quella che Burke & Kraut (2008) documentano — ogni tentativo successivo ha meno
+probabilità del precedente. Il calo da noi è più ripido ai tentativi alti che l'11,8% per
+tentativo del loro modello, ma loro stimano un effetto medio su una specifica regressione, non
+una tabella grezza come questa: **concordanza nella direzione, non nei coefficienti.**
+
+### 19.5 La durata riproduce il processo, verificata contro wiki-Elec
+
+Qui il confronto è **indipendente**: wiki-Elec ha le elezioni già separate, quindi la sua
+distribuzione delle durate non dipende in nulla dalla nostra regola.
+
+| | wiki-Elec (elezioni vere) | Nostra ricostruzione | Solo 2004–2008 |
+|---|---|---|---|
+| Durata mediana | 6,39 giorni | 6,24 | 6,35 |
+| Fra 6,5 e 7,5 giorni | 40,1% | **41,3%** | 41,5% |
+| Sotto 1 giorno | 29,6% | **30,9%** | 27,7% |
+| Tasso di successo | 44,7% | — | 49,3% |
+
+La distribuzione è **bimodale in entrambi i file**: una massa sotto il giorno e un picco netto
+a 6,5–7,5 giorni (1.685 tentativi su 4.082). Il picco **non è imposto dalla soglia**: la soglia
+separa due tentativi quando passano più di 7 giorni *fra un voto e l'altro*, non limita la
+durata di un tentativo, tanto che 26 tentativi durano fra 10 e 20 giorni.
+
+**Il 31% di tentativi sotto il giorno non è un artefatto**, ed è la cosa che più mi aveva
+insospettito. Quei tentativi hanno **4,4% di successo** contro il 65,9% degli altri, e una
+quota di sostegno mediana di **0,083** contro 0,918. Sono candidature senza speranza chiuse in
+poche ore — il fenomeno noto come WP:SNOW / WP:NOTNOW. Lo conferma il fatto che wiki-Elec, che
+non sa nulla della nostra ricostruzione, ne ha **la stessa quota (29,6%)**.
+
+### 19.6 L'andamento storico è quello noto
+
+| Anno | n | Successo |
+|---|---|---|
+| 2003 | 53 | 100,0% |
+| 2004 | 296 | 79,4% |
+| 2005 | 590 | 66,1% |
+| 2006 | 849 | 39,8% |
+| 2008 | 565 | 34,9% |
+| 2010 | 230 | 33,0% |
+| 2012 | 97 | 30,9% |
+
+Il crollo del tasso di successo e del volume di candidature fra il 2005 e il 2008 è la storia
+documentata delle RfA, che da processo di routine diventano un esame severo. Non è un fatto che
+abbiamo immesso nel codice: esce dai dati.
+
+### 19.7 Le due differenze che restano, dichiarate
+
+- **Tasso di successo 2004–2008: 49,3% nostro contro 44,7% di wiki-Elec.** Quattro punti e
+  mezzo di scarto. Coerente con il fatto che i due file non contengono esattamente le stesse
+  elezioni (§6), ma non l'ho spiegato nel dettaglio.
+- **wiki-Elec ha un'elezione lunga 780 giorni**, noi al massimo 17,34. La nostra regola di
+  separazione **tronca** per costruzione le durate oltre una certa soglia, la loro no. Sulla
+  massa della distribuzione non cambia niente, ma va detto: le durate estreme non sono
+  confrontabili.
+
+### 19.8 Conclusione
+
+I conteggi sono giusti (§18) e il risultato si comporta come il processo che deve descrivere:
+separa gli esiti, ritrova una soglia istituzionale che non gli abbiamo dato, riproduce la
+durata di sette giorni e la coda delle chiusure anticipate con le stesse proporzioni di una
+fonte indipendente, e mostra l'andamento storico corretto. Per quanto si può stabilire con
+questi dati, **la ricostruzione è adatta ai dati di partenza e produce risultati sensati.**
+
+Quello che questa sezione **non** dimostra: che le scelte aperte del §14 siano quelle giuste,
+che i 2.176 tentativi senza riscontro esterno siano ricostruiti bene come quelli con riscontro
+(§10, terza riserva), e che l'interpretazione di rete che verrà costruita sopra queste tabelle
+sia valida.
+
+## 20. Appendice: tutto il codice
 
 Quello che segue è il contenuto integrale dei file in `R/`, nell'ordine di esecuzione. Con i
 due file di `data/raw/` e questo codice, chiunque può rifare l'intera elaborazione e ottenere
@@ -1138,7 +1271,7 @@ Rscript R/99_verifica_dati.R    # facoltativo: la verifica indipendente
 
 ### `R/00_paths.R`
 
-```r
+````r
 # Percorsi e utilità comuni. Da eseguire dalla radice del repo (source(), non standalone).
 
 DIR_RAW       <- file.path("data", "raw")
@@ -1154,11 +1287,11 @@ stop_if_missing <- function(path) {
   }
   invisible(TRUE)
 }
-```
+````
 
 ### `R/00_lib_data.R`
 
-```r
+````r
 # Funzioni condivise del data workstream. Sorgente per 02 e 03, non eseguibile
 # da sola. Solo R base: nessuna dipendenza.
 
@@ -1360,8 +1493,15 @@ parse_dat <- function(x) {
     out[ok] <- as.numeric(as.POSIXct(iso, format = "%Y-%m-%d %H:%M:%S", tz = "UTC"))
   }
   res <- as.POSIXct(out, origin = "1970-01-01", tz = "UTC")
-  attr(res, "n_non_parsate") <- sum(!ok & nzchar(x))
-  attr(res, "n_vuote")       <- sum(!nzchar(x))
+  # Attenzione: superare il controllo di formato non basta. Un record ha
+  # "31:29, 24 May 2008": l'ora 31 passa la regex ma as.POSIXct la rifiuta e
+  # restituisce NA. La diagnostica deve contare i NA DOPO la costruzione della
+  # data, non solo i formati non riconosciuti, altrimenti dichiara zero
+  # quando non e zero (lo faceva).
+  attr(res, "n_formato_non_valido") <- sum(!ok & nzchar(x))
+  attr(res, "n_valori_impossibili") <- sum(ok & is.na(res))
+  attr(res, "n_non_parsate")        <- sum(!ok & nzchar(x)) + sum(ok & is.na(res))
+  attr(res, "n_vuote")              <- sum(!nzchar(x))
   res
 }
 
@@ -1472,11 +1612,11 @@ costruisci_attempts <- function(v) {
   a$flag_year_clash <- key %in% key[duplicated(key)]
   a[order(a$candidate, a$attempt_no), ]
 }
-```
+````
 
 ### `R/01_read_raw.R`
 
-```r
+````r
 # 01 - Lettura dei file grezzi, nessuna pulizia sostanziale.
 # Input : data/raw/wiki-RfA.txt.gz, data/raw/wikiElec.ElecBs3.txt.gz
 # Output: data/processed/votes_raw.rds, data/processed/username_case_variants.csv
@@ -1507,8 +1647,10 @@ n_voti   <- nrow(votes_raw)
 n_utenti <- length(unique(c(votes_raw$SRC, votes_raw$TGT)))
 cat("voti:                    ", n_voti,   " (SNAP: 198275)",
     if (n_voti == 198275) " OK" else " DIVERSO", "\n", sep = "")
-cat("utenti distinti:         ", n_utenti, " (SNAP: 11381)",
-    if (n_utenti == 11381) " OK" else " DIVERSO", "\n", sep = "")
+cat("utenti distinti:         ", n_utenti,
+    " (atteso 11380: SNAP ne dichiara 11381 perche non unifica uno spazio doppio",
+    " interno e un carattere invisibile, vedi NOTA 1)",
+    if (n_utenti == 11380) " OK" else " DIVERSO", "\n", sep = "")
 # NOTA 3 - le coppie distinte sono 189.003 col trim e 189.004 senza: una sola
 # coppia (December21st2012Freak -> Jeffrey Mall) compare con due grafie che
 # differiscono solo per gli spazi. Quindi i totali pubblicati da SNAP non sono
@@ -1540,11 +1682,11 @@ cat("candidati distinti:", length(unique(elec$elections$candidate)),
     "  di cui con piu di un'elezione:",
     sum(table(elec$elections$candidate) > 1), "\n")
 cat("date di chiusura mancanti:", sum(is.na(elec$elections$closed_at)), "\n")
-```
+````
 
 ### `R/02_build_attempts.R`
 
-```r
+````r
 # 02 - Ricostruzione dei tentativi: una riga per (candidato, tentativo).
 # Input : data/processed/votes_raw.rds
 # Output: data/processed/votes.rds     (una riga per voto validato, con attempt_id)
@@ -1605,7 +1747,9 @@ d$dat <- dd
 d$dat_missing <- is.na(d$dat)
 nota("voti con DAT vuoto: ", attr(dd, "n_vuote"),
      sprintf("  (%.2f%%)", 100 * attr(dd, "n_vuote") / nrow(d)))
-nota("voti con DAT presente ma non interpretabile: ", attr(dd, "n_non_parsate"))
+nota("voti con DAT presente ma non interpretabile: ", attr(dd, "n_non_parsate"),
+     "  (formato non riconosciuto: ", attr(dd, "n_formato_non_valido"),
+     " | valore impossibile, es. ora 31: ", attr(dd, "n_valori_impossibili"), ")")
 
 
 # --- 1c. record senza votante ------------------------------------------------
@@ -1728,11 +1872,11 @@ saveRDS(v, file.path(DIR_PROCESSED, "votes.rds"))
 saveRDS(a, file.path(DIR_PROCESSED, "attempts.rds"))
 writeLines(log_righe, file.path(DIR_PROCESSED, "02_log.txt"))
 nota("scritti: votes.rds (", nrow(v), " righe), attempts.rds (", nrow(a), " righe)")
-```
+````
 
 ### `R/03_validate_outcomes.R`
 
-```r
+````r
 # 03 - Validazione della ricostruzione contro wiki-Elec, e scelta della soglia.
 # Input : data/processed/votes_raw.rds, data/processed/elec_raw.rds,
 #         data/processed/votes.rds, data/processed/attempts.rds
@@ -1910,11 +2054,11 @@ nota("LIMITE: la validazione copre ", sum(a$elec_matched), " tentativi su ", nro
      ". Fuori dal periodo di wiki-Elec, cioe dal 2008 al 2013, non esiste.")
 nota("scritti: attempts_validated.rds, 03_match_wikielec.csv")
 writeLines(log_righe, file.path(DIR_PROCESSED, "03_log.txt"))
-```
+````
 
 ### `R/99_verifica_dati.R`
 
-```r
+````r
 # 99 - Verifica indipendente delle affermazioni di docs/DATI.md.
 # Ricalcola ogni numero PARTENDO DAI FILE GREZZI, senza usare gli output
 # intermedi, e confronta con quanto dichiarato. Stampa OK o DIVERSO.
@@ -1982,7 +2126,8 @@ chk("esito respinto (RES=-1)",  sum(D$RES == "-1"),  74987)
 chk("esito approvato (RES=1)",  sum(D$RES ==  "1"), 123288)
 chk("DAT vuoto", sum(D$DAT == ""), 9367)
 dt <- parse_dat(D$DAT)
-chk("DAT presente ma non interpretabile", attr(dt, "n_non_parsate"), 0)
+chk("DAT con formato non riconosciuto", attr(dt, "n_formato_non_valido"), 0)
+chk("DAT con valore impossibile (ora 31)", attr(dt, "n_valori_impossibili"), 1)
 mm <- sub("^.*, [0-9]{1,2} ([A-Za-z]+) [0-9]{4}$", "\\1", D$DAT[D$DAT != ""])
 abbr <- c("Jan","Feb","Mar","Apr","Jun","Jul","Aug","Sep","Oct","Nov","Dec")
 chk("voti con mese abbreviato (May esclusa: identica alla forma piena)", sum(mm %in% abbr), 7077)
@@ -2139,11 +2284,11 @@ cat(if (ko == 0) "Tutte le affermazioni verificate coincidono.\n" else
 log_righe <- c(log_righe, if (ko == 0) "Tutte le affermazioni coincidono." else
                sprintf("%d affermazioni NON coincidono.", ko))
 writeLines(log_righe, file.path(DIR_PROCESSED, "99_verifica.txt"))
-```
+````
 
 ### `R/99b_verifica_output.R`
 
-```r
+````r
 # 99b - Seconda ronda di verifica: gli INVARIANTI INTERNI delle tabelle prodotte
 # e i numeri derivati citati in docs/DATI.md.
 # Mentre 99_verifica_dati.R controlla le affermazioni sui file GREZZI, questo
@@ -2283,11 +2428,11 @@ cat(if (ko == 0) "Tutti gli invarianti reggono e tutti i numeri coincidono.\n" e
     sprintf("%d controlli FALLITI.\n", ko))
 log_righe <- c(log_righe, if (ko == 0) "Tutto coerente." else sprintf("%d controlli falliti.", ko))
 writeLines(log_righe, file.path(DIR_PROCESSED, "99b_verifica.txt"))
-```
+````
 
 ### `R/98_genera_appendice.R`
 
-```r
+````r
 # 98 - Rigenera l'appendice di codice in docs/DATI.md dai file veri in R/.
 # Da eseguire dopo ogni modifica agli script, cosi il codice nel documento non
 # puo divergere da quello che gira. Non tocca il resto del documento.
@@ -2302,11 +2447,11 @@ j <- grep("^<!-- FINE APPENDICE GENERATA -->$", testo)
 stopifnot(length(i) == 1, length(j) == 1, j > i)
 blocchi <- unlist(lapply(FILES, function(f) {
   c(paste0("### `", f, "`"), "",
-    paste0("```r"), readLines(f, warn = FALSE), "```", "")
+    "````r", readLines(f, warn = FALSE), "````", "")
 }))
 out <- c(testo[seq_len(i)], "", blocchi, testo[j:length(testo)])
 writeLines(out, doc)
 cat("appendice rigenerata:", length(blocchi), "righe da", length(FILES), "file\n")
-```
+````
 
 <!-- FINE APPENDICE GENERATA -->

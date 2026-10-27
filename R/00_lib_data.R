@@ -199,8 +199,15 @@ parse_dat <- function(x) {
     out[ok] <- as.numeric(as.POSIXct(iso, format = "%Y-%m-%d %H:%M:%S", tz = "UTC"))
   }
   res <- as.POSIXct(out, origin = "1970-01-01", tz = "UTC")
-  attr(res, "n_non_parsate") <- sum(!ok & nzchar(x))
-  attr(res, "n_vuote")       <- sum(!nzchar(x))
+  # Attenzione: superare il controllo di formato non basta. Un record ha
+  # "31:29, 24 May 2008": l'ora 31 passa la regex ma as.POSIXct la rifiuta e
+  # restituisce NA. La diagnostica deve contare i NA DOPO la costruzione della
+  # data, non solo i formati non riconosciuti, altrimenti dichiara zero
+  # quando non e zero (lo faceva).
+  attr(res, "n_formato_non_valido") <- sum(!ok & nzchar(x))
+  attr(res, "n_valori_impossibili") <- sum(ok & is.na(res))
+  attr(res, "n_non_parsate")        <- sum(!ok & nzchar(x)) + sum(ok & is.na(res))
+  attr(res, "n_vuote")              <- sum(!nzchar(x))
   res
 }
 
