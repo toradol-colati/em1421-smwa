@@ -14,7 +14,7 @@ Questo file aggiunge solo ciò che è cambiato o è stato deciso dopo quel docum
 - **Proposta approvata** dal docente con la domanda del brief così com'è. La domanda NON va riscritta senza scrivere prima al docente.
   - Conseguenza: la circolarità della seconda metà (§8.1 del contesto) si risolve nell'analisi, non nella domanda. Variabili di coalizione di t+1 → solo descrittive, con modello nullo. Regressione → solo variabili note prima dell'apertura di t+1.
   - I 29 "previously successful" restano (sono nella domanda approvata) come confronto secondario descrittivo. Vanno controllati a mano: se sono errori di ricostruzione, va scritto nei limiti.
-- **Gruppo:** Bubi (GitHub `toradol-colati`) e Mihretab.
+- **Gruppo:** Bubi (GitHub `toradol-colati`) e Mihretab (GitHub `mihretabworku`).
 - **Divisione del lavoro: PROPOSTA, non ancora concordata.**
   - A. Insieme, prima del codice: schema delle tabelle `attempts` (una riga per tentativo: candidato, n. tentativo, apertura, chiusura, esito validato, flag ambiguità) e `votes` (con id tentativo); definizioni scritte delle reti (nodi, archi, direzione, peso, voti neutri, finestra temporale).
   - B. In parallelo e indipendenti: ricostruzione dei tentativi, ciascuno con la propria regola, senza guardare quella dell'altro. Poi confronto dei conteggi e regola unica.
@@ -33,7 +33,7 @@ Questo file aggiunge solo ciò che è cambiato o è stato deciso dopo quel docum
 - Data dell'appello (4/11 dedotto dalla consegna del 2/11, 09:00 CET).
 
 ## Repo
-- Remote: `toradol-colati/em1421-smwa` (privata).
+- Remote: `toradol-colati/em1421-smwa` (privata). Collaboratori: `mihretabworku` con permesso di scrittura (invitato il 27/10/2026).
 - Struttura creata: `data/raw/` (file SNAP, da scaricare: vedi `data/raw/README.md`), `data/processed/`, `R/` (script numerati `00`–`07`), `output/figures/`, `report/`, `docs/`.
 - I file SNAP compressi stanno sotto il limite GitHub (wiki-RfA ~15 MB): vanno in `data/raw/` e si committano, perché la consegna richiede i dati insieme al codice.
 - `data/raw/` è di sola lettura per gli script. Ogni script scrive solo in `data/processed/` o `output/`.

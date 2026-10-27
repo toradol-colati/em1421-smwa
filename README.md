@@ -13,7 +13,7 @@ Dati: SNAP **wiki-RfA** (voti RfA di Wikipedia, 2003 – maggio 2013) come fonte
 **wiki-Elec** (elezioni fino a gennaio 2008) per validare gli esiti. Analisi interamente in R
 (igraph, ggplot2). I risultati sono associazioni, non effetti causali.
 
-Gruppo: **Bubi** (Umberto Toraldo, GitHub `toradol-colati`) e **Mihretab**.
+Gruppo: **Bubi** (Umberto Toraldo, GitHub `toradol-colati`) e **Mihretab** (GitHub `mihretabworku`).
 Scadenza dal brief: **2 novembre 2026, 09:00 CET** (report PDF + codice + dati, più email di
 conferma al docente).
 
