@@ -11,13 +11,12 @@ tentativi ricostruiti: 4082
 candidati con almeno un tentativo: 3468
 voti rimossi perche lo stesso votante compare piu volte nello stesso tentativo (tenuto il piu recente): 627
 voti validati: 188280
-tentativi: 4082
+voti senza data attribuiti in modo univoco: 8562 su 9368
+voti senza data non attribuibili (persi): 806
+voti rimossi nella seconda deduplica (stesso votante, uno datato e uno imputato nello stesso tentativo): 679
+tentativi: 4082 (prima dell'attribuzione dei voti senza data: 4082)
 candidati ripetuti (2+ tentativi): 484   (il brief dichiara 414)
   di cui con 3+ tentativi: 90
 coppie di tentativi consecutivi: 614
-tentativi segnalati: pochi voti (<5): 333 | durata >14gg: 4 | stesso candidato/anno/esito: 359
-tentativi con un esito precedente noto: 614
-  preceduti da un rifiuto: 558
-  preceduti da un successo: 56   (il brief dichiara 29 candidati 'previously successful')
-voti senza data attribuiti in modo univoco: 8562 su 9368
-voti senza data non attribuibili (persi): 806
+tentativi segnalati: pochi voti (<5): 281 | durata >14gg: 4 | stesso candidato/anno/esito: 359
+  preceduti da un rifiuto: 558 | preceduti da un successo: 56

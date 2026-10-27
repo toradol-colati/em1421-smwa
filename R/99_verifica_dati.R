@@ -140,7 +140,7 @@ ec <- unique(E$elections$candidate); rc <- unique(tolower(Dt$TGT))
 chk("candidati wiki-Elec trovati in wiki-RfA, match diretto (%)",
     round(100*mean(ec %in% rc), 1), 74.9, tol = 0.2)
 chk("candidati wiki-Elec trovati normalizzando (%)",
-    round(100*mean(norm_user(ec) %in% norm_user(rc)), 1), 89.5, tol = 0.2)
+    round(100*mean(norm_user(ec) %in% norm_user(rc)), 1), 89.8, tol = 0.2)
 
 # ------------------------------------------------ assunzioni del metodo -----
 sez("ASSUNZIONE: RES e una proprieta dell'elezione, non del voto")
@@ -161,4 +161,16 @@ for (r in seq_len(nrow(ele))) {
   if (length(unique(Dt$RES[jj])) > 1) res_misti <- res_misti + 1L
 }
 cat(sprintf("  elezioni esaminate (>=10 votanti ritrovati): %d\n", esaminate))
-cat(sprintf("  di cu
+cat(sprintf("  di cui con RES NON costante fra i loro voti in wiki-RfA: %d (%.1f%%)\n",
+            res_misti, 100*res_misti/esaminate))
+cat("  NB: un valore alto invaliderebbe il raggruppamento per (candidato, RES).\n")
+log_righe <- c(log_righe,
+  sprintf("  elezioni esaminate: %d | con RES non costante: %d (%.1f%%)",
+          esaminate, res_misti, 100*res_misti/esaminate))
+
+sez("ESITO")
+cat(if (ko == 0) "Tutte le affermazioni verificate coincidono.\n" else
+    sprintf("%d affermazioni NON coincidono.\n", ko))
+log_righe <- c(log_righe, if (ko == 0) "Tutte le affermazioni coincidono." else
+               sprintf("%d affermazioni NON coincidono.", ko))
+writeLines(log_righe, file.path(DIR_PROCESSED, "99_verifica.txt"))

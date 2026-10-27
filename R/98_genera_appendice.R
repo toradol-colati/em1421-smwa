@@ -3,7 +3,8 @@
 # puo divergere da quello che gira. Non tocca il resto del documento.
 FILES <- c("R/00_paths.R", "R/00_lib_data.R", "R/01_read_raw.R",
            "R/02_build_attempts.R", "R/03_validate_outcomes.R",
-           "R/99_verifica_dati.R", "R/98_genera_appendice.R")
+           "R/99_verifica_dati.R", "R/99b_verifica_output.R",
+           "R/98_genera_appendice.R")
 doc <- "docs/DATI.md"
 testo <- readLines(doc, warn = FALSE)
 i <- grep("^<!-- INIZIO APPENDICE GENERATA -->$", testo)

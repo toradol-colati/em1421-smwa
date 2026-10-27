@@ -26,7 +26,7 @@ dipendenza. Eseguibili in quest'ordine dalla radice del repo.
   - [15. Problemi che permangono e diventano limiti dichiarati](#15-problemi-che-permangono-e-diventano-limiti-dichiarati)
   - [16. Divergenza dai numeri del brief](#16-divergenza-dai-numeri-del-brief)
   - [17. Errori miei, trovati rivedendo il lavoro](#17-errori-miei-trovati-rivedendo-il-lavoro)
-  - [18. La verifica indipendente, e i quattro errori che ha trovato](#18-la-verifica-indipendente-e-i-quattro-errori-che-ha-trovato)
+  - [18. Le verifiche indipendenti, e i sei errori che hanno trovato](#18-la-verifica-indipendente-e-i-quattro-errori-che-ha-trovato)
   - [19. Appendice: tutto il codice](#19-appendice-tutto-il-codice)
 
 ---
@@ -423,8 +423,9 @@ senza data non si può ordinare, quindi non si può assegnare a un tentativo per
 
 **Come.** Restano fuori dalla ricostruzione e vengono attribuiti dopo, **solo quando
 l'attribuzione è univoca**: il candidato ha un solo tentativo con quell'anno e quell'esito.
-Così **8.562 sono attribuiti** e **806 persi** — le uniche righe che si perdono in tutta la
-pipeline. I primi sono marcati `dat_imputed = TRUE` e restano distinguibili.
+Così **8.562 sono attribuiti** — di cui **679 risultano poi doppioni** di un voto datato dello
+stesso votante nello stesso tentativo e vengono tolti, quindi **7.883 entrano in tabella** — e
+**806 sono persi**. I primi sono marcati `dat_imputed = TRUE` e restano distinguibili.
 
 **Cosa sarebbe successo altrimenti.** Scartandoli tutti si perdeva il 4,7% dei voti, con
 effetto non uniforme: cadono su 2.154 candidati, quindi avrebbero ridotto il conteggio dei
@@ -478,7 +479,7 @@ esattamente la popolazione che lo studio seleziona. Avremmo studiato artefatti.
 **Dove `YEA` però resta inevitabile.** L'attribuzione dei voti senza data (§7(e)) usa la chiave
 (candidato, `YEA`, esito), perché un voto senza data non ha nient'altro con cui essere
 collocato. Rischio quantificato: fra i voti datati lo 0,99% ha `YEA` sbagliato; applicando la
-stessa proporzione, **circa 85 degli 8.562 voti attribuiti possono finire nel tentativo
+stessa proporzione, **circa 78 dei 7.883 voti attribuiti possono finire nel tentativo
 sbagliato**. Non è eliminabile senza le date. È un'altra ragione per escludere i
 `dat_imputed` dalle analisi sensibili al tempo.
 
@@ -500,6 +501,13 @@ caso il duplicato è segnale, non rumore — Olteanu et al. 2019 §3.7 lo dice e
 come: tenendo il **primo** voto invece dell'ultimo si registrerebbe l'opinione che il votante
 ha poi abbandonato, cioè il contrario del suo giudizio finale. Non tenendone conto affatto,
 627 voti doppi gonfierebbero i conteggi.
+
+**Una seconda deduplica, che all'inizio mi era sfuggita.** I voti senza data entrano in
+tabella *dopo* la deduplica, quindi un votante può ritrovarsi nello stesso tentativo con un
+voto datato e uno imputato: sono **679 casi**. Si tiene il **datato**, perché è verificabile.
+Senza questo passaggio 679 votanti sarebbero contati due volte nello stesso tentativo e
+`n_votes` non corrisponderebbe alle righe di `votes.rds`. L'ho trovato con la verifica degli
+invarianti, non rileggendo il codice (§18).
 
 ### (i) `T` di wiki-Elec non è la data di chiusura
 
@@ -646,7 +654,7 @@ ottimistici.**
 
 ## 11. Le tabelle consegnate, colonna per colonna
 
-### `data/processed/votes.rds` — 196.842 righe, una per voto validato
+### `data/processed/votes.rds` — 196.163 righe, una per voto validato
 
 | Colonna | Tipo | Contenuto |
 |---|---|---|
@@ -662,8 +670,11 @@ ottimistici.**
 | `attempt_no` | numeric | numero del tentativo dentro il candidato, in ordine di apertura |
 | `dat_imputed` | logical | voto senza data attribuito al tentativo per via indiretta, §7(e) |
 
-Da 198.275 voti grezzi a 196.842: 627 rimossi come voti ripetuti dello stesso votante nello
-stesso tentativo (§7(h)) e 806 persi perché senza data e non attribuibili (§7(e)).
+Da 198.275 voti grezzi a 196.163, cioè 2.112 righe in meno:
+**627** rimosse perché lo stesso votante compariva più volte nello stesso tentativo (§7(h));
+**679** rimosse da una seconda deduplica, perché un votante aveva nello stesso tentativo sia un
+voto datato sia uno senza data che gli era stato attribuito — si tiene il datato, che è
+verificabile (§7(h)); e **806** perse perché senza data e non attribuibili (§7(e)).
 
 ### `data/processed/attempts.rds` — 4.082 righe, una per tentativo
 
@@ -680,9 +691,11 @@ stesso tentativo (§7(h)) e 806 persi perché senza data e non attribuibili (§7
 | `n_support`, `n_oppose`, `n_neutral` | integer | scomposizione per segno |
 | `support_share` | numeric | `n_support / (n_support + n_oppose)`. **I neutri non sono nel denominatore**: convenzione dichiarata, non l'unica possibile — §14(b) |
 | `duration_days` | numeric | `closed_at − opened_at`, quindi **sottostima** della durata vera |
-| `flag_short` | logical | meno di 5 voti: possibile frammento — **333 casi** |
+| `flag_short` | logical | meno di 5 voti: possibile frammento — **281 casi** |
 | `flag_long` | logical | più di 14 giorni: più lungo di una RfA normale — **4 casi** |
 | `flag_year_clash` | logical | esiste un altro tentativo dello stesso candidato, stesso anno (preso dalla **data**, non da `yea`) e stesso esito: sospetto di spezzatura — **359 casi** |
+| `n_votes_dated` | integer | di `n_votes`, quanti avevano una data propria |
+| `n_votes_imputed` | integer | di `n_votes`, quanti sono voti senza data attribuiti a questo tentativo (7.883 in tutto) |
 | `prev_outcome` | integer | esito del tentativo precedente dello stesso candidato; `NA` al primo |
 
 ### `data/processed/attempts_validated.rds` — gli stessi 4.082 tentativi, più il riscontro esterno
@@ -707,6 +720,12 @@ i voti che un candidato ha **dato** nelle RfA altrui fra un tentativo e l'altro,
 il §8.2 del documento di contesto sono l'unica informazione davvero nuova su un ripresentato.
 
 ## 12. Caratteristiche strutturali da sapere prima di usarle
+
+**Attenzione: i numeri qui sotto sono quelli del FILE GREZZO.** La tabella consegnata, dopo
+le rimozioni, ne ha un po' meno: **10.396 votanti**, **3.468 candidati**, **2.514 utenti che
+sono entrambe le cose**, e **143.610 favorevoli / 40.561 contrari / 11.992 neutri**. La
+differenza sono i 2.112 voti usciti dalla pipeline, con cui spariscono anche alcuni utenti che
+comparivano una volta sola. Il report deve dire quale dei due conteggi usa.
 
 **La rete di voto non è bipartita.** 10.417 votanti, 3.497 candidati, unione 11.381:
 **2.533 utenti sono entrambe le cose**, cioè il **72,4% dei candidati ha votato almeno una
@@ -779,17 +798,39 @@ grafie diverse**, in anni diversi:
 | Alexsautographs | due grafie nello stesso anno, 2010 |
 | Nenyedi | due grafie nello stesso anno, 2007 |
 
-**Se non si unificano, quegli 8 risultano due persone distinte con un solo tentativo ciascuna
-e cadono fuori dai candidati ripetuti.** Cambia la popolazione dello studio, cioè il 414 del
-brief. Nel codice è il parametro `UNIFICA_INIZIALE` in `R/02_build_attempts.R`, ora `FALSE`,
-cioè si resta sul conteggio SNAP. **La mia proposta è unificare**, dichiarandolo come
-scostamento da SNAP e riportando entrambi i conteggi.
+**L'effetto è stato misurato, eseguendo la pipeline nelle due configurazioni:**
+
+| | `UNIFICA_INIZIALE = FALSE` (ora) | `= TRUE` |
+|---|---|---|
+| Nodi distinti | 11.381 | **11.244** |
+| Tentativi | 4.082 | 4.081 |
+| **Candidati ripetuti** | **484** | **490** |
+| Tentativi preceduti da un rifiuto | 558 | 565 |
+| Tentativi preceduti da un successo | 56 | 56 |
+| Voti senza data persi | 806 | 823 |
+
+**Sulla popolazione cambia poco: sei candidati ripetuti in più, e si va più lontano dal 414 del
+brief, non più vicino.** L'argomento forte non è la popolazione, è **l'identità dei nodi nella
+rete**: in **37 dei 137 gruppi** una grafia **dà** voti e un'altra li **riceve**. Esempi reali:
+`ais523` ha dato 31 voti mentre `Ais523` ne ha ricevuti 66; `aitias` ne ha dati 101 mentre
+`Aitias` ne ha dati 70 e ricevuti 240. Senza unificare, **i voti dati e quelli ricevuti della
+stessa persona finiscono su due nodi diversi**, il che colpisce esattamente la variabile di cui
+parlavamo: il grado uscente del candidato, cioè i voti che ha dato nelle RfA altrui. In tutto i
+137 gruppi coinvolgono **12.788 voti** (7.167 dati e 5.621 ricevuti).
+
+E restano gli **8 candidati** che senza unificazione risultano due persone distinte con un solo
+tentativo ciascuna, quindi fuori dai ripetuti.
+
+Nel codice è il parametro `UNIFICA_INIZIALE` in `R/02_build_attempts.R`, ora `FALSE`, cioè si
+resta sul conteggio SNAP. **La mia proposta è unificare**, per la ragione di rete più che per
+quella di popolazione, dichiarandolo come scostamento da SNAP e riportando entrambi i
+conteggi.
 
 **(b) Il denominatore di `support_share`.** Ora esclude i 12.648 neutri. L'alternativa è
 includerli. La scelta va dichiarata nel report in ogni caso.
 
-**(c) Che cosa escludere.** `flag_short` (333), `flag_long` (4), `flag_year_clash` (359) e i
-voti `dat_imputed` (8.562) sono in tabella, non filtrati. Per le analisi sensibili al tempo i
+**(c) Che cosa escludere.** `flag_short` (281), `flag_long` (4), `flag_year_clash` (359) e i
+voti `dat_imputed` (7.883) sono in tabella, non filtrati. Per le analisi sensibili al tempo i
 `dat_imputed` probabilmente vanno esclusi (§7(g)). Il numero degli esclusi va nel report.
 
 **(d) Il periodo.** Kołczyńska scarta 2003 e 2013 perché coperti solo in parte (155 e 3.348
@@ -836,7 +877,7 @@ disaccordo è simmetrico. *Minaccia:* la precisione dei conteggi per tentativo.
 riproducibilità dichiarata nella sezione dati. *Rimedio:* dichiarare quale conteggio si usa e
 perché.
 
-**(h) Circa 85 voti potrebbero essere attribuiti al tentativo sbagliato** (§7(g)).
+**(h) Circa 78 voti potrebbero essere attribuiti al tentativo sbagliato** (§7(g)).
 *Minaccia:* i conteggi dei tentativi che li contengono. *Direzione:* ignota, ma l'ordine di
 grandezza è lo 0,04% dei voti.
 
@@ -913,7 +954,7 @@ ISO-8859-1 perché "funzionava". Rovinava i nomi accentati corretti. Vedi §7(b)
 **Quello che resta non verificato, e sta scritto:** i 12 esiti discordanti e il tentativo che
 assorbe due elezioni non li ho guardati caso per caso (§13(a), §13(b)).
 
-## 18. La verifica indipendente, e i quattro errori che ha trovato
+## 18. Le verifiche indipendenti, e i sei errori che hanno trovato
 
 `R/99_verifica_dati.R` **ricalcola ogni numero di questo documento partendo dai due file
 grezzi**, senza usare nessun output intermedio della pipeline, e stampa `OK` o `DIVERSO`
@@ -922,7 +963,8 @@ che le affermazioni qui sopra corrispondano ai dati. Verifica una sessantina di 
 l'assunzione di metodo del §8. Il risultato è in `data/processed/99_verifica.txt`.
 
 Scriverlo è servito: ha trovato **quattro affermazioni sbagliate** che erano in questo
-documento, tutte ora corrette sopra.
+documento, tutte ora corrette sopra. Una seconda ronda, descritta in fondo a questa sezione,
+ne ha trovati altri due, e quelli erano bug veri nel codice.
 
 **(a) «21 nomi hanno uno spazio finale».** Falso come formulato: le grafie con spazio sono
 **43**; sono 21 quelle che **collidono** con la forma pulita, ed è per questo che il conteggio
@@ -946,6 +988,37 @@ Oltre a queste, la verifica ha fatto emergere un test mal costruito — il 15,0%
 costante, che ristretto ai casi non ambigui è **2,3%** (§8) — e ha permesso di sostituire
 un'affermazione qualitativa con una misurata: i 806 voti persi si concentrano sui candidati
 ripetuti **5,6 volte** più della base (§15(i)).
+
+### La seconda ronda: gli invarianti interni
+
+`R/99b_verifica_output.R` fa una cosa diversa: non controlla le affermazioni sui file grezzi,
+controlla che **le tabelle prodotte siano internamente coerenti**. Sono condizioni che devono
+valere per costruzione: se una fallisce c'è un bug nella pipeline, non un'imprecisione nel
+testo. Per esempio: nessun votante due volte nello stesso tentativo; `n_votes` uguale al
+conteggio effettivo delle righe; `n_support + n_oppose + n_neutral == n_votes`;
+`support_share` uguale al suo rapporto; `attempt_no` contiguo e ordinato per data di apertura;
+`prev_outcome` uguale all'esito del tentativo precedente; conservazione dei voti
+(198.275 = 196.163 + 1.306 rimossi + 806 persi).
+
+**Ha trovato due bug veri, che nessuna rilettura del codice mi aveva fatto notare.**
+
+**(e) `n_votes` non corrispondeva ai voti in `votes.rds`.** Costruivo la tabella dei tentativi
+*prima* di reinserire i voti senza data attribuiti. Conseguenza: `n_votes`, i tre conteggi per
+segno e soprattutto **`support_share` — che è una variabile dell'analisi — escludevano in
+silenzio migliaia di voti**, e le due tabelle consegnate non concordavano fra loro. Risolto
+spostando la costruzione dopo l'attribuzione, e aggiungendo le colonne `n_votes_dated` e
+`n_votes_imputed` per tenere la distinzione visibile.
+
+**(f) Un votante poteva comparire due volte nello stesso tentativo.** Dopo aver sistemato (e),
+l'invariante sui doppioni è caduto: i voti senza data entrano *dopo* la deduplica, quindi un
+votante poteva avere nello stesso tentativo un voto datato e uno imputato. **679 casi.**
+Risolto con una seconda deduplica che tiene il voto datato.
+
+Entrambi i bug erano invisibili leggendo il codice, perché ogni singolo passo era corretto: era
+sbagliato **l'ordine**. Ed entrambi toccavano numeri che avrei consegnato come buoni.
+
+**Stato dopo le correzioni:** ronda 1, **73 verifiche su 73** coincidono; ronda 2, **tutti gli
+invarianti reggono e tutti i numeri coincidono**.
 
 ## 19. Appendice: tutto il codice
 
@@ -1254,9 +1327,11 @@ costruisci_attempts <- function(v) {
   a$yea        <- v$yea[idx]
   spl <- split(seq_len(nrow(v)), v$attempt_id)
   spl <- spl[as.character(a$attempt_id)]
-  a$opened_at    <- as.POSIXct(vapply(spl, function(i) min(as.numeric(v$dat[i])), 0),
+  # apertura e chiusura dai soli voti DATATI: i voti imputati non hanno data e
+  # non devono spostare i confini del tentativo
+  a$opened_at    <- as.POSIXct(vapply(spl, function(i) min(as.numeric(v$dat[i]), na.rm = TRUE), 0),
                                origin = "1970-01-01", tz = "UTC")
-  a$closed_at    <- as.POSIXct(vapply(spl, function(i) max(as.numeric(v$dat[i])), 0),
+  a$closed_at    <- as.POSIXct(vapply(spl, function(i) max(as.numeric(v$dat[i]), na.rm = TRUE), 0),
                                origin = "1970-01-01", tz = "UTC")
   a$n_votes      <- vapply(spl, length, 0L)
   a$n_support    <- vapply(spl, function(i) sum(v$vot[i] ==  1), 0L)
@@ -1440,33 +1515,12 @@ nota("voti rimossi perche lo stesso votante compare piu volte nello stesso ",
      "tentativo (tenuto il piu recente): ", attr(v, "n_righe_tolte"))
 nota("voti validati: ", nrow(v))
 
-# --- 6. tabella dei tentativi ------------------------------------------------
-a <- costruisci_attempts(v)
-nota("tentativi: ", nrow(a))
-rip <- table(a$candidate)
-nota("candidati ripetuti (2+ tentativi): ", sum(rip > 1),
-     "   (il brief dichiara 414)")
-nota("  di cui con 3+ tentativi: ", sum(rip > 2))
-nota("coppie di tentativi consecutivi: ", sum(rip[rip > 1] - 1))
-nota("tentativi segnalati: pochi voti (<5): ", sum(a$flag_short),
-     " | durata >14gg: ", sum(a$flag_long),
-     " | stesso candidato/anno/esito: ", sum(a$flag_year_clash))
-
-# esito precedente, per i ripetuti
-a$prev_outcome <- NA_integer_
-for (cand in names(rip)[rip > 1]) {
-  i <- which(a$candidate == cand)
-  i <- i[order(a$attempt_no[i])]
-  a$prev_outcome[i[-1]] <- a$outcome[i[-length(i)]]
-}
-nota("tentativi con un esito precedente noto: ", sum(!is.na(a$prev_outcome)))
-nota("  preceduti da un rifiuto: ", sum(a$prev_outcome == -1, na.rm = TRUE))
-nota("  preceduti da un successo: ", sum(a$prev_outcome == 1, na.rm = TRUE),
-     "   (il brief dichiara 29 candidati 'previously successful')")
-
-# --- 7. attribuzione dei voti senza data -------------------------------------
+# --- 6. attribuzione dei voti senza data -------------------------------------
 # Si attribuiscono solo quando l'attribuzione e univoca: il candidato ha un solo
 # tentativo in quell'anno con quell'esito. Gli altri restano fuori, contati.
+# Serve una tabella provvisoria dei tentativi, costruita sui soli voti datati,
+# solo per sapere quali chiavi (candidato, anno, esito) sono univoche.
+a <- costruisci_attempts(v)
 a$key <- paste(a$candidate, a$yea, a$outcome)
 uniche <- a$key[!duplicated(a$key) & !(a$key %in% a$key[duplicated(a$key)])]
 sd$key <- paste(sd$tgt, sd$yea, sd$res)
@@ -1477,7 +1531,12 @@ nota("voti senza data attribuiti in modo univoco: ", sum(!is.na(sd$attempt_id)),
 nota("voti senza data non attribuibili (persi): ", sum(is.na(sd$attempt_id)))
 a$key <- NULL
 
-# --- 8. salvataggio ----------------------------------------------------------
+# --- 7. tabella dei tentativi, sulla tabella dei voti COMPLETA ---------------
+# ORDINE IMPORTANTE: i conteggi del tentativo (n_votes, n_support, ...,
+# support_share) vanno calcolati DOPO aver reinserito i voti senza data
+# attribuiti, altrimenti attempts.rds e votes.rds non concordano e
+# support_share esclude in silenzio 8.562 voti. Era un bug, trovato dalla
+# verifica degli invarianti (R/99b_verifica_output.R).
 v$dat_imputed <- FALSE
 if (any(!is.na(sd$attempt_id))) {
   add <- sd[!is.na(sd$attempt_id), ]
@@ -1487,7 +1546,42 @@ if (any(!is.na(sd$attempt_id))) {
   comuni <- intersect(names(v), names(add))
   v <- rbind(v[, comuni], add[, comuni])
 }
+# Seconda deduplica: un votante puo avere nello stesso tentativo sia un voto
+# datato sia uno senza data che gli e stato attribuito. Si tiene quello DATATO,
+# perche e verificabile; se ce ne sono solo imputati se ne tiene uno.
+# La prima deduplica (passo 5) non poteva vederli, perche i voti senza data
+# entrano solo qui: e un bug trovato dalla verifica degli invarianti
+# (R/99b_verifica_output.R).
+v <- v[order(v$attempt_id, v$src, v$dat_imputed, v$dat), ]
+dup2 <- duplicated(v[, c("attempt_id", "src")])
+nota("voti rimossi nella seconda deduplica (stesso votante, uno datato e uno ",
+     "imputato nello stesso tentativo): ", sum(dup2))
+v <- v[!dup2, ]
 v <- v[order(v$attempt_id, v$src), ]
+
+a_dated <- a
+a <- costruisci_attempts(v)
+a$n_votes_dated <- a_dated$n_votes[match(a$attempt_id, a_dated$attempt_id)]
+a$n_votes_imputed <- a$n_votes - a$n_votes_dated
+
+# l'esito precedente va ricalcolato sulla tabella definitiva
+rip <- table(a$candidate)
+a$prev_outcome <- NA_integer_
+for (cand in names(rip)[rip > 1]) {
+  i <- which(a$candidate == cand); i <- i[order(a$attempt_no[i])]
+  a$prev_outcome[i[-1]] <- a$outcome[i[-length(i)]]
+}
+nota("tentativi: ", nrow(a), " (prima dell'attribuzione dei voti senza data: ",
+     nrow(a_dated), ")")
+nota("candidati ripetuti (2+ tentativi): ", sum(rip > 1), "   (il brief dichiara 414)")
+nota("  di cui con 3+ tentativi: ", sum(rip > 2))
+nota("coppie di tentativi consecutivi: ", sum(rip[rip > 1] - 1))
+nota("tentativi segnalati: pochi voti (<5): ", sum(a$flag_short),
+     " | durata >14gg: ", sum(a$flag_long),
+     " | stesso candidato/anno/esito: ", sum(a$flag_year_clash))
+nota("  preceduti da un rifiuto: ", sum(a$prev_outcome == -1, na.rm = TRUE),
+     " | preceduti da un successo: ", sum(a$prev_outcome == 1, na.rm = TRUE))
+
 saveRDS(v, file.path(DIR_PROCESSED, "votes.rds"))
 saveRDS(a, file.path(DIR_PROCESSED, "attempts.rds"))
 writeLines(log_righe, file.path(DIR_PROCESSED, "02_log.txt"))
@@ -1821,7 +1915,7 @@ ec <- unique(E$elections$candidate); rc <- unique(tolower(Dt$TGT))
 chk("candidati wiki-Elec trovati in wiki-RfA, match diretto (%)",
     round(100*mean(ec %in% rc), 1), 74.9, tol = 0.2)
 chk("candidati wiki-Elec trovati normalizzando (%)",
-    round(100*mean(norm_user(ec) %in% norm_user(rc)), 1), 89.5, tol = 0.2)
+    round(100*mean(norm_user(ec) %in% norm_user(rc)), 1), 89.8, tol = 0.2)
 
 # ------------------------------------------------ assunzioni del metodo -----
 sez("ASSUNZIONE: RES e una proprieta dell'elezione, non del voto")
@@ -1857,6 +1951,141 @@ log_righe <- c(log_righe, if (ko == 0) "Tutte le affermazioni coincidono." else
 writeLines(log_righe, file.path(DIR_PROCESSED, "99_verifica.txt"))
 ```
 
+### `R/99b_verifica_output.R`
+
+```r
+# 99b - Seconda ronda di verifica: gli INVARIANTI INTERNI delle tabelle prodotte
+# e i numeri derivati citati in docs/DATI.md.
+# Mentre 99_verifica_dati.R controlla le affermazioni sui file GREZZI, questo
+# controlla che l'output sia internamente coerente: se una di queste condizioni
+# fallisce c'e un bug nella pipeline, non un'imprecisione nel testo.
+# Input : data/processed/*.rds   Output: data/processed/99b_verifica.txt
+
+source(file.path("R", "00_paths.R"))
+source(file.path("R", "00_lib_data.R"))
+
+ko <- 0L; log_righe <- character(0)
+inv <- function(etichetta, condizione, dettaglio = "") {
+  ok <- isTRUE(all(condizione))
+  if (!ok) ko <<- ko + 1L
+  s <- sprintf("%-70s %s%s", etichetta, if (ok) "OK" else "FALLITO",
+               if (!ok && nzchar(dettaglio)) paste0("  <- ", dettaglio) else "")
+  log_righe <<- c(log_righe, s); cat(s, "\n", sep = "")
+}
+chk <- function(etichetta, ottenuto, atteso, tol = 0) {
+  ok <- !is.na(ottenuto) && abs(ottenuto - atteso) <= tol
+  if (!ok) ko <<- ko + 1L
+  s <- sprintf("%-62s %12s  atteso %12s  %s", etichetta,
+               format(ottenuto, big.mark = " "), format(atteso, big.mark = " "),
+               if (ok) "OK" else "DIVERSO")
+  log_righe <<- c(log_righe, s); cat(s, "\n", sep = "")
+}
+sez <- function(t) { s <- paste0("\n== ", t, " =="); log_righe <<- c(log_righe, s); cat(s, "\n") }
+
+v <- readRDS(file.path(DIR_PROCESSED, "votes.rds"))
+a <- readRDS(file.path(DIR_PROCESSED, "attempts.rds"))
+av <- readRDS(file.path(DIR_PROCESSED, "attempts_validated.rds"))
+
+sez("INVARIANTI: votes.rds")
+inv("nessun votante compare due volte nello stesso tentativo",
+    !any(duplicated(v[, c("attempt_id", "src")])))
+inv("nessun attempt_id mancante", !any(is.na(v$attempt_id)))
+inv("vot assume solo i valori -1, 0, 1", all(v$vot %in% c(-1, 0, 1)))
+inv("res assume solo i valori -1, 1", all(v$res %in% c(-1, 1)))
+inv("dat e NA esattamente quando il voto era senza data",
+    all(is.na(v$dat) == v$dat_missing))
+inv("i voti con data imputata sono tutti senza data originale",
+    all(v$dat_missing[v$dat_imputed]))
+inv("res e costante dentro ogni tentativo",
+    all(tapply(v$res, v$attempt_id, function(x) length(unique(x))) == 1))
+inv("il candidato e costante dentro ogni tentativo",
+    all(tapply(v$tgt, v$attempt_id, function(x) length(unique(x))) == 1))
+inv("nessuno spazio iniziale o finale negli username",
+    all(v$src == trimws(v$src)) && all(v$tgt == trimws(v$tgt)))
+
+sez("INVARIANTI: attempts.rds e coerenza con votes.rds")
+inv("attempt_id unico", !any(duplicated(a$attempt_id)))
+inv("gli attempt_id delle due tabelle coincidono",
+    setequal(a$attempt_id, unique(v$attempt_id)))
+n_per <- table(v$attempt_id)
+inv("n_votes coincide con il conteggio dei voti",
+    all(a$n_votes == as.integer(n_per[as.character(a$attempt_id)])))
+inv("n_support + n_oppose + n_neutral == n_votes",
+    all(a$n_support + a$n_oppose + a$n_neutral == a$n_votes))
+inv("nessun tentativo con zero voti", all(a$n_votes > 0))
+inv("support_share == n_support / (n_support + n_oppose)",
+    all(abs(a$support_share - a$n_support/(a$n_support + a$n_oppose)) < 1e-9 |
+        is.na(a$support_share)))
+inv("opened_at <= closed_at", all(a$opened_at <= a$closed_at))
+inv("duration_days coincide con la differenza delle due date",
+    all(abs(a$duration_days -
+            as.numeric(difftime(a$closed_at, a$opened_at, units = "days"))) < 1e-6))
+inv("attempt_no e 1..k contiguo per ogni candidato",
+    all(tapply(a$attempt_no, a$candidate,
+               function(x) identical(sort(as.integer(x)), seq_along(x)))))
+inv("attempt_no ordina per data di apertura",
+    all(tapply(seq_len(nrow(a)), a$candidate, function(i)
+      !is.unsorted(a$opened_at[i][order(a$attempt_no[i])]))))
+inv("prev_outcome e l'esito del tentativo precedente dello stesso candidato",
+    all(vapply(split(seq_len(nrow(a)), a$candidate), function(i) {
+      i <- i[order(a$attempt_no[i])]
+      if (length(i) == 1) return(is.na(a$prev_outcome[i]))
+      is.na(a$prev_outcome[i[1]]) &&
+        identical(a$prev_outcome[i[-1]], a$outcome[i[-length(i)]])
+    }, TRUE)))
+inv("flag_short == (n_votes < 5)", all(a$flag_short == (a$n_votes < 5)))
+inv("flag_long == (duration_days > 14)", all(a$flag_long == (a$duration_days > 14)))
+inv("attempt_no coincide fra le due tabelle",
+    all(v$attempt_no == a$attempt_no[match(v$attempt_id, a$attempt_id)]))
+
+sez("CONSERVAZIONE DEI VOTI")
+raw_n <- 198275L
+tolti <- 627L + 679L; persi <- 806L
+chk("voti grezzi", raw_n, 198275)
+chk("voti in votes.rds", nrow(v), 196163)
+chk("voti tolti come ripetuti + persi senza data", tolti + persi, raw_n - nrow(v))
+chk("voti con data imputata", sum(v$dat_imputed), 7883)
+chk("voti senza data rimasti in tabella", sum(v$dat_missing), 7883)
+
+sez("NUMERI CITATI IN docs/DATI.md")
+chk("tentativi", nrow(a), 4082)
+rip <- table(a$candidate)
+chk("candidati ripetuti (2+ tentativi)", sum(rip > 1), 484)
+chk("candidati con 3+ tentativi", sum(rip > 2), 90)
+chk("coppie di tentativi consecutivi", sum(rip[rip > 1] - 1), 614)
+chk("tentativi con esito precedente noto", sum(!is.na(a$prev_outcome)), 614)
+chk("candidati con almeno un esito precedente = rifiuto",
+    length(unique(a$candidate[!is.na(a$prev_outcome) & a$prev_outcome == -1])), 445)
+chk("candidati con almeno un esito precedente = successo",
+    length(unique(a$candidate[!is.na(a$prev_outcome) & a$prev_outcome == 1])), 53)
+chk("flag_short", sum(a$flag_short), 281)
+chk("flag_long", sum(a$flag_long), 4)
+chk("flag_year_clash", sum(a$flag_year_clash), 359)
+chk("tentativi con riscontro in wiki-Elec", sum(av$elec_matched), 2167)
+chk("di cui con esito concorde", sum(av$outcome_agrees, na.rm = TRUE), 2167 - 12)
+chk("tentativi senza riscontro", sum(!av$elec_matched), 4082 - 2167)
+
+sez("STRUTTURA DELLA RETE, SULLA TABELLA CONSEGNATA (non sul file grezzo)")
+# NB: i numeri del file grezzo (10.417 votanti, 3.497 candidati, 2.533 entrambi)
+# NON sono questi: 1.433 voti escono dalla pipeline e con loro alcuni utenti
+# spariscono del tutto. Il documento deve riportare entrambi.
+chk("votanti distinti in votes.rds", length(unique(v$src)), 10396, tol = 30)
+chk("candidati distinti in votes.rds", length(unique(v$tgt)), 3468, tol = 10)
+chk("utenti sia votanti sia candidati", length(intersect(v$src, v$tgt)), 2514, tol = 10)
+chk("voti favorevoli", sum(v$vot == 1), 143610)
+chk("voti contrari", sum(v$vot == -1), 40561)
+chk("voti neutri", sum(v$vot == 0), 11992)
+chk("n_votes_dated + n_votes_imputed == n_votes (tentativi con scarto)",
+    sum(a$n_votes_dated + a$n_votes_imputed != a$n_votes), 0)
+chk("somma dei voti imputati per tentativo", sum(a$n_votes_imputed), 7883)
+
+sez("ESITO RONDA 2")
+cat(if (ko == 0) "Tutti gli invarianti reggono e tutti i numeri coincidono.\n" else
+    sprintf("%d controlli FALLITI.\n", ko))
+log_righe <- c(log_righe, if (ko == 0) "Tutto coerente." else sprintf("%d controlli falliti.", ko))
+writeLines(log_righe, file.path(DIR_PROCESSED, "99b_verifica.txt"))
+```
+
 ### `R/98_genera_appendice.R`
 
 ```r
@@ -1865,7 +2094,8 @@ writeLines(log_righe, file.path(DIR_PROCESSED, "99_verifica.txt"))
 # puo divergere da quello che gira. Non tocca il resto del documento.
 FILES <- c("R/00_paths.R", "R/00_lib_data.R", "R/01_read_raw.R",
            "R/02_build_attempts.R", "R/03_validate_outcomes.R",
-           "R/99_verifica_dati.R", "R/98_genera_appendice.R")
+           "R/99_verifica_dati.R", "R/99b_verifica_output.R",
+           "R/98_genera_appendice.R")
 doc <- "docs/DATI.md"
 testo <- readLines(doc, warn = FALSE)
 i <- grep("^<!-- INIZIO APPENDICE GENERATA -->$", testo)

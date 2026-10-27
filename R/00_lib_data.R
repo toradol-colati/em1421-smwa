@@ -264,9 +264,11 @@ costruisci_attempts <- function(v) {
   a$yea        <- v$yea[idx]
   spl <- split(seq_len(nrow(v)), v$attempt_id)
   spl <- spl[as.character(a$attempt_id)]
-  a$opened_at    <- as.POSIXct(vapply(spl, function(i) min(as.numeric(v$dat[i])), 0),
+  # apertura e chiusura dai soli voti DATATI: i voti imputati non hanno data e
+  # non devono spostare i confini del tentativo
+  a$opened_at    <- as.POSIXct(vapply(spl, function(i) min(as.numeric(v$dat[i]), na.rm = TRUE), 0),
                                origin = "1970-01-01", tz = "UTC")
-  a$closed_at    <- as.POSIXct(vapply(spl, function(i) max(as.numeric(v$dat[i])), 0),
+  a$closed_at    <- as.POSIXct(vapply(spl, function(i) max(as.numeric(v$dat[i]), na.rm = TRUE), 0),
                                origin = "1970-01-01", tz = "UTC")
   a$n_votes      <- vapply(spl, length, 0L)
   a$n_support    <- vapply(spl, function(i) sum(v$vot[i] ==  1), 0L)

@@ -84,33 +84,12 @@ nota("voti rimossi perche lo stesso votante compare piu volte nello stesso ",
      "tentativo (tenuto il piu recente): ", attr(v, "n_righe_tolte"))
 nota("voti validati: ", nrow(v))
 
-# --- 6. tabella dei tentativi ------------------------------------------------
-a <- costruisci_attempts(v)
-nota("tentativi: ", nrow(a))
-rip <- table(a$candidate)
-nota("candidati ripetuti (2+ tentativi): ", sum(rip > 1),
-     "   (il brief dichiara 414)")
-nota("  di cui con 3+ tentativi: ", sum(rip > 2))
-nota("coppie di tentativi consecutivi: ", sum(rip[rip > 1] - 1))
-nota("tentativi segnalati: pochi voti (<5): ", sum(a$flag_short),
-     " | durata >14gg: ", sum(a$flag_long),
-     " | stesso candidato/anno/esito: ", sum(a$flag_year_clash))
-
-# esito precedente, per i ripetuti
-a$prev_outcome <- NA_integer_
-for (cand in names(rip)[rip > 1]) {
-  i <- which(a$candidate == cand)
-  i <- i[order(a$attempt_no[i])]
-  a$prev_outcome[i[-1]] <- a$outcome[i[-length(i)]]
-}
-nota("tentativi con un esito precedente noto: ", sum(!is.na(a$prev_outcome)))
-nota("  preceduti da un rifiuto: ", sum(a$prev_outcome == -1, na.rm = TRUE))
-nota("  preceduti da un successo: ", sum(a$prev_outcome == 1, na.rm = TRUE),
-     "   (il brief dichiara 29 candidati 'previously successful')")
-
-# --- 7. attribuzione dei voti senza data -------------------------------------
+# --- 6. attribuzione dei voti senza data -------------------------------------
 # Si attribuiscono solo quando l'attribuzione e univoca: il candidato ha un solo
 # tentativo in quell'anno con quell'esito. Gli altri restano fuori, contati.
+# Serve una tabella provvisoria dei tentativi, costruita sui soli voti datati,
+# solo per sapere quali chiavi (candidato, anno, esito) sono univoche.
+a <- costruisci_attempts(v)
 a$key <- paste(a$candidate, a$yea, a$outcome)
 uniche <- a$key[!duplicated(a$key) & !(a$key %in% a$key[duplicated(a$key)])]
 sd$key <- paste(sd$tgt, sd$yea, sd$res)
@@ -121,7 +100,12 @@ nota("voti senza data attribuiti in modo univoco: ", sum(!is.na(sd$attempt_id)),
 nota("voti senza data non attribuibili (persi): ", sum(is.na(sd$attempt_id)))
 a$key <- NULL
 
-# --- 8. salvataggio ----------------------------------------------------------
+# --- 7. tabella dei tentativi, sulla tabella dei voti COMPLETA ---------------
+# ORDINE IMPORTANTE: i conteggi del tentativo (n_votes, n_support, ...,
+# support_share) vanno calcolati DOPO aver reinserito i voti senza data
+# attribuiti, altrimenti attempts.rds e votes.rds non concordano e
+# support_share esclude in silenzio 8.562 voti. Era un bug, trovato dalla
+# verifica degli invarianti (R/99b_verifica_output.R).
 v$dat_imputed <- FALSE
 if (any(!is.na(sd$attempt_id))) {
   add <- sd[!is.na(sd$attempt_id), ]
@@ -131,7 +115,42 @@ if (any(!is.na(sd$attempt_id))) {
   comuni <- intersect(names(v), names(add))
   v <- rbind(v[, comuni], add[, comuni])
 }
+# Seconda deduplica: un votante puo avere nello stesso tentativo sia un voto
+# datato sia uno senza data che gli e stato attribuito. Si tiene quello DATATO,
+# perche e verificabile; se ce ne sono solo imputati se ne tiene uno.
+# La prima deduplica (passo 5) non poteva vederli, perche i voti senza data
+# entrano solo qui: e un bug trovato dalla verifica degli invarianti
+# (R/99b_verifica_output.R).
+v <- v[order(v$attempt_id, v$src, v$dat_imputed, v$dat), ]
+dup2 <- duplicated(v[, c("attempt_id", "src")])
+nota("voti rimossi nella seconda deduplica (stesso votante, uno datato e uno ",
+     "imputato nello stesso tentativo): ", sum(dup2))
+v <- v[!dup2, ]
 v <- v[order(v$attempt_id, v$src), ]
+
+a_dated <- a
+a <- costruisci_attempts(v)
+a$n_votes_dated <- a_dated$n_votes[match(a$attempt_id, a_dated$attempt_id)]
+a$n_votes_imputed <- a$n_votes - a$n_votes_dated
+
+# l'esito precedente va ricalcolato sulla tabella definitiva
+rip <- table(a$candidate)
+a$prev_outcome <- NA_integer_
+for (cand in names(rip)[rip > 1]) {
+  i <- which(a$candidate == cand); i <- i[order(a$attempt_no[i])]
+  a$prev_outcome[i[-1]] <- a$outcome[i[-length(i)]]
+}
+nota("tentativi: ", nrow(a), " (prima dell'attribuzione dei voti senza data: ",
+     nrow(a_dated), ")")
+nota("candidati ripetuti (2+ tentativi): ", sum(rip > 1), "   (il brief dichiara 414)")
+nota("  di cui con 3+ tentativi: ", sum(rip > 2))
+nota("coppie di tentativi consecutivi: ", sum(rip[rip > 1] - 1))
+nota("tentativi segnalati: pochi voti (<5): ", sum(a$flag_short),
+     " | durata >14gg: ", sum(a$flag_long),
+     " | stesso candidato/anno/esito: ", sum(a$flag_year_clash))
+nota("  preceduti da un rifiuto: ", sum(a$prev_outcome == -1, na.rm = TRUE),
+     " | preceduti da un successo: ", sum(a$prev_outcome == 1, na.rm = TRUE))
+
 saveRDS(v, file.path(DIR_PROCESSED, "votes.rds"))
 saveRDS(a, file.path(DIR_PROCESSED, "attempts.rds"))
 writeLines(log_righe, file.path(DIR_PROCESSED, "02_log.txt"))

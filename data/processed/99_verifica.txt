@@ -82,10 +82,10 @@ wiki-Elec: candidati con spazio                                           0  att
 wiki-RfA: candidati con underscore                                        0  atteso            0  OK
 wiki-RfA: candidati con spazio                                          606  atteso          606  OK
 candidati wiki-Elec trovati in wiki-RfA, match diretto (%)             75.1  atteso         74.9  OK
-candidati wiki-Elec trovati normalizzando (%)                          89.8  atteso         89.5  DIVERSO
+candidati wiki-Elec trovati normalizzando (%)                          89.8  atteso         89.8  OK
 
 == ASSUNZIONE: RES e una proprieta dell'elezione, non del voto ==
   elezioni esaminate: 2048 | con RES non costante: 307 (15.0%)
 
 == ESITO ==
-1 affermazioni NON coincidono.
+Tutte le affermazioni coincidono.
