@@ -101,4 +101,4 @@ Da fare, in ordine di dipendenza:
 
 Le decisioni ancora aperte sono elencate in
 `docs/EM1421_RfA_contesto_nuova_chat.md` §11 e i vincoli che il corso impone su quelle
-decisioni in `docs/MATERIALE_CORSO.md` §11.
+decisioni in `docs/M
