@@ -42,15 +42,15 @@ righe perse sono 806 voti senza data non attribuibili, contate sotto.
 | `n_support`, `n_oppose`, `n_neutral` | integer | scomposizione per segno |
 | `support_share` | numeric | `n_support / (n_support + n_oppose)`. **I neutri non sono nel denominatore**: è una convenzione dichiarata, non l'unica possibile |
 | `duration_days` | numeric | `closed_at − opened_at` |
-| `flag_short` | logical | meno di 5 voti: possibile frammento (330 casi) |
+| `flag_short` | logical | meno di 5 voti: possibile frammento (333 casi) |
 | `flag_long` | logical | più di 14 giorni: più lungo di una RfA normale (4 casi) |
-| `flag_year_clash` | logical | un altro tentativo dello stesso candidato, anno ed esito esiste (374 casi): sospetto di spezzatura |
+| `flag_year_clash` | logical | un altro tentativo dello stesso candidato, anno (preso dalla **data**, non da `yea`) ed esito esiste (359 casi): sospetto di spezzatura |
 | `prev_outcome` | integer | esito del tentativo precedente dello stesso candidato, `NA` al primo |
 
 ### `data/processed/attempts_validated.rds` — gli stessi tentativi più il confronto con wiki-Elec
 
 Aggiunge `elec_matched` (logical), `elec_outcome`, `elec_closed_at`, `outcome_agrees`.
-858 tentativi su 4.082 hanno un riscontro in wiki-Elec.
+992 tentativi su 4.082 hanno un riscontro in wiki-Elec.
 
 ### File di appoggio
 
@@ -171,32 +171,63 @@ il candidato ha un solo tentativo con quell'anno e quell'esito. **8.562 su 9.368
 `dat_imputed = TRUE`: chi analizza può escluderli, e per le finestre temporali probabilmente
 deve.
 
+**Punto debole di questa attribuzione.** La chiave usata è (candidato, `yea`, esito), e `yea`
+è il campo che ho dichiarato inaffidabile al §4: un voto senza data non ha nulla con cui
+verificarlo. Fra i voti *datati*, lo 0,99% ha `yea` sbagliato; applicando la stessa
+proporzione, circa **85 degli 8.562 voti attribuiti potrebbero finire nel tentativo
+sbagliato**. Non è eliminabile senza le date, ma è quantificato, ed è un'altra ragione per
+escludere i `dat_imputed` dalle analisi sensibili al tempo.
+
 ---
 
 ## 6. La soglia non è assunta, è scelta sui dati
 
 wiki-Elec contiene 2.794 elezioni già separate con data di chiusura: è verità a terra. Ho
-provato **2 regole × 17 soglie** (da 1 a 60 giorni) e misurato, sul periodo coperto:
-la quota di elezioni ritrovate, la concordanza dell'esito, e la concordanza del **numero di
-tentativi per candidato**.
+provato **2 regole × 17 soglie** (da 1 a 60 giorni) e misurato, sul periodo coperto: le
+elezioni appaiate, la concordanza dell'esito, e la concordanza del **numero di tentativi per
+candidato**. Tutto in `03_soglia_sweep.csv`.
 
-Risultato: `res_then_gap` domina su ogni metrica, e la concordanza del conteggio è massima
-al 93,6% ma **il plateau va da 5 a 35 giorni**. Cioè la ricostruzione è **insensibile alla
-soglia** in quella fascia: è un risultato di robustezza, e la ragione per tenere 7 giorni,
-che è il valore del precedente pubblico e la durata nominale di una RfA.
+Il criterio di appaiamento è: la chiusura ufficiale dell'elezione cade entro **7 giorni**
+dall'ultimo voto del tentativo. La tolleranza non è arbitraria: la chiusura ufficiale cade
+quasi sempre *dopo* l'ultimo voto, tanto che il criterio più stretto — "la chiusura cade
+dentro l'intervallo dei voti" — appaia solo 27 elezioni su 2.794. A 1 giorno se ne appaiano
+869, a 7 giorni 1.015, e l'audit (sotto) mostra che il massimo ottenibile è circa 1.093.
 
-**Validazione degli esiti: 99,54% di concordanza** sulle elezioni ritrovate (4 discordanti
-su 869).
+**Il risultato è un compromesso, non un massimo.** La concordanza del conteggio dei tentativi
+cresce con la soglia (96,7% a 4 giorni, 97,1% a 7, 98,1% a 60) perché fondere riduce le
+spezzature; ma le elezioni appaiate *calano* (1.015 a 7 giorni, 991 a 60) perché fondere
+distrugge elezioni distinte. Fra 4 e 21 giorni entrambe le metriche sono piatte: **la scelta
+non è guidata dai dati, ed è questo il risultato di robustezza.** Si tiene 7 giorni, valore
+del precedente pubblico e durata nominale di una RfA.
 
-**Il limite grosso, da dichiarare nel report.** Solo il **31%** delle elezioni di wiki-Elec
-si ritrova in wiki-RfA con la chiusura entro un giorno (869 su 2.794; 273 elezioni hanno un
-candidato che in wiki-RfA non compare affatto). La copertura per anno di chiusura è 40% nel
-2004, 43% nel 2005, 25% nel 2006, 31% nel 2007, 38% nel 2008. I volumi di voto dei due file
-sono comparabili, quindi non è una questione di scala: **wiki-RfA non è un soprainsieme di
-wiki-Elec**. Conseguenza: la validazione riguarda 858 tentativi su 4.082, e sul **2008–2013
-non esiste alcuna validazione**.
+Con 7 giorni e la regola `res_then_gap`:
 
----
+| Misura | Valore |
+|---|---|
+| Elezioni di wiki-Elec appaiate | 1.015 su 2.794 (36,3%) |
+| **Concordanza dell'esito** | **99,01%** (10 discordanti su 1.015) |
+| Conteggio dei tentativi esatto | 97,1% degli 841 candidati confrontabili |
+| Sovra-spezzature | 6 candidati |
+| Sotto-spezzature (un tentativo assorbe 2 elezioni) | 23, **costanti al variare della soglia** |
+| Tentativi con riscontro | 992 su 4.082 |
+
+La concordanza del conteggio è calcolata **solo sui candidati le cui elezioni sono tutte
+appaiate** (841). Calcolarla su tutti, come facevo in una prima versione, la gonfia con
+accordi casuali: un candidato di cui wiki-RfA non ha l'elezione giusta ma ne ha un'altra
+risulta "1 contro 1" e viene contato come concorde. Vedi §9.
+
+**Il limite grosso, da dichiarare nel report.** Delle 1.779 elezioni non appaiate:
+273 hanno un candidato che in wiki-RfA non compare affatto; **1.428 hanno il candidato
+presente ma zero voti entro 30 giorni dalla chiusura ufficiale** — assenza vera; solo 78
+hanno voti vicini non sfruttati dal criterio di match. Quindi **wiki-RfA non è un
+soprainsieme di wiki-Elec**: circa il 61% delle elezioni del 2004–2008 non c'è. Questo è
+misurato direttamente, non inferito dai volumi.
+
+Copertura per anno di chiusura: 2004 62%, 2005 69%, **2006 28%**, **2007 34%**, 2008 83%.
+Il buco è concentrato nel 2006–2007, cioè negli anni di massimo volume.
+
+Conseguenza: la validazione riguarda 992 tentativi su 4.082 (24%), e sul **2008–2013 non
+esiste alcuna validazione**.
 
 ## 7. Decisioni aperte, che non prendo da solo
 
@@ -217,9 +248,20 @@ conteggi.
 
 **(b) Il denominatore di `support_share`.** Ora esclude i neutri. Alternativa: includerli.
 
-**(c) Cosa escludere.** I tentativi con `flag_short`, `flag_long`, `flag_year_clash` e i voti
-con `dat_imputed` sono in tabella, non filtrati. La decisione su cosa tenere è di chi
-analizza, e il numero degli esclusi va nel report.
+**(c) Cosa escludere.** I tentativi con `flag_short` (333), `flag_long` (4),
+`flag_year_clash` (359) e i voti con `dat_imputed` (8.562) sono in tabella, non filtrati. La
+decisione su cosa tenere è di chi analizza, e il numero degli esclusi va nel report.
+
+**(d) Le 23 sotto-spezzature.** 23 tentativi assorbono due elezioni distinte di wiki-Elec, e
+il numero **non cambia al variare della soglia**: non è un problema di taratura, sono
+elezioni che nei dati di wiki-RfA si sovrappongono nel tempo. Vanno guardate a mano (sono in
+`03_match_wikielec.csv`, due righe che puntano allo stesso `mio_attempt`) e si decide se
+spezzarle a mano o escluderle.
+
+**(e) I 10 esiti discordanti** fra la mia ricostruzione e wiki-Elec. Pochi, ma vanno guardati:
+se sono casi in cui la mia ricostruzione ha unito due elezioni con esito diverso, sono
+errori; se sono casi in cui `RES` in wiki-RfA contraddice wiki-Elec, è un difetto della
+fonte, e va detto.
 
 ---
 
@@ -241,3 +283,40 @@ la validazione è possibile: è il punto di partenza per il confronto, non una v
 
 Da chiarire con chi ha prodotto il 414: con quale regola di separazione dei tentativi, con
 quale trattamento dei duplicati, e se gli username erano normalizzati.
+
+---
+
+## 9. Errori trovati rivedendo il lavoro, e corretti
+
+Li elenco perché contano per leggere i numeri sopra, e perché due di essi erano già finiti in
+una descrizione precedente.
+
+**(a) La metrica su cui avevo scelto la soglia era gonfiata.** Confrontavo il numero di
+tentativi per candidato su *tutti* i candidati, inclusi quelli le cui elezioni di wiki-Elec
+non erano state appaiate. Per quelli il confronto è "1 contro 1" per caso, e veniva contato
+come concordanza. Dichiaravo 93,6%; ristretto ai 841 candidati le cui elezioni sono tutte
+appaiate, il valore vero è **97,1%** — più alto, ma la cosa importante è che la metrica
+precedente non misurava quello che dicevo. La scelta della soglia non ne dipendeva (il
+plateau resta), ma l'affermazione era sbagliata.
+
+**(b) La tolleranza di appaiamento a 1 giorno era troppo stretta, e il 31% era troppo basso.**
+L'audit diretto — "per un'elezione non appaiata, wiki-RfA ha voti per quel candidato entro
+30 giorni?" — ha mostrato che 224 elezioni avevano i voti presenti (mediana 30 voti) e non
+venivano appaiate per colpa del criterio. Portando la tolleranza a 7 giorni le elezioni
+appaiate passano da 869 a **1.015 (36,3%)**, e i casi recuperabili residui scendono a 78.
+Il limite vero è circa 39%, non 31%.
+
+**(c) "I volumi sono comparabili, quindi non è una questione di scala" era un'inferenza.**
+Vera nella conclusione ma non dimostrata nel modo in cui l'avevo scritta. Ora l'affermazione
+che wiki-RfA non è un soprainsieme di wiki-Elec si appoggia sulla misura diretta: 1.428
+elezioni il cui candidato c'è ma senza alcun voto entro 30 giorni dalla chiusura.
+
+**(d) `flag_year_clash` usava `yea`**, cioè il campo che io stesso avevo dichiarato
+inaffidabile e scartato dalla ricostruzione. Incoerenza interna: ora usa l'anno preso dalla
+data di apertura. Il conteggio passa da 374 a 359.
+
+**(e) L'attribuzione dei voti senza data usa `yea` e non può farne a meno.** Non è un errore
+ma un limite che prima non era quantificato: vedi §5, circa 85 voti su 8.562 a rischio.
+
+Resta non verificato: i 10 esiti discordanti e le 23 sotto-spezzature non li ho guardati caso
+per caso (§7d, §7e).

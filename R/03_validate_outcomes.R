@@ -19,7 +19,12 @@ source(file.path("R", "00_lib_data.R"))
 
 GRIGLIA  <- c(1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 14, 18, 21, 28, 35, 45, 60)
 MODI     <- c("res_then_gap", "gap_then_res")
-TOLL_GG  <- 3    # tolleranza nel confronto fra le date di chiusura, nello sweep
+TOLL_GG  <- 7    # tolleranza fra la chiusura ufficiale e l'ultimo voto del tentativo.
+                 # NON e arbitraria: la chiusura ufficiale cade quasi sempre DOPO
+                 # l'ultimo voto, quindi il criterio "la chiusura cade dentro
+                 # l'intervallo dei voti" appaia solo 27 elezioni su 2.794. Con
+                 # tolleranza 1 giorno se ne appaiano 869, con 7 giorni 1.015, e
+                 # l'audit (vedi sotto) mostra che il massimo ottenibile e ~1.093.
 SOGLIA_SCELTA <- 7   # soglia adottata: vedi la nota sul plateau in fondo
 
 log_righe <- character(0)
@@ -61,21 +66,27 @@ valuta <- function(mode, soglia) {
   # finestra di wiki-Elec
   aw <- a[a$closed_at >= da - 86400*30 & a$closed_at <= a_ + 86400*30, ]
   # per ogni elezione vera, il tentativo piu vicino dello stesso candidato
-  per_cand <- split(seq_len(nrow(aw)), aw$cand_lc)
   dist <- rep(NA_real_, nrow(ele)); esito_ok <- rep(NA, nrow(ele))
+  mio_attempt <- rep(NA_integer_, nrow(ele))
+  per_att <- split(seq_len(nrow(aw)), aw$cand_lc)
   for (r in seq_len(nrow(ele))) {
-    ii <- per_cand[[ele$cand_lc[r]]]
+    ii <- per_att[[ele$cand_lc[r]]]
     if (is.null(ii)) next
     dd <- abs(as.numeric(difftime(aw$closed_at[ii], ele$closed_at[r], units = "days")))
     j <- ii[which.min(dd)]
-    dist[r] <- min(dd)
+    dist[r] <- min(dd); mio_attempt[r] <- aw$attempt_id[j]
     esito_ok[r] <- (aw$outcome[j] == 1) == (ele$outcome[r] == 1)
   }
   trovate <- !is.na(dist) & dist <= TOLL_GG
-  # conteggio dei tentativi per candidato, solo candidati con tutte le elezioni
-  # dentro la finestra
-  n_vero <- table(ele$cand_lc)
-  n_mio  <- table(aw$cand_lc[aw$n_votes >= 1])
+  # Confronto del NUMERO di tentativi per candidato. ATTENZIONE: va fatto solo
+  # sui candidati le cui elezioni di wiki-Elec sono TUTTE appaiate. Farlo su
+  # tutti, come in una prima versione di questo script, gonfia la concordanza
+  # con accordi casuali: un candidato di cui wiki-RfA non ha l'elezione giusta
+  # ma ne ha un'altra risulta "1 contro 1" e viene contato come concorde.
+  per_cand <- split(seq_len(nrow(ele)), ele$cand_lc)
+  pieni <- names(per_cand)[vapply(per_cand, function(ii) all(trovate[ii]), TRUE)]
+  n_vero <- table(ele$cand_lc[ele$cand_lc %in% pieni])
+  n_mio  <- table(aw$cand_lc[aw$cand_lc %in% pieni])
   comuni <- intersect(names(n_vero), names(n_mio))
   data.frame(
     mode = mode, soglia = soglia,
@@ -85,6 +96,9 @@ valuta <- function(mode, soglia) {
     esito_concorde = mean(esito_ok[trovate], na.rm = TRUE),
     conteggio_concorde = mean(n_vero[comuni] == n_mio[comuni]),
     media_abs_diff_conteggio = mean(abs(as.integer(n_vero[comuni]) - as.integer(n_mio[comuni]))),
+    cand_confrontabili = length(comuni),
+    sotto_spezzati = sum(duplicated(na.omit(ifelse(trovate, seq_along(trovate), NA)))) * 0L +
+                     sum(duplicated(na.omit(mio_attempt[trovate]))),
     frammenti_lt5 = sum(a$n_votes < 5),
     stringsAsFactors = FALSE
   )
@@ -102,24 +116,28 @@ pr$conteggio_concorde <- round(pr$conteggio_concorde, 4)
 pr$media_abs_diff_conteggio <- round(pr$media_abs_diff_conteggio, 3)
 print(pr, row.names = FALSE)
 
-best <- res[which.max(res$conteggio_concorde), ]
-nota("\nmigliore per concordanza del NUMERO di tentativi per candidato: ",
-     best$mode, ", soglia ", best$soglia, " giorni  (",
-     sprintf("%.2f%%", 100*best$conteggio_concorde), ")")
 rtg <- res[res$mode == "res_then_gap", ]
-plateau <- rtg$soglia[rtg$conteggio_concorde >= max(rtg$conteggio_concorde) - 0.005]
-nota("plateau entro mezzo punto dal massimo: soglie ", min(plateau), "-", max(plateau),
-     " giorni. La ricostruzione e quindi INSENSIBILE alla soglia in quella fascia:")
-nota("  e un risultato di robustezza, e la ragione per tenere 7 giorni, che e il",
-     " valore del precedente pubblico (Kolczynska) e la durata nominale di una RfA.")
+nota("\nLa concordanza del numero di tentativi per candidato cresce con la soglia")
+nota("(", sprintf("%.1f%%", 100*rtg$conteggio_concorde[rtg$soglia==4]), " a 4 giorni, ",
+     sprintf("%.1f%%", 100*rtg$conteggio_concorde[rtg$soglia==7]), " a 7, ",
+     sprintf("%.1f%%", 100*rtg$conteggio_concorde[rtg$soglia==60]), " a 60) perche fondere")
+nota("riduce le spezzature. Ma le elezioni appaiate CALANO (",
+     rtg$elezioni_riconosciute[rtg$soglia==7], " a 7 giorni, ",
+     rtg$elezioni_riconosciute[rtg$soglia==60], " a 60), perche fondere distrugge")
+nota("elezioni distinte. Fra 4 e 21 giorni entrambe le metriche sono piatte:")
+nota("la scelta NON e guidata dai dati, ed e questo il risultato di robustezza.")
+nota("Si tiene 7 giorni: valore del precedente pubblico (Kolczynska) e durata")
+nota("nominale di una RfA. A 7 giorni: ", rtg$elezioni_riconosciute[rtg$soglia==7],
+     " elezioni appaiate, esito concorde ",
+     sprintf("%.2f%%", 100*rtg$esito_concorde[rtg$soglia==7]),
+     ", conteggio esatto per ", sprintf("%.1f%%", 100*rtg$conteggio_concorde[rtg$soglia==7]),
+     " dei ", rtg$cand_confrontabili[rtg$soglia==7], " candidati confrontabili.")
+nota("Tentativi che assorbono due elezioni distinte (sotto-spezzatura): ",
+     rtg$sotto_spezzati[rtg$soglia==7], ", costante al variare della soglia.")
 nota("regola scartata (gap_then_res): a parita di soglia produce ",
      res$frammenti_lt5[res$mode=="gap_then_res" & res$soglia==SOGLIA_SCELTA],
      " tentativi con meno di 5 voti contro ",
-     res$frammenti_lt5[res$mode=="res_then_gap" & res$soglia==SOGLIA_SCELTA],
-     ", e un errore medio di conteggio di ",
-     round(res$media_abs_diff_conteggio[res$mode=="gap_then_res" & res$soglia==SOGLIA_SCELTA],2),
-     " contro ",
-     round(res$media_abs_diff_conteggio[res$mode=="res_then_gap" & res$soglia==SOGLIA_SCELTA],3))
+     res$frammenti_lt5[res$mode=="res_then_gap" & res$soglia==SOGLIA_SCELTA], ".")
 
 # --- passata finale con la soglia scelta -------------------------------------
 nota("\n--- validazione con regola res_then_gap e soglia ", SOGLIA_SCELTA, " giorni ---")
@@ -144,8 +162,8 @@ for (r in seq_len(nrow(ele2))) {
   ele2$dist[r] <- min(dd); ele2$mio_outcome[r] <- a$outcome[j]
   ele2$mio_attempt[r] <- a$attempt_id[j]
 }
-ele2$trovata <- !is.na(ele2$dist) & ele2$dist <= 1
-nota("elezioni di wiki-Elec ritrovate in wiki-RfA (chiusura entro 1 giorno): ",
+ele2$trovata <- !is.na(ele2$dist) & ele2$dist <= TOLL_GG
+nota("elezioni di wiki-Elec ritrovate in wiki-RfA (chiusura entro ", TOLL_GG, " giorni): ",
      sum(ele2$trovata), " su ", nrow(ele2),
      sprintf("  (%.1f%%)", 100*mean(ele2$trovata)))
 nota("  elezioni il cui candidato non compare affatto in wiki-RfA: ", sum(is.na(ele2$dist)))
@@ -153,6 +171,28 @@ tb <- table(ele2$anno, ifelse(ele2$trovata, "trovata", "assente"))
 nota("copertura per anno di chiusura:")
 for (y in rownames(tb)) nota("  ", y, ": ", tb[y,"trovata"], "/", sum(tb[y,]),
                              sprintf("  (%.0f%%)", 100*tb[y,"trovata"]/sum(tb[y,])))
+# AUDIT delle elezioni non appaiate: distinguere l'assenza vera dal difetto del
+# criterio di match. Per ogni elezione non appaiata si guarda se wiki-RfA ha
+# QUALSIASI voto per quel candidato entro 30 giorni dalla chiusura ufficiale.
+dd_all <- d[!is.na(d$dat), ]
+dd_all$key <- norm_user(dd_all$tgt)
+per_v <- split(seq_len(nrow(dd_all)), dd_all$key)
+na_ <- which(!ele2$trovata)
+vicini <- vapply(na_, function(r) {
+  ii <- per_v[[ele2$cand_key[r]]]
+  if (is.null(ii)) return(NA_integer_)
+  sum(abs(as.numeric(difftime(dd_all$dat[ii], ele2$closed_at[r], units = "days"))) <= 30)
+}, integer(1))
+nota("audit delle ", length(na_), " elezioni non appaiate:")
+nota("  candidato assente da wiki-RfA: ", sum(is.na(vicini)))
+nota("  candidato presente ma ZERO voti entro 30 giorni dalla chiusura: ",
+     sum(vicini == 0, na.rm = TRUE), "  <- assenza vera")
+nota("  candidato presente CON voti entro 30 giorni: ", sum(vicini > 0, na.rm = TRUE),
+     "  <- limite del criterio di match, non dei dati")
+nota("  quindi il tetto ottenibile e circa ", sum(ele2$trovata) + sum(vicini > 0, na.rm = TRUE),
+     " elezioni su ", nrow(ele2),
+     sprintf(" (%.0f%%)", 100*(sum(ele2$trovata) + sum(vicini > 0, na.rm=TRUE))/nrow(ele2)))
+
 m <- ele2[ele2$trovata, ]
 conc <- (m$mio_outcome == 1) == (m$outcome == 1)
 nota("concordanza dell'esito sulle elezioni ritrovate: ",

@@ -147,8 +147,12 @@ costruisci_attempts <- function(v) {
   a$flag_long       <- a$duration_days > 14   # piu lungo di una RfA normale
   a$flag_year_clash <- FALSE                  # riempito sotto
   # due tentativi dello stesso candidato nello stesso anno con lo stesso esito:
-  # sospetti di essere un unico tentativo spezzato dalla soglia
-  key <- paste(a$candidate, a$yea, a$outcome)
+  # sospetti di essere un unico tentativo spezzato dalla soglia.
+  # L'anno si prende dalla DATA di apertura, non da YEA: YEA e inaffidabile
+  # (1.875 voti hanno la data in un anno diverso da quello dichiarato) e usarlo
+  # qui sarebbe incoerente con la scelta di non usarlo nella ricostruzione.
+  a$anno_data <- as.integer(format(a$opened_at, "%Y"))
+  key <- paste(a$candidate, a$anno_data, a$outcome)
   a$flag_year_clash <- key %in% key[duplicated(key)]
   a[order(a$candidate, a$attempt_no), ]
 }

@@ -4,20 +4,30 @@ elezioni il cui candidato esiste anche in wiki-RfA: 2530 su 2794  (90.6%)
 
 sweep: 2 regole x 17 soglie...
 
-migliore per concordanza del NUMERO di tentativi per candidato: res_then_gap, soglia 14 giorni  (93.64%)
-plateau entro mezzo punto dal massimo: soglie 5-35 giorni. La ricostruzione e quindi INSENSIBILE alla soglia in quella fascia:
-  e un risultato di robustezza, e la ragione per tenere 7 giorni, che e il valore del precedente pubblico (Kolczynska) e la durata nominale di una RfA.
-regola scartata (gap_then_res): a parita di soglia produce 1678 tentativi con meno di 5 voti contro 330, e un errore medio di conteggio di 0.69 contro 0.071
+La concordanza del numero di tentativi per candidato cresce con la soglia
+(96.7% a 4 giorni, 97.1% a 7, 98.1% a 60) perche fondere
+riduce le spezzature. Ma le elezioni appaiate CALANO (1015 a 7 giorni, 991 a 60), perche fondere distrugge
+elezioni distinte. Fra 4 e 21 giorni entrambe le metriche sono piatte:
+la scelta NON e guidata dai dati, ed e questo il risultato di robustezza.
+Si tiene 7 giorni: valore del precedente pubblico (Kolczynska) e durata
+nominale di una RfA. A 7 giorni: 1015 elezioni appaiate, esito concorde 99.01%, conteggio esatto per 97.1% dei 841 candidati confrontabili.
+Tentativi che assorbono due elezioni distinte (sotto-spezzatura): 23, costante al variare della soglia.
+regola scartata (gap_then_res): a parita di soglia produce 1678 tentativi con meno di 5 voti contro 330.
 
 --- validazione con regola res_then_gap e soglia 7 giorni ---
-elezioni di wiki-Elec ritrovate in wiki-RfA (chiusura entro 1 giorno): 869 su 2794  (31.1%)
+elezioni di wiki-Elec ritrovate in wiki-RfA (chiusura entro 7 giorni): 1015 su 2794  (36.3%)
   elezioni il cui candidato non compare affatto in wiki-RfA: 273
 copertura per anno di chiusura:
-  2004: 29/73  (40%)
-  2005: 66/154  (43%)
-  2006: 90/358  (25%)
-  2007: 673/2180  (31%)
-  2008: 11/29  (38%)
-concordanza dell'esito sulle elezioni ritrovate: 99.54%  (discordanti: 4)
-LIMITE: la validazione riguarda 869 elezioni, cioe il 31% di wiki-Elec e una frazione ancora minore dei 4082 tentativi ricostruiti. Sul 2008-2013 nessuna validazione esiste.
-scritti: attempts_validated.rds (4082 tentativi, di cui 858 validati), 03_match_wikielec.csv
+  2004: 45/73  (62%)
+  2005: 107/154  (69%)
+  2006: 102/358  (28%)
+  2007: 737/2180  (34%)
+  2008: 24/29  (83%)
+audit delle 1779 elezioni non appaiate:
+  candidato assente da wiki-RfA: 273
+  candidato presente ma ZERO voti entro 30 giorni dalla chiusura: 1428  <- assenza vera
+  candidato presente CON voti entro 30 giorni: 78  <- limite del criterio di match, non dei dati
+  quindi il tetto ottenibile e circa 1093 elezioni su 2794 (39%)
+concordanza dell'esito sulle elezioni ritrovate: 99.01%  (discordanti: 10)
+LIMITE: la validazione riguarda 1015 elezioni, cioe il 36% di wiki-Elec e una frazione ancora minore dei 4082 tentativi ricostruiti. Sul 2008-2013 nessuna validazione esiste.
+scritti: attempts_validated.rds (4082 tentativi, di cui 992 validati), 03_match_wikielec.csv

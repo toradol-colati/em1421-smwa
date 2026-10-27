@@ -15,7 +15,7 @@ tentativi: 4082
 candidati ripetuti (2+ tentativi): 484   (il brief dichiara 414)
   di cui con 3+ tentativi: 90
 coppie di tentativi consecutivi: 614
-tentativi segnalati: pochi voti (<5): 333 | durata >14gg: 4 | stesso candidato/anno/esito: 374
+tentativi segnalati: pochi voti (<5): 333 | durata >14gg: 4 | stesso candidato/anno/esito: 359
 tentativi con un esito precedente noto: 614
   preceduti da un rifiuto: 558
   preceduti da un successo: 56   (il brief dichiara 29 candidati 'previously successful')
