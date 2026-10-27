@@ -1186,8 +1186,10 @@ the 1,906 attempts without an external match are reconstructed as well as the ma
 
 ## 20. Appendix: all the R code
 
-What follows is the full content of the files in `R/`, in execution order. With the two files
-in `data/raw/` and this code, anyone can redo the whole processing and obtain the same figures.
+What follows is the full content of every file in `R/`, in execution order: the five scripts of
+the data workstream, the four skeletons of the network workstream, the two verification rounds
+and the generator of this appendix. With the two files in `data/raw/` and this code, anyone can
+redo the whole processing and obtain the same figures.
 **This appendix is generated automatically from the real files** by `R/98_generate_appendix.R`,
 so it cannot drift from the code that runs.
 
@@ -1875,7 +1877,8 @@ dT <- as.numeric(difftime(ele$closed_at, ele$last_vote, units = "days"))
 note("wiki-Elec: ", nrow(ele), " elections, declared closing times from ",
      format(min(ele$closed_at), "%Y-%m-%d"), " to ",
      format(max(ele$closed_at), "%Y-%m-%d"),
-     ", votes from ", format(min(ele$last_vote), "%Y-%m-%d"), ".")
+     ". Earliest last-vote of an election: ",
+     format(min(ele$last_vote), "%Y-%m-%d"), ".")
 note("Field T (closing time) is UNRELIABLE: the gap between T and the last vote")
 note("  of the same election has a median of ", round(median(dT), 1),
      " days; it exceeds 30 days in ", sprintf("%.0f%%", 100 * mean(dT > 30)),
@@ -2012,6 +2015,80 @@ note("LIMIT: the validation covers ", sum(a$elec_matched), " attempts of ", nrow
      " no validation exists.")
 note("written: attempts_validated.rds, 03_match_wikielec.csv")
 writeLines(log_lines, file.path(DIR_PROCESSED, "03_log.txt"))
+````
+
+### `R/04_build_networks.R`
+
+````r
+# 04 - Network construction (igraph).  [SKELETON - network workstream]
+# Input : data/processed/votes.rds, data/processed/attempts_validated.rds
+# Output: data/processed/net_*.rds
+#
+# OPEN DECISIONS. Each network needs four explicit choices - node, edge,
+# direction, weight - plus a time window:
+#   - voting network: voter -> candidate, support and opposition kept apart,
+#     neutral votes (vot = 0) to be handled, window = everything up to the
+#     opening of attempt t+1;
+#   - voter-voter co-voting network: what creates an edge and with what weight.
+#     The projection is dense; extracting a backbone against a null model is an
+#     option, but note that it is outside the course syllabus;
+#   - community detection algorithm;
+#   - the network on which brokerage is measured, and which measure.
+#
+# Known constraints, measured: 10,394 voters and 3,468 candidates in votes.rds,
+# 2,512 users are both. Self-votes are loops: see the self_vote column.
+````
+
+### `R/05_measure_change.R`
+
+````r
+# 05 - Measuring the change between attempt t and attempt t+1.  [SKELETON]
+# Input : data/processed/net_*.rds, data/processed/attempts_validated.rds
+# Output: data/processed/features.rds
+#
+# Two blocks, to be kept strictly apart:
+#   - PREDICTIVE: only variables known before attempt t+1 opens (outcome and
+#     support share at t, the candidate's network position up to that point,
+#     votes the candidate cast in other RfAs between attempts, time elapsed,
+#     year).
+#   - DESCRIPTIVE: shared supporters, new supporters, community diversity.
+#     These use the votes of t+1, so they never enter the model; they are
+#     compared against a null model that holds the number of voters fixed.
+#
+# Mandatory check before any regression: the correlation between in-degree or
+# centrality before t+1 and the number of voters or support share at t.
+````
+
+### `R/06_model_outcome.R`
+
+````r
+# 06 - Outcome of the next attempt.  [SKELETON]
+# Input : data/processed/features.rds
+# Output: data/processed/model_*.rds
+#
+# Descriptive comparison by previous outcome, then a parsimonious logistic
+# regression. Constraints:
+#   - no predictor observed during t+1;
+#   - attempt pairs of the same candidate are not independent: keep one pair per
+#     candidate, or cluster by candidate;
+#   - count the successes at t+1: roughly 10 events per variable;
+#   - baseline: first-attempt success rate, or a model with previous outcome and
+#     year only;
+#   - the year must be controlled for in any case: RfA standards changed over
+#     time (success falls from 100% in 2003 to 31% in 2012 in our data).
+````
+
+### `R/07_figures.R`
+
+````r
+# 07 - Figures for the report (ggplot2).  [SKELETON]
+# Input : data/processed/features.rds, data/processed/model_*.rds
+# Output: output/figures/
+#
+# At most 4 figures or tables in the whole report, each with a caption and
+# referenced in the text. For the small groups, show the distribution with the
+# points overlaid rather than a bare boxplot. Save with explicit size and dpi so
+# the figure in the report is the one that was inspected.
 ````
 
 ### `R/99_verify_data.R`
@@ -2391,11 +2468,14 @@ writeLines(log_lines, file.path(DIR_PROCESSED, "99b_verification.txt"))
 ### `R/98_generate_appendix.R`
 
 ````r
-# 98 - Rigenera l'appendice di codice in docs/DATA.md dai file veri in R/.
-# Da eseguire dopo ogni modifica agli script, cosi il codice nel documento non
-# puo divergere da quello che gira. Non tocca il rest del documento.
+# 98 - Regenerates the code appendix of docs/DATA.md from the real files in R/.
+# Run it after every change to the scripts, so that the code shown in the
+# document cannot drift from the code that actually runs. It rewrites only the
+# region between the two markers and leaves the rest of the document untouched.
 FILES <- c("R/00_paths.R", "R/00_lib_data.R", "R/01_read_raw.R",
            "R/02_build_attempts.R", "R/03_validate_outcomes.R",
+           "R/04_build_networks.R", "R/05_measure_change.R",
+           "R/06_model_outcome.R", "R/07_figures.R",
            "R/99_verify_data.R", "R/99b_verify_output.R",
            "R/98_generate_appendix.R")
 doc <- "docs/DATA.md"
@@ -2403,6 +2483,9 @@ text_lines <- readLines(doc, warn = FALSE)
 i <- grep("^<!-- GENERATED APPENDIX START -->$", text_lines)
 j <- grep("^<!-- GENERATED APPENDIX END -->$", text_lines)
 stopifnot(length(i) == 1, length(j) == 1, j > i)
+# Four-backtick fences: this very file contains three-backtick sequences in its
+# own strings, and a three-backtick fence would be closed by them, breaking the
+# last block of the appendix.
 blocks <- unlist(lapply(FILES, function(f) {
   c(paste0("### `", f, "`"), "",
     "````r", readLines(f, warn = FALSE), "````", "")

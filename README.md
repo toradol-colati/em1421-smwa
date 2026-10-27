@@ -1,104 +1,117 @@
 # EM1421 — Repeat Requests for Adminship
 
-Progetto di gruppo per **EM1421 Social Media and Web Analytics**, Ca' Foscari, a.a. 2026/2027.
-Docente: Pierluigi Zama Ramirez.
+Group project for **EM1421 Social Media and Web Analytics**, Ca' Foscari University of Venice,
+academic year 2026/2027. Instructor: Pierluigi Zama Ramirez.
 
-**Domanda (testo approvato dal docente, da non riscrivere senza scrivergli prima):**
+**Research question (the approved wording; it must not be rewritten without writing to the
+instructor first):**
 > Among repeat Requests for Adminship candidates, how do changes in voter-community
 > composition, support-coalition overlap and network position differ between previously
 > rejected and previously successful candidates, and how are these changes associated with the
 > next outcome?
 
-Dati: SNAP **wiki-RfA** (voti RfA di Wikipedia, 2003 – maggio 2013) come fonte primaria, SNAP
-**wiki-Elec** (elezioni fino a gennaio 2008) per validare gli esiti. Analisi interamente in R
-(igraph, ggplot2). I risultati sono associazioni, non effetti causali.
+Data: SNAP **wiki-RfA** (Wikipedia RfA votes, 2003 – May 2013) as the primary source, SNAP
+**wiki-Elec** (elections up to January 2008) to validate outcomes. The whole analysis is in R
+(igraph, ggplot2). Results are described as associations, not causal effects.
 
-Gruppo: **Bubi** (Umberto Toraldo, GitHub `toradol-colati`) e **Mihretab** (GitHub `mihretabworku`).
-Scadenza dal brief: **2 novembre 2026, 09:00 CET** (report PDF + codice + dati, più email di
-conferma al docente).
+Team of two. **Umberto Toraldo** (GitHub `toradol-colati`) is the **data member**: preparing
+both SNAP datasets, cleaning the records, reconstructing candidate attempts, validating the
+outcomes, and delivering analysis-ready vote-level and attempt-level tables. **Mihretab Worku
+Morka** (GitHub `mihretabworku`) is the **network member**: building the voter and co-voting
+networks, measuring communities, support overlap, centrality and brokerage, running the outcome
+analysis and producing the report figures. Jointly: the data and network definitions, the
+literature, interpretation, the report and the final submission package.
+
+Deadline stated in the brief: **2 November 2026, 09:00 CET** (report PDF, code and data, plus a
+confirmation email to the instructor).
 
 ---
 
-## Se apri questa repo per la prima volta: leggi in questo ordine
+## Start here
 
-| # | File | Perché |
+| # | File | Why |
 |---|---|---|
-| 1 | [docs/EM1421_RfA_contesto_nuova_chat.md](docs/EM1421_RfA_contesto_nuova_chat.md) | **Il documento fondamentale.** Stato del progetto, numeri, letteratura verificata, i problemi aperti e le 8 decisioni ancora da prendere (§11). Se leggi un solo file, leggi questo. |
-| 2 | [CLAUDE.md](CLAUDE.md) | Cosa è cambiato dopo quel documento: proposta approvata, divisione del lavoro proposta, tre punti deboli aperti. Serve anche a istruire Claude Code, se lo usi. |
-| 3 | [docs/MATERIALE_CORSO.md](docs/MATERIALE_CORSO.md) | Tutte le slide del corso sintetizzate: definizioni, formule, funzioni igraph, e dove il materiale vincola le nostre scelte di metodo. Usalo mentre sviluppi invece di riaprire i PDF. Le §11 e §12 sono le due da leggere prima di scrivere codice. |
-| 4 | [docs/CODICE.md](docs/CODICE.md) | Il gemello del precedente, lato codice: cosa possiamo e dobbiamo scrivere oltre il codice delle slide, i requisiti perché il docente possa eseguirlo, le convenzioni del repo, gli idiomi R per ciò che le slide non coprono, e la checklist di consegna. Da leggere prima di scrivere il primo script. |
-| 5 | [docs/EM1421_group_project_brief.pdf](docs/EM1421_group_project_brief.pdf) | Il brief inviato e approvato. |
-| 6 | [docs/writing_your_project.txt](docs/writing_your_project.txt) + [docs/EM1421_projectsInstructions.txt](docs/EM1421_projectsInstructions.txt) | I criteri 01–08 con cui il docente valuta, e le regole formali (max 4 figure, 12.000–20.000 caratteri, niente codice nel report, ≥5 riferimenti scientifici, paragrafo sul contributo di ciascuno). |
+| 1 | [docs/DATA.md](docs/DATA.md) | **The data workstream, complete.** What the raw data are and where they come from, the eleven defects found and how each was fixed, the delivered tables column by column, what is still open, the two verification rounds, the substantive analysis of the results, and all the R code in an appendix. Everything the network workstream needs in order to start. |
+| 2 | [docs/EM1421_RfA_contesto_nuova_chat.md](docs/EM1421_RfA_contesto_nuova_chat.md) | Project background: state of play, figures, verified literature, open problems and the decisions still to be taken (§11). In Italian. |
+| 3 | [CLAUDE.md](CLAUDE.md) | What changed after that document. In Italian; it also instructs Claude Code. |
+| 4 | [docs/MATERIALE_CORSO.md](docs/MATERIALE_CORSO.md) | All the course slides summarised: definitions, formulas, igraph functions, and where the material constrains our method choices. In Italian. §11 and §12 are the ones to read before writing analysis code. |
+| 5 | [docs/CODICE.md](docs/CODICE.md) | What code we are allowed to write beyond the slides, and the repository conventions. In Italian. |
+| 6 | [docs/EM1421_group_project_brief.pdf](docs/EM1421_group_project_brief.pdf) · [docs/writing_your_project.txt](docs/writing_your_project.txt) · [docs/EM1421_projectsInstructions.txt](docs/EM1421_projectsInstructions.txt) | The approved brief, the criteria the instructor marks against, and the formal rules (max 4 figures, 12,000–20,000 characters, no code in the report, at least 5 scientific references, a paragraph on each member's contribution). |
 
-Il resto di `docs/` sono le slide originali e i paper, lasciati come riferimento.
+The rest of `docs/` holds the original slides and papers, kept for reference.
 
-## Struttura della repo
+## Repository layout
 
 ```
-CLAUDE.md                 aggiornamenti e istruzioni di lavoro
-README.md                 questo file
-R/                        script numerati, da eseguire in ordine
-  00_paths.R              percorsi condivisi e controllo dei file mancanti
-  01_read_raw.R           lettura dei due file SNAP, nessuna pulizia
-  02_build_attempts.R     ricostruzione dei tentativi          [SCHELETRO]
-  03_validate_outcomes.R  validazione esiti su wiki-Elec       [SCHELETRO]
-  04_build_networks.R     rete di voto e proiezione di co-voto [SCHELETRO]
-  05_measure_change.R     misure del cambiamento t -> t+1      [SCHELETRO]
-  06_model_outcome.R      esito del tentativo successivo       [SCHELETRO]
-  07_figures.R            le figure del report                 [SCHELETRO]
-data/raw/                 file SNAP come scaricati (vedi il README dentro)
-data/processed/           tabelle derivate, prodotte dagli script
-output/figures/           figure
-report/                   report PDF e sorgenti
-docs/                     brief, istruzioni, slide, paper, note
+CLAUDE.md                 working notes and instructions
+README.md                 this file
+R/                        numbered scripts, to be run in order
+  00_paths.R              shared paths and the missing-file check
+  00_lib_data.R           shared functions: parsers, name normalisation, dates,
+                          attempt reconstruction, deduplication, attempt table
+  01_read_raw.R           read both SNAP files, no substantive cleaning
+  02_build_attempts.R     reconstruct attempts, produce votes.rds and attempts.rds
+  03_validate_outcomes.R  validate against wiki-Elec, choose the threshold
+  04_build_networks.R     voting network and co-voting projection    [SKELETON]
+  05_measure_change.R     measures of change from t to t+1           [SKELETON]
+  06_model_outcome.R      outcome of the next attempt                [SKELETON]
+  07_figures.R            the report figures                         [SKELETON]
+  98_generate_appendix.R  regenerates the code appendix of docs/DATA.md
+  99_verify_data.R        round 1: every claim recomputed from the raw files
+  99b_verify_output.R     round 2: internal invariants of the tables
+data/raw/                 the SNAP files as downloaded, with checksums
+data/processed/           derived tables and logs, produced by the scripts
+output/figures/           figures
+report/                   the report PDF and its sources
+docs/                     brief, instructions, slides, papers, documentation
 ```
 
-**Gli script marcati [SCHELETRO] non contengono codice**: solo un'intestazione con input,
-output e l'elenco delle decisioni ancora aperte per quel passo. Sono deliberatamente vuoti —
-quelle sono scelte di metodo che dobbiamo prendere noi due, non da riempire di default.
-`01_read_raw.R` è scritto ma **non ancora eseguito**: i file SNAP non sono in repo.
+The scripts marked `[SKELETON]` contain no code yet: only a header with inputs, outputs and the
+decisions still open for that step. They belong to the network workstream.
 
-## Far partire tutto
+## Running everything
 
-1. Scaricare i due file SNAP in `data/raw/` — comandi pronti in
-   [data/raw/README.md](data/raw/README.md). Vanno committati: la consegna richiede i dati
-   insieme al codice, e stanno sotto il limite di GitHub (wiki-RfA ~15 MB).
-2. Pacchetti R: `igraph`, `ggplot2`, `data.table`. Più `backbone` solo se decidiamo di usarlo
-   (ma vedi `docs/MATERIALE_CORSO.md` §12: è fuori programma).
-3. Dalla radice della repo, in ordine:
+The two SNAP files are in the repository, so no download is needed. From the repository root:
 
 ```bash
 Rscript R/01_read_raw.R
+Rscript R/02_build_attempts.R
+Rscript R/03_validate_outcomes.R
 ```
 
-Gli altri script si aggiungono alla sequenza quando li scriviamo. Tutti usano percorsi
-relativi alla radice della repo e non installano pacchetti: il docente deve poterli eseguire
-("it is your responsibility to deliver a code that can be tested by the instructor").
+Optionally, the two verification rounds:
 
-## Convenzioni
+```bash
+Rscript R/99_verify_data.R
+Rscript R/99b_verify_output.R
+```
 
-- `data/raw/` è **di sola lettura** per gli script. Ogni script scrive solo in
-  `data/processed/` o in `output/`.
-- Nessuna variabile osservata **durante** il tentativo t+1 entra come predittore dell'esito di
-  t+1. Le variabili di coalizione di t+1 servono solo al confronto descrittivo, con modello
-  nullo. È la regola "no leakage" del brief e il criterio 06 del docente.
-- Script numerati, eseguibili in ordine, uno per passo del piano del brief.
-- Nel report niente codice né descrizione del codice (regola §3 delle istruzioni).
+Base R only; nothing else is required for the data workstream. `igraph` and `ggplot2` will be
+needed for the network workstream. The scripts install nothing and make no network calls, so
+the instructor can run them as they are.
 
-## Stato e cosa manca
+## Conventions
 
-Fatto: struttura della repo, lettura del materiale del corso, sintesi in
-`docs/MATERIALE_CORSO.md`.
+- `data/raw/` is **read-only** for the scripts. Every script writes only to `data/processed/`
+  or `output/`.
+- **Do not filter, flag.** Problematic rows stay in the tables with a flag column, so whoever
+  analyses decides what to exclude and the number of exclusions is available for the report.
+- No variable observed **during** attempt t+1 may enter as a predictor of the outcome of t+1.
+  The t+1 coalition variables are for descriptive comparison only, against a null model. This
+  is the brief's "no leakage" rule.
+- Thresholds and parameters are named constants at the top of each script, never numbers buried
+  in the code.
+- The report contains no code and no description of the code.
 
-Da fare, in ordine di dipendenza:
-1. **Insieme, prima di scrivere codice:** lo schema delle tabelle `attempts` (una riga per
-   tentativo) e `votes` (con id del tentativo), e le definizioni scritte delle due reti —
-   nodo, arco, direzione, peso, voti neutri, finestra temporale.
-2. **In parallelo e indipendenti:** la ricostruzione dei tentativi, ciascuno con la propria
-   regola e senza guardare quella dell'altro; poi confronto dei conteggi e regola unica.
-3. Poi i ruoli (Data member / Network member) — **ancora non assegnati**, vedi `CLAUDE.md`.
-4. Insieme: figure (max 4), letteratura, report, revisione incrociata del codice.
+## Status
 
-Le decisioni ancora aperte sono elencate in
-`docs/EM1421_RfA_contesto_nuova_chat.md` §11 e i vincoli che il corso impone su quelle
-decisioni in `docs/MATERIALE_CORSO.md` §11.
+**Done — data workstream.** `data/processed/votes.rds` (195,271 validated votes) and
+`data/processed/attempts.rds` (4,082 attempts, 484 repeat candidates) are ready, documented in
+`docs/DATA.md`, validated against wiki-Elec at 99.45% outcome agreement on 2,177 matched
+elections, and covered by two verification rounds that both pass.
+
+**Next, together:** agree on the open decisions in `docs/DATA.md` §14 — first-letter case
+variants above all, because they change both the study population and the node identities — and
+settle the definitions of the two networks: node, edge, direction, weight, time window.
+
+**Then — network workstream.** Scripts 04 to 07.

@@ -56,7 +56,8 @@ dT <- as.numeric(difftime(ele$closed_at, ele$last_vote, units = "days"))
 note("wiki-Elec: ", nrow(ele), " elections, declared closing times from ",
      format(min(ele$closed_at), "%Y-%m-%d"), " to ",
      format(max(ele$closed_at), "%Y-%m-%d"),
-     ", votes from ", format(min(ele$last_vote), "%Y-%m-%d"), ".")
+     ". Earliest last-vote of an election: ",
+     format(min(ele$last_vote), "%Y-%m-%d"), ".")
 note("Field T (closing time) is UNRELIABLE: the gap between T and the last vote")
 note("  of the same election has a median of ", round(median(dT), 1),
      " days; it exceeds 30 days in ", sprintf("%.0f%%", 100 * mean(dT > 30)),
