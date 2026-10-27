@@ -9,3 +9,6 @@
 .Renviron
 
 # Niente ignore su data/: la consegna richiede i dati insieme al codice (§5).
+
+# intermedio rigenerabile da R/01_read_raw.R (14 MB)
+data/processed/votes_raw.rds

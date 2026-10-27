@@ -81,15 +81,79 @@ case_variants <- function(d) {
 }
 
 # --- wiki-Elec ----------------------------------------------------------------
-# Blocchi già separati per elezione: E esito (1/0), T data di chiusura,
-# U candidato, N proponente, V un voto per riga.
-# TODO (Data member): parser dei blocchi -> tabella elezioni + tabella voti.
-# Lo scheletro: blocco <- cumsum(keys == "E"); poi split() per blocco.
+# Blocchi separati per elezione, campi separati da tabulazione:
+#   E <0|1>                                      esito
+#   T <YYYY-MM-DD HH:MM:SS>                      chiusura dell'elezione
+#   U <id> <username>                            candidato
+#   N <id> <username>                            proponente (puo mancare)
+#   V <voto> <id> <YYYY-MM-DD HH:MM:SS> <username>   un voto per riga
+# NOTA 4 - tre trappole in questo file, tutte sull'identita dei nodi:
+#  (a) gli username sono TUTTI MINUSCOLI, mentre in wiki-RfA hanno la grafia
+#      originale, e wiki-Elec usa UNDERSCORE dove wiki-RfA usa lo SPAZIO (408
+#      nomi con underscore e 0 con spazio, contro 0 e 606 in wiki-RfA).
+#      Normalizzando i nomi i candidati di wiki-Elec ritrovati in wiki-RfA
+#      passano dal 74,9% all'89,5%: vedi norm_user() in 00_lib_data.R;
+#  (b) il file e UTF-8 ma contiene byte corrotti: 19 righe su 128.017 non sono
+#      UTF-8 valido, e sono tutte dello stesso utente (una sequenza troncata,
+#      'eivind_f_<c3>yangen' invece di 'eivind_f_oyangen'). Senza intervento
+#      substr() si ferma con "stringa multibyte non valida". Si scartano i byte
+#      invalidi con iconv(sub = ""): convertire tutto da ISO-8859-1, come
+#      sembrerebbe suggerire il fatto che 'iconv -f ISO-8859-1' riesca, e
+#      SBAGLIATO, perche rovina i nomi che erano UTF-8 corretto (anarion ->
+#      an\u00c3\u00a1rion);
+#  (c) le righe finiscono in CRLF (128.016 righe su 128.022): senza togliere il
+#      \r l'ultimo campo di ogni riga, cioe proprio lo username, si porta
+#      dietro un carattere invisibile e nessun join funziona.
+# Per confronto, in wiki-RfA non c'e CRLF: li i 21 nomi fuori posto hanno uno
+# spazio in coda (es. "Dream Focus ", "Peripitus ").
+read_elec <- function(path) {
+  stop_if_missing(path)
+  lines <- iconv(readLines(gzfile(path), warn = FALSE, skipNul = TRUE),
+                 from = "UTF-8", to = "UTF-8", sub = "")   # (b)
+  lines <- sub("\r$", "", lines)                      # (c)
+  lines <- lines[!startsWith(lines, "#") & nzchar(lines)]
+  tag   <- substr(lines, 1, 1)
+  blocco <- cumsum(tag == "E")
+  campo <- function(t) {
+    i <- which(tag == t)
+    data.frame(blocco = blocco[i], resto = sub("^.\t", "", lines[i]),
+               stringsAsFactors = FALSE)
+  }
+  e <- campo("E"); tt <- campo("T"); u <- campo("U"); n <- campo("N")
+  pezzi <- function(x, k) vapply(strsplit(x, "\t", fixed = TRUE),
+                                 function(p) if (length(p) >= k) p[k] else NA_character_,
+                                 character(1))
+  elections <- data.frame(
+    election_id = e$blocco,
+    outcome     = as.integer(e$resto),                       # 1 promosso, 0 no
+    closed_at   = as.POSIXct(tt$resto[match(e$blocco, tt$blocco)],
+                             format = "%Y-%m-%d %H:%M:%S", tz = "UTC"),
+    candidate   = trimws(pezzi(u$resto[match(e$blocco, u$blocco)], 2)),
+    nominator   = trimws(pezzi(n$resto[match(e$blocco, n$blocco)], 2)),
+    stringsAsFactors = FALSE
+  )
+  iv <- which(tag == "V")
+  pv <- strsplit(sub("^V\t", "", lines[iv]), "\t", fixed = TRUE)
+  elec_votes <- data.frame(
+    election_id = blocco[iv],
+    vot   = as.integer(vapply(pv, `[`, character(1), 1)),
+    voter = trimws(vapply(pv, function(p) if (length(p) >= 4) p[4] else NA_character_,
+                          character(1))),
+    dat   = as.POSIXct(vapply(pv, function(p) if (length(p) >= 3) p[3] else NA_character_,
+                              character(1)),
+                       format = "%Y-%m-%d %H:%M:%S", tz = "UTC"),
+    stringsAsFactors = FALSE
+  )
+  list(elections = elections, votes = elec_votes)
+}
 
 # --- esecuzione ---------------------------------------------------------------
 votes_raw <- read_rfa(FILE_RFA)
 dir.create(DIR_PROCESSED, showWarnings = FALSE, recursive = TRUE)
 saveRDS(votes_raw, file.path(DIR_PROCESSED, "votes_raw.rds"))
+
+elec <- read_elec(FILE_ELEC)
+saveRDS(elec, file.path(DIR_PROCESSED, "elec_raw.rds"))
 
 cv <- case_variants(votes_raw)
 write.csv(cv, file.path(DIR_PROCESSED, "username_case_variants.csv"), row.names = FALSE)
@@ -119,3 +183,16 @@ cat("  di cui compaiono come CANDIDATO con due grafie diverse: ",
     length(unique(cv$nome_unificato[ave(cv$n_voti_ricevuti > 0, cv$nome_unificato,
                                         FUN = sum) > 1])),
     "  <- caso distruttivo per la ricostruzione dei tentativi\n", sep = "")
+
+cat("\n--- wiki-Elec ---\n")
+cat("elezioni:", nrow(elec$elections), " (SNAP: 2794)",
+    if (nrow(elec$elections) == 2794) " OK" else " DIVERSO", "\n", sep = "")
+cat("voti:", nrow(elec$votes), "\n", sep = "")
+cat("promozioni:", sum(elec$elections$outcome == 1),
+    "  respinte:", sum(elec$elections$outcome == 0), "  (SNAP: ~1200 / ~1500)\n")
+cat("periodo:", format(min(elec$elections$closed_at, na.rm = TRUE), "%Y-%m-%d"), "->",
+    format(max(elec$elections$closed_at, na.rm = TRUE), "%Y-%m-%d"), "\n")
+cat("candidati distinti:", length(unique(elec$elections$candidate)),
+    "  di cui con piu di un'elezione:",
+    sum(table(elec$elections$candidate) > 1), "\n")
+cat("date di chiusura mancanti:", sum(is.na(elec$elections$closed_at)), "\n")

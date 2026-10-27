@@ -1,0 +1,23 @@
+voti in ingresso: 198275
+username: grafia SNAP conservata -> nodi distinti: 11381
+voti con DAT vuoto: 9367  (4.72%)
+voti con DAT presente ma non interpretabile: 0
+candidati toccati da voti senza data: 2154
+  di cui con un solo YEA fra i voti senza data: 2042
+righe interamente identiche (stesso votante, candidato, voto, esito, anno, data): 595
+regola: res_then_gap; soglia: 7 giorni
+voti datati usati nella ricostruzione: 188907
+tentativi ricostruiti: 4082
+candidati con almeno un tentativo: 3468
+voti rimossi perche lo stesso votante compare piu volte nello stesso tentativo (tenuto il piu recente): 627
+voti validati: 188280
+tentativi: 4082
+candidati ripetuti (2+ tentativi): 484   (il brief dichiara 414)
+  di cui con 3+ tentativi: 90
+coppie di tentativi consecutivi: 614
+tentativi segnalati: pochi voti (<5): 333 | durata >14gg: 4 | stesso candidato/anno/esito: 374
+tentativi con un esito precedente noto: 614
+  preceduti da un rifiuto: 558
+  preceduti da un successo: 56   (il brief dichiara 29 candidati 'previously successful')
+voti senza data attribuiti in modo univoco: 8562 su 9368
+voti senza data non attribuibili (persi): 806
