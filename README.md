@@ -25,10 +25,11 @@ conferma al docente).
 |---|---|---|
 | 1 | [docs/EM1421_RfA_contesto_nuova_chat.md](docs/EM1421_RfA_contesto_nuova_chat.md) | **Il documento fondamentale.** Stato del progetto, numeri, letteratura verificata, i problemi aperti e le 8 decisioni ancora da prendere (§11). Se leggi un solo file, leggi questo. |
 | 2 | [CLAUDE.md](CLAUDE.md) | Cosa è cambiato dopo quel documento: proposta approvata, divisione del lavoro proposta, tre punti deboli aperti. Serve anche a istruire Claude Code, se lo usi. |
-| 3 | [docs/MATERIALE_CORSO.md](docs/MATERIALE_CORSO.md) | Tutte le slide del corso sintetizzate: definizioni, formule, funzioni igraph, e dove il materiale vincola le nostre scelte di metodo. Usalo mentre sviluppi invece di riaprire i PDF. Le §11 e §12 sono le due da leggere prima di scrivere codice. |
-| 4 | [docs/CODICE.md](docs/CODICE.md) | Il gemello del precedente, lato codice: cosa possiamo e dobbiamo scrivere oltre il codice delle slide, i requisiti perché il docente possa eseguirlo, le convenzioni del repo, gli idiomi R per ciò che le slide non coprono, e la checklist di consegna. Da leggere prima di scrivere il primo script. |
-| 5 | [docs/EM1421_group_project_brief.pdf](docs/EM1421_group_project_brief.pdf) | Il brief inviato e approvato. |
-| 6 | [docs/writing_your_project.txt](docs/writing_your_project.txt) + [docs/EM1421_projectsInstructions.txt](docs/EM1421_projectsInstructions.txt) | I criteri 01–08 con cui il docente valuta, e le regole formali (max 4 figure, 12.000–20.000 caratteri, niente codice nel report, ≥5 riferimenti scientifici, paragrafo sul contributo di ciascuno). |
+| 3 | [TEAM_PLAN.md](TEAM_PLAN.md) | Ruoli concordati, lavoro già completato, blocchi attuali, due script finali e sequenza di consegna. |
+| 4 | [docs/MATERIALE_CORSO.md](docs/MATERIALE_CORSO.md) | Tutte le slide del corso sintetizzate: definizioni, formule, funzioni igraph, e dove il materiale vincola le nostre scelte di metodo. Usalo mentre sviluppi invece di riaprire i PDF. Le §11 e §12 sono le due da leggere prima di scrivere codice. |
+| 5 | [docs/CODICE.md](docs/CODICE.md) | Il gemello del precedente, lato codice: cosa possiamo e dobbiamo scrivere oltre il codice delle slide, i requisiti perché il docente possa eseguirlo, le convenzioni del repo, gli idiomi R per ciò che le slide non coprono, e la checklist di consegna. Da leggere prima di scrivere il primo script. |
+| 6 | [docs/EM1421_group_project_brief.pdf](docs/EM1421_group_project_brief.pdf) | Il brief inviato e approvato. |
+| 7 | [docs/writing_your_project.txt](docs/writing_your_project.txt) + [docs/EM1421_projectsInstructions.txt](docs/EM1421_projectsInstructions.txt) | I criteri 01–08 con cui il docente valuta, e le regole formali (max 4 figure, 12.000–20.000 caratteri, niente codice nel report, ≥5 riferimenti scientifici, paragrafo sul contributo di ciascuno). |
 
 Il resto di `docs/` sono le slide originali e i paper, lasciati come riferimento.
 
