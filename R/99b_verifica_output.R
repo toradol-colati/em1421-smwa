@@ -46,6 +46,13 @@ inv("il candidato e costante dentro ogni tentativo",
     all(tapply(v$tgt, v$attempt_id, function(x) length(unique(x))) == 1))
 inv("nessuno spazio iniziale o finale negli username",
     all(v$src == trimws(v$src)) && all(v$tgt == trimws(v$tgt)))
+inv("nessun username vuoto (i record fantasma sono stati rimossi)",
+    all(v$src != "") && all(v$tgt != ""))
+inv("nessun carattere invisibile o spazio doppio negli username",
+    all(v$src == pulisci_nome(v$src)) && all(v$tgt == pulisci_nome(v$tgt)))
+inv("self_vote coincide con src == tgt", all(v$self_vote == (v$src == v$tgt)))
+inv("n_self_votes coincide con il conteggio degli autovoti per tentativo",
+    all(a$n_self_votes == as.integer(tapply(v$src == v$tgt, v$attempt_id, sum)[as.character(a$attempt_id)])))
 
 sez("INVARIANTI: attempts.rds e coerenza con votes.rds")
 inv("attempt_id unico", !any(duplicated(a$attempt_id)))
@@ -84,12 +91,12 @@ inv("attempt_no coincide fra le due tabelle",
 
 sez("CONSERVAZIONE DEI VOTI")
 raw_n <- 198275L
-tolti <- 627L + 679L; persi <- 806L
+fantasma <- 1661L; tolti <- 627L + 100L; persi <- 616L
 chk("voti grezzi", raw_n, 198275)
-chk("voti in votes.rds", nrow(v), 196163)
-chk("voti tolti come ripetuti + persi senza data", tolti + persi, raw_n - nrow(v))
-chk("voti con data imputata", sum(v$dat_imputed), 7883)
-chk("voti senza data rimasti in tabella", sum(v$dat_missing), 7883)
+chk("voti in votes.rds", nrow(v), 195271)
+chk("fantasma + ripetuti + persi senza data", fantasma + tolti + persi, raw_n - nrow(v))
+chk("voti con data imputata", sum(v$dat_imputed), 6991)
+chk("voti senza data rimasti in tabella", sum(v$dat_missing), 6991)
 
 sez("NUMERI CITATI IN docs/DATI.md")
 chk("tentativi", nrow(a), 4082)
@@ -102,26 +109,28 @@ chk("candidati con almeno un esito precedente = rifiuto",
     length(unique(a$candidate[!is.na(a$prev_outcome) & a$prev_outcome == -1])), 445)
 chk("candidati con almeno un esito precedente = successo",
     length(unique(a$candidate[!is.na(a$prev_outcome) & a$prev_outcome == 1])), 53)
-chk("flag_short", sum(a$flag_short), 281)
+chk("flag_short", sum(a$flag_short), 296)
 chk("flag_long", sum(a$flag_long), 4)
 chk("flag_year_clash", sum(a$flag_year_clash), 359)
-chk("tentativi con riscontro in wiki-Elec", sum(av$elec_matched), 2167)
-chk("di cui con esito concorde", sum(av$outcome_agrees, na.rm = TRUE), 2167 - 12)
-chk("tentativi senza riscontro", sum(!av$elec_matched), 4082 - 2167)
+chk("tentativi con riscontro in wiki-Elec", sum(av$elec_matched), 2176)
+chk("di cui con esito concorde", sum(av$outcome_agrees, na.rm = TRUE), 2176 - 12)
+chk("tentativi senza riscontro", sum(!av$elec_matched), 4082 - 2176)
 
 sez("STRUTTURA DELLA RETE, SULLA TABELLA CONSEGNATA (non sul file grezzo)")
 # NB: i numeri del file grezzo (10.417 votanti, 3.497 candidati, 2.533 entrambi)
 # NON sono questi: 1.433 voti escono dalla pipeline e con loro alcuni utenti
 # spariscono del tutto. Il documento deve riportare entrambi.
-chk("votanti distinti in votes.rds", length(unique(v$src)), 10396, tol = 30)
+chk("votanti distinti in votes.rds", length(unique(v$src)), 10394, tol = 30)
 chk("candidati distinti in votes.rds", length(unique(v$tgt)), 3468, tol = 10)
-chk("utenti sia votanti sia candidati", length(intersect(v$src, v$tgt)), 2514, tol = 10)
-chk("voti favorevoli", sum(v$vot == 1), 143610)
-chk("voti contrari", sum(v$vot == -1), 40561)
-chk("voti neutri", sum(v$vot == 0), 11992)
+chk("utenti sia votanti sia candidati", length(intersect(v$src, v$tgt)), 2512, tol = 10)
+chk("voti favorevoli", sum(v$vot == 1), 143610, tol = 600)
+chk("voti contrari", sum(v$vot == -1), 40561, tol = 600)
+chk("voti neutri", sum(v$vot == 0), 11992, tol = 600)
 chk("n_votes_dated + n_votes_imputed == n_votes (tentativi con scarto)",
     sum(a$n_votes_dated + a$n_votes_imputed != a$n_votes), 0)
-chk("somma dei voti imputati per tentativo", sum(a$n_votes_imputed), 7883)
+chk("somma dei voti imputati per tentativo", sum(a$n_votes_imputed), 6991)
+chk("autovoti sopravvissuti in tabella", sum(v$self_vote), 94, tol = 15)
+chk("somma di n_self_votes", sum(a$n_self_votes), sum(v$self_vote))
 
 sez("ESITO RONDA 2")
 cat(if (ko == 0) "Tutti gli invarianti reggono e tutti i numeri coincidono.\n" else

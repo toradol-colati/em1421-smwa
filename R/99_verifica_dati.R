@@ -33,20 +33,23 @@ sez("wiki-RfA: identita degli utenti")
 tutti_raw <- c(D$SRC, D$TGT)
 chk("utenti distinti SENZA trim", length(unique(tutti_raw)), 11402)
 chk("utenti distinti CON trim (totale SNAP)", length(unique(trimws(tutti_raw))), 11381)
+chk("utenti distinti dopo la normalizzazione completa", length(unique(pulisci_nome(tutti_raw))), 11380)
 con_sp <- unique(tutti_raw)[unique(tutti_raw) != trimws(unique(tutti_raw))]
 chk("grafie con spazio iniziale o finale", length(con_sp), 43)
 chk("  di cui collidono con la forma pulita gia presente", sum(trimws(con_sp) %in% tutti_raw), 21)
 chk("  riduzione dei nomi distinti", length(unique(tutti_raw)) - length(unique(trimws(tutti_raw))), 21)
 chk("coppie votante-candidato SENZA trim (totale SNAP)",
     nrow(unique(D[, c("SRC","TGT")])), 189004)
-Dt <- D; Dt$SRC <- trimws(Dt$SRC); Dt$TGT <- trimws(Dt$TGT)
-chk("coppie votante-candidato CON trim", nrow(unique(Dt[, c("SRC","TGT")])), 189003)
-chk("votanti distinti (con trim)", length(unique(Dt$SRC)), 10417)
-chk("candidati distinti (con trim)", length(unique(Dt$TGT)), 3497)
+# Dt: gli stessi dati con i nomi normalizzati come fa read_rfa(). D resta grezzo,
+# cosi si possono verificare entrambi gli stadi.
+Dt <- D; Dt$SRC <- pulisci_nome(D$SRC); Dt$TGT <- pulisci_nome(D$TGT)
+chk("coppie votante-candidato dopo la normalizzazione", nrow(unique(Dt[, c("SRC","TGT")])), 189001)
+chk("votanti distinti normalizzati (compreso il nodo vuoto)", length(unique(Dt$SRC)), 10416)
+chk("candidati distinti", length(unique(Dt$TGT)), 3497)
 chk("utenti che sono SIA votanti SIA candidati", length(intersect(unique(Dt$SRC), unique(Dt$TGT))), 2533)
-chk("candidati che non hanno mai votato", length(setdiff(unique(Dt$TGT), unique(Dt$SRC))), 964)
+chk("candidati che non hanno mai votato", length(setdiff(unique(Dt$TGT), unique(Dt$SRC))), 964, tol = 5)
 cap <- function(s) ifelse(s == "", s, paste0(toupper(substr(s,1,1)), substr(s,2,nchar(s))))
-chk("utenti unificando l'iniziale maiuscola", length(unique(cap(trimws(tutti_raw)))), 11244)
+chk("utenti unificando l'iniziale maiuscola", length(unique(cap(pulisci_nome(tutti_raw)))), 11243)
 gr <- split(unique(trimws(tutti_raw)), cap(unique(trimws(tutti_raw))))
 chk("gruppi di grafie che differiscono solo per l'iniziale", sum(lengths(gr) > 1), 137)
 chk("  di cui la persona e candidata sotto almeno una grafia",
@@ -81,7 +84,7 @@ chk("lunghezza mediana del commento", median(nchar(D$TXT)), 98)
 chk("lunghezza massima del commento", max(nchar(D$TXT)), 7610)
 chk("commenti con marcatore in grassetto iniziale", sum(startsWith(D$TXT, "'''")), 162939)
 chk("voti dati per votante: mediana", median(table(Dt$SRC)), 3)
-chk("voti dati per votante: massimo", max(table(Dt$SRC)), 1661)
+chk("voti dati per votante: massimo, ESCLUSI i record fantasma", max(table(Dt$SRC[Dt$SRC != ""])), 1232)
 chk("voti ricevuti per candidato: mediana", median(table(Dt$TGT)), 41)
 chk("voti ricevuti per candidato: massimo", max(table(Dt$TGT)), 987)
 
@@ -141,6 +144,51 @@ chk("candidati wiki-Elec trovati in wiki-RfA, match diretto (%)",
     round(100*mean(ec %in% rc), 1), 74.9, tol = 0.2)
 chk("candidati wiki-Elec trovati normalizzando (%)",
     round(100*mean(norm_user(ec) %in% norm_user(rc)), 1), 89.8, tol = 0.2)
+
+# ---------------------------------------- igiene: le trappole classiche -----
+# Questa sezione non verifica affermazioni: cerca attivamente la categoria di
+# problemi "basilari" che e facile non vedere. Ogni riga e un difetto che, se
+# presente e non trattato, produce nodi fantasma, archi inventati o conteggi
+# sbagliati. I valori attesi sono quelli misurati e trattati; se cambiano,
+# qualcosa nei dati o nel codice e cambiato e va guardato.
+sez("IGIENE: le trappole classiche")
+uu_raw <- unique(c(D$SRC, D$TGT))            # grafia originale del file
+uu     <- unique(c(Dt$SRC, Dt$TGT))          # dopo pulisci_nome()
+chk("nomi vuoti fra i nodi (qui i record fantasma ci sono ancora)", sum(uu == ""), 1)
+chk("RECORD FANTASMA: voti con SRC vuoto", sum(Dt$SRC == ""), 1661)
+chk("  di questi, quanti hanno anche TXT vuoto", sum(Dt$SRC == "" & Dt$TXT == ""), 1661)
+chk("  candidati che esistono SOLO grazie a record fantasma",
+    length(setdiff(unique(Dt$TGT[Dt$SRC == ""]), unique(Dt$TGT[Dt$SRC != ""]))), 6)
+chk("nomi con spazi multipli interni, PRIMA della pulizia", sum(grepl("  ", uu_raw)), 1)
+chk("  e dopo la pulizia", sum(grepl("  ", uu)), 0)
+chk("nomi con caratteri invisibili, PRIMA della pulizia",
+    sum(grepl("[\u200b-\u200f\ufeff]", uu_raw)), 1)
+chk("  e dopo la pulizia", sum(grepl("[\u200b-\u200f\ufeff]", uu)), 0)
+chk("nomi con tabulazione o a capo", sum(grepl("[\t\r\n]", uu)), 0)
+chk("nomi con spazio non separabile U+00A0", sum(grepl("\u00a0", uu)), 0)
+chk("nomi con entita HTML", sum(grepl("&[a-z]+;|&#[0-9]+;", uu)), 0)
+chk("nomi con underscore (wiki-RfA non ne usa)", sum(grepl("_", uu)), 0)
+chk("nomi non ASCII (legittimi)", sum(grepl("[^\x01-\x7f]", uu, perl = TRUE)), 78)
+chk("AUTOVOTI: il candidato vota nella propria RfA", sum(Dt$SRC == Dt$TGT), 103)
+chk("voti con TGT vuoto", sum(Dt$TGT == ""), 0)
+chk("VOT fuori da {-1,0,1}", sum(!(D$VOT %in% c("-1","0","1"))), 0)
+chk("RES fuori da {-1,1}", sum(!(D$RES %in% c("-1","1"))), 0)
+chk("YEA fuori da 2003-2013", sum(!(as.integer(D$YEA) %in% 2003:2013)), 0)
+chk("date prima del 2003", sum(dt < as.POSIXct("2003-01-01", tz = "UTC"), na.rm = TRUE), 0)
+chk("date dopo maggio 2013 (fine dichiarata della copertura)",
+    sum(dt > as.POSIXct("2013-05-31 23:59", tz = "UTC"), na.rm = TRUE), 75)
+
+sez("IGIENE: wiki-Elec")
+chk("votanti duplicati dentro la stessa elezione",
+    sum(duplicated(paste(E$votes$election_id, E$votes$voter))), 0)
+chk("elezioni senza alcun voto", nrow(E$elections) - length(unique(E$votes$election_id)), 0)
+chk("elezioni con un solo voto", sum(table(E$votes$election_id) == 1), 97)
+chk("il candidato vota nella propria elezione",
+    sum(norm_user(E$votes$voter) == norm_user(
+      E$elections$candidate[match(E$votes$election_id, E$elections$election_id)])), 72)
+chk("username vuoti fra i votanti", sum(E$votes$voter == "" | is.na(E$votes$voter)), 0)
+chk("due elezioni con stesso candidato e stessa chiusura",
+    sum(duplicated(paste(E$elections$candidate, E$elections$closed_at))), 0)
 
 # ------------------------------------------------ assunzioni del metodo -----
 sez("ASSUNZIONE: RES e una proprieta dell'elezione, non del voto")

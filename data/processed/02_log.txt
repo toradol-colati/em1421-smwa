@@ -1,22 +1,27 @@
 voti in ingresso: 198275
-username: grafia SNAP conservata -> nodi distinti: 11381
+username: grafia SNAP conservata -> nodi distinti: 11380
 voti con DAT vuoto: 9367  (4.72%)
 voti con DAT presente ma non interpretabile: 0
-candidati toccati da voti senza data: 2154
-  di cui con un solo YEA fra i voti senza data: 2042
-righe interamente identiche (stesso votante, candidato, voto, esito, anno, data): 595
+record con SRC vuoto (nessun votante), rimossi: 1661 su 198275  (0.84%)
+  candidati toccati: 926 | elenco in record_senza_votante.csv
+voti con un votante identificabile: 196614
+autovoti (il candidato vota nella propria RfA): 103  -> restano in tabella con la colonna self_vote
+voti senza data, fra quelli con un votante: 7707
+candidati toccati da voti senza data: 1762
+  di cui con un solo YEA fra i voti senza data: 1687
+righe interamente identiche (stesso votante, candidato, voto, esito, anno, data): 46
 regola: res_then_gap; soglia: 7 giorni
 voti datati usati nella ricostruzione: 188907
 tentativi ricostruiti: 4082
 candidati con almeno un tentativo: 3468
 voti rimossi perche lo stesso votante compare piu volte nello stesso tentativo (tenuto il piu recente): 627
 voti validati: 188280
-voti senza data attribuiti in modo univoco: 8562 su 9368
-voti senza data non attribuibili (persi): 806
-voti rimossi nella seconda deduplica (stesso votante, uno datato e uno imputato nello stesso tentativo): 679
+voti senza data attribuiti in modo univoco: 7091 su 7707
+voti senza data non attribuibili (persi): 616
+voti rimossi nella seconda deduplica (stesso votante, uno datato e uno imputato nello stesso tentativo): 100
 tentativi: 4082 (prima dell'attribuzione dei voti senza data: 4082)
 candidati ripetuti (2+ tentativi): 484   (il brief dichiara 414)
   di cui con 3+ tentativi: 90
 coppie di tentativi consecutivi: 614
-tentativi segnalati: pochi voti (<5): 281 | durata >14gg: 4 | stesso candidato/anno/esito: 359
+tentativi segnalati: pochi voti (<5): 296 | durata >14gg: 4 | stesso candidato/anno/esito: 359
   preceduti da un rifiuto: 558 | preceduti da un successo: 56

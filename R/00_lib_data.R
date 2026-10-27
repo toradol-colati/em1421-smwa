@@ -27,12 +27,18 @@ read_rfa <- function(path) {
   }
   out <- as.data.frame(tapply(vals, list(rec, keys), identity),
                        stringsAsFactors = FALSE)
-  # NOTA 1 - username: 21 nomi differiscono solo per spazi iniziali o finali.
-  # Senza trimws() i nomi distinti sono 11.402; con trimws() sono 11.381, cioe
-  # esattamente il totale pubblicato da SNAP. Il trim e quindi parte della
-  # definizione dei nodi, non una pulizia opzionale.
-  out$SRC <- trimws(out$SRC)
-  out$TGT <- trimws(out$TGT)
+  # NOTA 1 - username: la grafia NON e l'identita. Tre interventi, ognuno
+  # imposto da un difetto misurato nel file:
+  #  - 43 grafie hanno uno spazio iniziale o finale, e 21 di queste collidono con
+  #    la forma pulita gia presente: senza trim i nomi distinti sono 11.402
+  #    invece di 11.381, il totale pubblicato da SNAP;
+  #  - un nome ha uno spazio doppio interno ("Salvio  giuliano") e collide con la
+  #    forma a spazio singolo, gia presente;
+  #  - un nome ha un marcatore invisibile in testa (U+200E, LEFT-TO-RIGHT MARK:
+  #    "<U+200E>Jetijonez"), che lo renderebbe un nodo a se.
+  # Dopo la normalizzazione i nomi distinti sono 11.380.
+  out$SRC <- pulisci_nome(out$SRC)
+  out$TGT <- pulisci_nome(out$TGT)
   out$vote_id <- seq_len(nrow(out))
   out[, c("vote_id", CAMPI)]
 }
@@ -147,8 +153,17 @@ read_elec <- function(path) {
 #    per il CONFRONTO fra i file tolower e corretto. Se usarlo anche DENTRO
 #    wiki-RfA, unificando 137 gruppi di grafie, e una decisione aperta (vedi
 #    CLAUDE.md): cambia il numero di nodi e la popolazione dei candidati ripetuti.
+# Normalizzazione della GRAFIA dentro un singolo file: toglie i caratteri
+# invisibili, collassa gli spazi ripetuti e taglia quelli ai bordi. Non tocca le
+# maiuscole: quella e una decisione aperta (UNIFICA_INIZIALE in 02).
+pulisci_nome <- function(x) {
+  x <- gsub("[\u200b-\u200f\ufeff]", "", x)  # marcatori di direzione e simili
+  x <- gsub("[[:space:]]+", " ", x)            # spazi ripetuti o esotici -> uno
+  trimws(x)
+}
+
 norm_user <- function(x, lower = TRUE) {
-  x <- trimws(gsub("_", " ", x))
+  x <- pulisci_nome(gsub("_", " ", x))
   if (lower) tolower(x) else x
 }
 
@@ -274,6 +289,9 @@ costruisci_attempts <- function(v) {
   a$n_support    <- vapply(spl, function(i) sum(v$vot[i] ==  1), 0L)
   a$n_oppose     <- vapply(spl, function(i) sum(v$vot[i] == -1), 0L)
   a$n_neutral    <- vapply(spl, function(i) sum(v$vot[i] ==  0), 0L)
+  # autovoti: il candidato che vota nella propria RfA. Sono 103 nel file grezzo
+  # e creano un cappio nella rete di voto; restano in tabella, segnalati.
+  a$n_self_votes <- vapply(spl, function(i) sum(v$src[i] == v$tgt[i]), 0L)
   # quota di sostegno sui soli voti espressi a favore o contro (i neutri fuori dal
   # denominatore: e una convenzione, dichiarata, non l'unica possibile)
   a$support_share <- ifelse(a$n_support + a$n_oppose > 0,

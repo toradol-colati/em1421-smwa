@@ -14,12 +14,12 @@ SCELTA DELLA SOGLIA
   Regola scartata (gap_then_res): a 7 giorni produce 1678 tentativi con meno di 5 voti contro 330.
 
 --- VALIDAZIONE con res_then_gap e soglia 7 giorni ---
-elezioni appaiate (Jaccard > 0.5): 2168 su 2794  (77.6%)
-  con Jaccard > 0.3: 2352   candidato assente da wiki-RfA: 273  (9.8%)
-  Jaccard mediano sulle appaiate: 0.666
-CONCORDANZA DELL'ESITO: 99.45%  (discordanti: 12 su 2168)
-tentativi distinti appaiati: 2167 su 4082; tentativi che assorbono 2 elezioni: 1
+elezioni appaiate (Jaccard > 0.5): 2177 su 2794  (77.9%)
+  con Jaccard > 0.3: 2353   candidato assente da wiki-RfA: 273  (9.8%)
+  Jaccard mediano sulle appaiate: 0.667
+CONCORDANZA DELL'ESITO: 99.45%  (discordanti: 12 su 2177)
+tentativi distinti appaiati: 2176 su 4082; tentativi che assorbono 2 elezioni: 1
 disaccordo sui singoli votanti (mediane): wiki-Elec ne ha 8 che io non ho, io ne ho 9 che loro non hanno,
-  su una mediana di 41 votanti per elezione. Numeri simili (uguali in 892 elezioni), liste diverse.
-LIMITE: la validazione copre 2167 tentativi su 4082 (53%). Fuori dal periodo di wiki-Elec, cioe dal 2008 al 2013, non esiste.
+  su una mediana di 41 votanti per elezione. Numeri simili (uguali in 1024 elezioni), liste diverse.
+LIMITE: la validazione copre 2176 tentativi su 4082 (53%). Fuori dal periodo di wiki-Elec, cioe dal 2008 al 2013, non esiste.
 scritti: attempts_validated.rds, 03_match_wikielec.csv

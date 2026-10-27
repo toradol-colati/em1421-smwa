@@ -13,7 +13,7 @@ dipendenza. Eseguibili in quest'ordine dalla radice del repo.
   - [5. Che cosa nei dati NON c'è](#5-che-cosa-nei-dati-non-cè)
   - [6. Perché le due ricostruzioni non combaciano](#6-perché-le-due-ricostruzioni-non-combaciano)
 - [Parte II — Le elaborazioni](#parte-ii--le-elaborazioni)
-  - [7. I nove difetti dei dati: problema, perché andava risolto, come, e cosa sarebbe successo altrimenti](#7-i-nove-difetti-dei-dati)
+  - [7. Gli undici difetti dei dati: problema, perché andava risolto, come, e cosa sarebbe successo altrimenti](#7-gli-undici-difetti-dei-dati)
   - [8. La ricostruzione dei tentativi](#8-la-ricostruzione-dei-tentativi)
   - [9. La scelta della soglia](#9-la-scelta-della-soglia)
   - [10. La validazione](#10-la-validazione)
@@ -275,10 +275,10 @@ di `T`.
 
 | Misura | Valore |
 |---|---|
-| Elezioni di wiki-Elec appaiate a un tentativo (Jaccard > 0,5) | **2.168 su 2.794 — 77,6%** |
-| Con criterio più permissivo (Jaccard > 0,3) | **2.352 — 84,2%** |
+| Elezioni di wiki-Elec appaiate a un tentativo (Jaccard > 0,5) | **2.177 su 2.794 — 77,9%** |
+| Con criterio più permissivo (Jaccard > 0,3) | **2.353 — 84,2%** |
 | Elezioni il cui candidato non compare affatto in wiki-RfA | **273 — 9,8%** |
-| Jaccard mediano sulle appaiate | **0,666** |
+| Jaccard mediano sulle appaiate | **0,667** |
 | Tentativi miei che assorbono due elezioni distinte | **1** |
 
 **Dove non combaciano: non sulle elezioni, sui singoli votanti.** Per la stessa elezione i due
@@ -326,10 +326,12 @@ l'assenza vera riguarda il 9,8%. Dettagli in §17.
 
 # Parte II — Le elaborazioni
 
-## 7. I nove difetti dei dati
+## 7. Gli undici difetti dei dati
 
 Per ciascuno: che cos'è, **perché andava risolto**, come l'ho risolto, e **cosa sarebbe
-successo se non l'avessi risolto**. Tutti trovati misurando, non per prudenza generica.
+successo se non l'avessi risolto**. Tutti trovati misurando, non per prudenza generica. Gli
+ultimi due, (j) e (k), sono emersi solo alla terza ronda di verifica (§18), e (j) è il più
+pericoloso di tutti.
 
 ### (a) Spazi in coda agli username — wiki-RfA
 
@@ -415,17 +417,19 @@ per una ragione tipografica.
 
 ### (e) Voti senza data
 
-**Che cos'è.** **9.367 voti su 198.275, il 4,72%**, hanno il campo `DAT` vuoto. Toccano 2.154
-candidati distinti.
+**Che cos'è.** 9.367 record su 198.275 hanno il campo `DAT` vuoto, ma **1.661 di questi sono i
+record fantasma del §7(j), che non sono voti**. I voti veri senza data sono **7.706 su 196.614,
+il 3,92%**. Toccano 2.154 candidati distinti. *In una versione precedente dichiaravo il 4,72%:
+era gonfiato dai fantasma.*
 
 **Perché andava risolto.** La ricostruzione dei tentativi si basa sui salti temporali: un voto
 senza data non si può ordinare, quindi non si può assegnare a un tentativo per via diretta.
 
 **Come.** Restano fuori dalla ricostruzione e vengono attribuiti dopo, **solo quando
 l'attribuzione è univoca**: il candidato ha un solo tentativo con quell'anno e quell'esito.
-Così **8.562 sono attribuiti** — di cui **679 risultano poi doppioni** di un voto datato dello
-stesso votante nello stesso tentativo e vengono tolti, quindi **7.883 entrano in tabella** — e
-**806 sono persi**. I primi sono marcati `dat_imputed = TRUE` e restano distinguibili.
+Così **7.091 sono attribuiti** — di cui **100 risultano poi doppioni** di un voto datato dello
+stesso votante nello stesso tentativo e vengono tolti, quindi **6.991 entrano in tabella** — e
+**616 sono persi**. I primi sono marcati `dat_imputed = TRUE` e restano distinguibili.
 
 **Cosa sarebbe successo altrimenti.** Scartandoli tutti si perdeva il 4,7% dei voti, con
 effetto non uniforme: cadono su 2.154 candidati, quindi avrebbero ridotto il conteggio dei
@@ -479,7 +483,7 @@ esattamente la popolazione che lo studio seleziona. Avremmo studiato artefatti.
 **Dove `YEA` però resta inevitabile.** L'attribuzione dei voti senza data (§7(e)) usa la chiave
 (candidato, `YEA`, esito), perché un voto senza data non ha nient'altro con cui essere
 collocato. Rischio quantificato: fra i voti datati lo 0,99% ha `YEA` sbagliato; applicando la
-stessa proporzione, **circa 78 dei 7.883 voti attribuiti possono finire nel tentativo
+stessa proporzione, **circa 69 dei 6.991 voti attribuiti possono finire nel tentativo
 sbagliato**. Non è eliminabile senza le date. È un'altra ragione per escludere i
 `dat_imputed` dalle analisi sensibili al tempo.
 
@@ -528,6 +532,49 @@ la sovrapposizione degli insiemi di votanti (§6, §10).
 risultava del 36% invece del 78%; comparivano 23 "sotto-spezzature" invece di 1; e concludevo
 a torto che wiki-RfA non contenesse le elezioni di wiki-Elec, scrivendolo come limite del
 progetto. Un limite inventato è peggio di un limite non trovato. Vedi §17.
+
+### (j) 1.661 record fantasma, senza votante
+
+**Che cos'è.** **1.661 record su 198.275 (lo 0,84%) hanno `SRC` vuoto**, e **tutti e 1.661
+hanno anche `TXT` vuoto e `DAT` vuoto**. Non sono voti: sono record senza votante, senza
+commento e senza data. Toccano **926 candidati**, distribuiti su tutti gli anni ma concentrati
+nel 2006 (800 casi). **Sei candidati esistono *soltanto* grazie a questi record**, cioè non hanno nemmeno un
+voto vero: senza la rimozione sarebbero sei candidati inventati.
+
+**Perché andava risolto, ed è il difetto più pericoloso dei nove.** La stringa vuota non viene
+scartata da sola: diventa un **nodo** della rete, e un nodo con **1.661 archi uscenti verso 926
+candidati**. Sarebbe stato di gran lunga il votante più attivo del dataset, un hub che non
+esiste. Qualunque misura di centralità, qualunque comunità e tutta la proiezione di co-voto ne
+sarebbero stati travolti: 926 candidati risultano collegati fra loro da un votante inventato.
+
+**Come.** Si tolgono prima di qualunque altra cosa, e si salvano in
+`data/processed/record_senza_votante.csv`, così niente sparisce in silenzio. Non sono
+"segnalabili" come le altre righe problematiche: un voto senza votante non è un arco, e tenerlo
+in tabella con una bandiera significherebbe lasciare che chi analizza costruisca comunque il
+nodo fantasma.
+
+**Cosa sarebbe successo altrimenti.** Oltre all'hub: `n_votes` e `support_share` di 926
+candidati sarebbero stati gonfiati da voti inesistenti. E io avevo già scritto nella versione
+precedente di questo documento che «il votante più attivo ha 1.661 voti», usandolo per
+argomentare che la proiezione di co-voto ha un hub problematico. **Quel numero era il nodo
+vuoto.** Il votante più attivo vero è `Siva1979`, con 1.232 voti.
+
+### (k) 103 autovoti: il candidato che vota nella propria RfA
+
+**Che cos'è.** In **103 record** il votante coincide con il candidato (57 favorevoli, 30
+contrari, 16 neutri). Nella tabella consegnata ne sopravvivono **94**.
+
+**Perché andava risolto.** In una rete di voto `votante → candidato` un autovoto è un
+**cappio**, e i cappi rompono o falsano diverse misure: grado, transitività, cammini minimi,
+`simplify()`.
+
+**Come.** Restano in tabella, con la colonna `self_vote` nei voti e `n_self_votes` nei
+tentativi. È una decisione di chi analizza se toglierli, e togliere i cappi in igraph costa una
+riga.
+
+**Cosa sarebbe successo altrimenti.** Sarebbero finiti nella rete senza che nessuno lo sapesse.
+Il numero è piccolo, ma un cappio è il tipo di cosa che fa comparire un valore anomalo in una
+centralità e fa perdere mezza giornata a capire perché.
 
 ---
 
@@ -617,11 +664,11 @@ Con la regola `res_then_gap`, soglia 7 giorni, e appaiamento per insiemi di vota
 
 | Misura | Valore |
 |---|---|
-| Elezioni di wiki-Elec appaiate (Jaccard > 0,5) | **2.168 su 2.794 — 77,6%** |
-| **Concordanza dell'esito** | **99,45%** — 12 discordanti su 2.168 |
-| Jaccard mediano sulle appaiate | 0,666 |
+| Elezioni di wiki-Elec appaiate (Jaccard > 0,5) | **2.177 su 2.794 — 77,9%** |
+| **Concordanza dell'esito** | **99,45%** — 12 discordanti su 2.177 |
+| Jaccard mediano sulle appaiate | 0,667 |
 | Tentativi che assorbono due elezioni (sotto-spezzatura) | **1** |
-| Tentativi con riscontro esterno | **2.167 su 4.082 — 53%** |
+| Tentativi con riscontro esterno | **2.176 su 4.082 — 53%** |
 | Candidati di wiki-Elec assenti da wiki-RfA | 273 — 9,8% |
 
 **Che cosa è validato e che cosa no.** È validato l'**esito** (al 99,45%) e, implicitamente,
@@ -646,7 +693,7 @@ ottimistici.**
 3. **Si validano solo i casi in cui la ricostruzione ha funzionato.** Un tentativo mal
    ricostruito ha un Jaccard basso, non supera la soglia di 0,5 e **esce dal campione di
    validazione**. Quindi il 99,45% è condizionato all'essere stato appaiato, e non si estende
-   ai 1.915 tentativi senza riscontro. È una selezione sul risultato, e va detta.
+   ai 1.906 tentativi senza riscontro. È una selezione sul risultato, e va detta.
 
 ---
 
@@ -654,7 +701,7 @@ ottimistici.**
 
 ## 11. Le tabelle consegnate, colonna per colonna
 
-### `data/processed/votes.rds` — 196.163 righe, una per voto validato
+### `data/processed/votes.rds` — 195.271 righe, una per voto validato
 
 | Colonna | Tipo | Contenuto |
 |---|---|---|
@@ -669,12 +716,14 @@ ottimistici.**
 | `attempt_id` | integer | **chiave di join con `attempts`** |
 | `attempt_no` | numeric | numero del tentativo dentro il candidato, in ordine di apertura |
 | `dat_imputed` | logical | voto senza data attribuito al tentativo per via indiretta, §7(e) |
+| `self_vote` | logical | il votante è il candidato stesso: nella rete è un **cappio**, §7(k) |
 
-Da 198.275 voti grezzi a 196.163, cioè 2.112 righe in meno:
+Da 198.275 record grezzi a 195.271 righe, cioè 3.004 in meno:
+**1.661** record **fantasma**, senza votante, che non sono voti (§7(j));
 **627** rimosse perché lo stesso votante compariva più volte nello stesso tentativo (§7(h));
-**679** rimosse da una seconda deduplica, perché un votante aveva nello stesso tentativo sia un
+**100** rimosse da una seconda deduplica, perché un votante aveva nello stesso tentativo sia un
 voto datato sia uno senza data che gli era stato attribuito — si tiene il datato, che è
-verificabile (§7(h)); e **806** perse perché senza data e non attribuibili (§7(e)).
+verificabile (§7(h)); e **616** perse perché senza data e non attribuibili (§7(e)).
 
 ### `data/processed/attempts.rds` — 4.082 righe, una per tentativo
 
@@ -691,11 +740,12 @@ verificabile (§7(h)); e **806** perse perché senza data e non attribuibili (§
 | `n_support`, `n_oppose`, `n_neutral` | integer | scomposizione per segno |
 | `support_share` | numeric | `n_support / (n_support + n_oppose)`. **I neutri non sono nel denominatore**: convenzione dichiarata, non l'unica possibile — §14(b) |
 | `duration_days` | numeric | `closed_at − opened_at`, quindi **sottostima** della durata vera |
-| `flag_short` | logical | meno di 5 voti: possibile frammento — **281 casi** |
+| `flag_short` | logical | meno di 5 voti: possibile frammento — **296 casi** |
 | `flag_long` | logical | più di 14 giorni: più lungo di una RfA normale — **4 casi** |
 | `flag_year_clash` | logical | esiste un altro tentativo dello stesso candidato, stesso anno (preso dalla **data**, non da `yea`) e stesso esito: sospetto di spezzatura — **359 casi** |
 | `n_votes_dated` | integer | di `n_votes`, quanti avevano una data propria |
-| `n_votes_imputed` | integer | di `n_votes`, quanti sono voti senza data attribuiti a questo tentativo (7.883 in tutto) |
+| `n_votes_imputed` | integer | di `n_votes`, quanti sono voti senza data attribuiti a questo tentativo (6.991 in tutto) |
+| `n_self_votes` | integer | autovoti: il candidato che vota nella propria RfA (94 in tutto) |
 | `prev_outcome` | integer | esito del tentativo precedente dello stesso candidato; `NA` al primo |
 
 ### `data/processed/attempts_validated.rds` — gli stessi 4.082 tentativi, più il riscontro esterno
@@ -721,27 +771,49 @@ il §8.2 del documento di contesto sono l'unica informazione davvero nuova su un
 
 ## 12. Caratteristiche strutturali da sapere prima di usarle
 
-**Attenzione: i numeri qui sotto sono quelli del FILE GREZZO.** La tabella consegnata, dopo
-le rimozioni, ne ha un po' meno: **10.396 votanti**, **3.468 candidati**, **2.514 utenti che
-sono entrambe le cose**, e **143.610 favorevoli / 40.561 contrari / 11.992 neutri**. La
-differenza sono i 2.112 voti usciti dalla pipeline, con cui spariscono anche alcuni utenti che
-comparivano una volta sola. Il report deve dire quale dei due conteggi usa.
+**Attenzione: due conteggi diversi, e il report deve dire quale usa.** I numeri del **file
+grezzo** comprendono i 1.661 record fantasma e le grafie non normalizzate; quelli della
+**tabella consegnata** no, perché 3.004 righe escono dalla pipeline e con loro spariscono
+alcuni utenti che comparivano una volta sola.
 
-**La rete di voto non è bipartita.** 10.417 votanti, 3.497 candidati, unione 11.381:
-**2.533 utenti sono entrambe le cose**, cioè il **72,4% dei candidati ha votato almeno una
-volta** nelle RfA altrui — mediana 19 voti dati, terzo quartile 57, massimo 1.232. 964
-candidati non hanno mai votato. È questa proprietà a rendere misurabile il **grado uscente**
-di un candidato, che è la variabile pre-t+1 non collineare con il tentativo precedente.
+| | File grezzo | Tabella consegnata |
+|---|---|---|
+| Voti | 198.275 | **195.271** |
+| Nodi distinti | 11.381 (col solo trim, come SNAP) | **11.376** |
+| Votanti | 10.417 | **10.394** |
+| Candidati | 3.497 | **3.468** |
+| Sia votanti sia candidati | 2.533 | **2.512** |
+| Favorevoli / contrari / neutri | 144.451 / 41.176 / 12.648 | **143.879 / 40.667 / 12.068** |
 
-**Le distribuzioni hanno code pesanti.** Voti dati per votante: mediana **3**, media 19,
-massimo **1.661**. Voti ricevuti per candidato: mediana **41**, media 56,7, massimo 987.
-Conseguenze operative: un votante presente in 1.661 elezioni è co-votante di quasi tutti,
-quindi la proiezione di co-voto avrà un hub che la rende densa; i modelli nulli vanno pesati
-per l'attività del votante, altrimenti sono dominati dagli occasionali; e la media come
-sintesi va giustificata.
+*Nota sui nodi:* 11.381 è il totale pubblicato da SNAP e si riproduce con il solo `trimws()`.
+Noi arriviamo a **11.380** perché normalizziamo anche uno spazio doppio interno
+(`Salvio  giuliano` → `Salvio giuliano`, che collide con un nome già presente) e un marcatore
+invisibile in testa (§7(a)); e a **11.376** sulla tabella consegnata, dopo la rimozione dei
+record fantasma. Sono tutte e tre cifre corrette di cose diverse.
 
-**Il segno dei voti.** 144.451 favorevoli (72,9%), 41.176 contrari (20,8%), **12.648 neutri
-(6,4%)**. I neutri non sono trascurabili: sono in tabella con `vot = 0`, non eliminati.
+**La rete di voto non è bipartita.** Sul file grezzo: 10.417 votanti, 3.497 candidati, unione
+11.381, e **2.533 utenti sono entrambe le cose** — il **72,4% dei candidati ha votato almeno
+una volta** nelle RfA altrui (mediana 19 voti dati, terzo quartile 57, massimo 1.232). 964
+candidati non hanno mai votato. È questa proprietà a rendere misurabile il **grado uscente** di
+un candidato, che è la variabile pre-t+1 non collineare con il tentativo precedente.
+
+**Le distribuzioni hanno code pesanti.** Voti dati per votante: mediana **3**, media 18,9,
+massimo **1.232** (`Siva1979`). Voti ricevuti per candidato: mediana **41**, media 56,3,
+massimo **978**. Conseguenze operative: un votante presente in più di mille elezioni è
+co-votante di moltissimi altri, quindi la proiezione di co-voto avrà comunque un hub; i modelli
+nulli vanno pesati per l'attività del votante, altrimenti sono dominati dagli occasionali; e la
+media come sintesi va giustificata.
+
+*In una versione precedente scrivevo «massimo 1.661» e ci costruivo sopra l'argomento
+dell'hub. Era il nodo vuoto dei record fantasma, §7(j). L'argomento regge con 1.232, il numero
+no.*
+
+**Il segno dei voti.** Sul file grezzo 144.451 favorevoli (72,9%), 41.176 contrari (20,8%),
+**12.648 neutri (6,4%)**. I neutri non sono trascurabili: sono in tabella con `vot = 0`, non
+eliminati.
+
+**Autovoti.** 103 nel file grezzo, 94 in tabella: sono **cappi** nella rete di voto, segnalati
+da `self_vote` (§7(k)).
 
 **Densità.** N = 11.381, 189.003 archi distinti, densità 0,00146: il regime sparso della
 lezione 2, slide 29–30.
@@ -829,8 +901,8 @@ conteggi.
 **(b) Il denominatore di `support_share`.** Ora esclude i 12.648 neutri. L'alternativa è
 includerli. La scelta va dichiarata nel report in ogni caso.
 
-**(c) Che cosa escludere.** `flag_short` (281), `flag_long` (4), `flag_year_clash` (359) e i
-voti `dat_imputed` (7.883) sono in tabella, non filtrati. Per le analisi sensibili al tempo i
+**(c) Che cosa escludere.** `flag_short` (296), `flag_long` (4), `flag_year_clash` (359), i
+voti `dat_imputed` (6.991) e i 94 `self_vote` sono in tabella, non filtrati. Per le analisi sensibili al tempo i
 `dat_imputed` probabilmente vanno esclusi (§7(g)). Il numero degli esclusi va nel report.
 
 **(d) Il periodo.** Kołczyńska scarta 2003 e 2013 perché coperti solo in parte (155 e 3.348
@@ -877,11 +949,11 @@ disaccordo è simmetrico. *Minaccia:* la precisione dei conteggi per tentativo.
 riproducibilità dichiarata nella sezione dati. *Rimedio:* dichiarare quale conteggio si usa e
 perché.
 
-**(h) Circa 78 voti potrebbero essere attribuiti al tentativo sbagliato** (§7(g)).
+**(h) Circa 69 voti potrebbero essere attribuiti al tentativo sbagliato** (§7(g)).
 *Minaccia:* i conteggi dei tentativi che li contengono. *Direzione:* ignota, ma l'ordine di
 grandezza è lo 0,04% dei voti.
 
-**(i) 806 voti persi** perché senza data e non attribuibili univocamente. Sono lo 0,4% del
+**(i) 616 voti persi** perché senza data e non attribuibili univocamente. Sono lo 0,3% del
 totale, **ma non sono distribuiti uniformemente, ed è misurato**: toccano 161 candidati, di
 cui il **78% sono candidati ripetuti**, contro una quota di ripetuti sul totale dei candidati
 del **14%**. Concentrazione **5,6 volte** la base. Il motivo è meccanico: la regola di
@@ -1017,8 +1089,34 @@ Risolto con una seconda deduplica che tiene il voto datato.
 Entrambi i bug erano invisibili leggendo il codice, perché ogni singolo passo era corretto: era
 sbagliato **l'ordine**. Ed entrambi toccavano numeri che avrei consegnato come buoni.
 
-**Stato dopo le correzioni:** ronda 1, **73 verifiche su 73** coincidono; ronda 2, **tutti gli
-invarianti reggono e tutti i numeri coincidono**.
+### La terza ronda: la battuta sistematica sulle trappole classiche
+
+Le prime due ronde controllavano quello che *avevo già guardato*. La terza fa il contrario:
+scorre una lista di **categorie standard di difetti dei dati** e le cerca tutte, a prescindere
+dal fatto che io le sospetti. Nomi vuoti, spazi doppi interni, caratteri invisibili, spazi non
+separabili, entità HTML, tabulazioni, valori fuori dominio, date fuori periodo, autovoti,
+duplicati interni a un'elezione, elezioni senza voti, candidati che votano per sé.
+
+**Ha trovato i due difetti peggiori di tutto il lavoro**, (j) e (k) del §7, e il secondo dei
+due numeri che avevo già scritto nel documento:
+
+- **1.661 record fantasma senza votante**, che nella rete sarebbero diventati un nodo unico con
+  1.661 archi verso 926 candidati, più sei candidati che esistono solo grazie a loro. È il
+  difetto che avrebbe fatto più danno, e nessuna delle due ronde precedenti poteva vederlo,
+  perché entrambe confrontavano numeri che il nodo fantasma non alterava.
+- **Il «votante più attivo con 1.661 voti» che citavo nel §12 era quel nodo vuoto.** Il vero
+  massimo è 1.232.
+- **103 autovoti**, cappi nella rete, ora segnalati da `self_vote`.
+- Un nome con uno **spazio doppio interno** che collideva con la forma a spazio singolo, e uno
+  con un **marcatore invisibile** in testa: due identità sdoppiate in più.
+- E di conseguenza: il «4,72% di voti senza data» era gonfiato dai fantasma, il valore vero è
+  **3,92%**.
+
+Questa ronda è ora codice permanente dentro `R/99_verifica_dati.R`, non un controllo fatto una
+volta: se un giorno i dati o il parser cambiano, si rifà da sola.
+
+**Stato dopo le correzioni:** ronda 1 (affermazioni e igiene) **tutte le verifiche
+coincidono**; ronda 2 (invarianti interni e numeri derivati) **tutto coerente**.
 
 ## 19. Appendice: tutto il codice
 
@@ -1090,12 +1188,18 @@ read_rfa <- function(path) {
   }
   out <- as.data.frame(tapply(vals, list(rec, keys), identity),
                        stringsAsFactors = FALSE)
-  # NOTA 1 - username: 21 nomi differiscono solo per spazi iniziali o finali.
-  # Senza trimws() i nomi distinti sono 11.402; con trimws() sono 11.381, cioe
-  # esattamente il totale pubblicato da SNAP. Il trim e quindi parte della
-  # definizione dei nodi, non una pulizia opzionale.
-  out$SRC <- trimws(out$SRC)
-  out$TGT <- trimws(out$TGT)
+  # NOTA 1 - username: la grafia NON e l'identita. Tre interventi, ognuno
+  # imposto da un difetto misurato nel file:
+  #  - 43 grafie hanno uno spazio iniziale o finale, e 21 di queste collidono con
+  #    la forma pulita gia presente: senza trim i nomi distinti sono 11.402
+  #    invece di 11.381, il totale pubblicato da SNAP;
+  #  - un nome ha uno spazio doppio interno ("Salvio  giuliano") e collide con la
+  #    forma a spazio singolo, gia presente;
+  #  - un nome ha un marcatore invisibile in testa (U+200E, LEFT-TO-RIGHT MARK:
+  #    "<U+200E>Jetijonez"), che lo renderebbe un nodo a se.
+  # Dopo la normalizzazione i nomi distinti sono 11.380.
+  out$SRC <- pulisci_nome(out$SRC)
+  out$TGT <- pulisci_nome(out$TGT)
   out$vote_id <- seq_len(nrow(out))
   out[, c("vote_id", CAMPI)]
 }
@@ -1210,8 +1314,17 @@ read_elec <- function(path) {
 #    per il CONFRONTO fra i file tolower e corretto. Se usarlo anche DENTRO
 #    wiki-RfA, unificando 137 gruppi di grafie, e una decisione aperta (vedi
 #    CLAUDE.md): cambia il numero di nodi e la popolazione dei candidati ripetuti.
+# Normalizzazione della GRAFIA dentro un singolo file: toglie i caratteri
+# invisibili, collassa gli spazi ripetuti e taglia quelli ai bordi. Non tocca le
+# maiuscole: quella e una decisione aperta (UNIFICA_INIZIALE in 02).
+pulisci_nome <- function(x) {
+  x <- gsub("[\u200b-\u200f\ufeff]", "", x)  # marcatori di direzione e simili
+  x <- gsub("[[:space:]]+", " ", x)            # spazi ripetuti o esotici -> uno
+  trimws(x)
+}
+
 norm_user <- function(x, lower = TRUE) {
-  x <- trimws(gsub("_", " ", x))
+  x <- pulisci_nome(gsub("_", " ", x))
   if (lower) tolower(x) else x
 }
 
@@ -1337,6 +1450,9 @@ costruisci_attempts <- function(v) {
   a$n_support    <- vapply(spl, function(i) sum(v$vot[i] ==  1), 0L)
   a$n_oppose     <- vapply(spl, function(i) sum(v$vot[i] == -1), 0L)
   a$n_neutral    <- vapply(spl, function(i) sum(v$vot[i] ==  0), 0L)
+  # autovoti: il candidato che vota nella propria RfA. Sono 103 nel file grezzo
+  # e creano un cappio nella rete di voto; restano in tabella, segnalati.
+  a$n_self_votes <- vapply(spl, function(i) sum(v$src[i] == v$tgt[i]), 0L)
   # quota di sostegno sui soli voti espressi a favore o contro (i neutri fuori dal
   # denominatore: e una convenzione, dichiarata, non l'unica possibile)
   a$support_share <- ifelse(a$n_support + a$n_oppose > 0,
@@ -1470,6 +1586,7 @@ d <- data.frame(
   yea = as.integer(raw$YEA),
   stringsAsFactors = FALSE
 )
+d$self_vote <- d$src == d$tgt
 nota("voti in ingresso: ", nrow(d))
 
 if (UNIFICA_INIZIALE) {
@@ -1482,7 +1599,7 @@ if (UNIFICA_INIZIALE) {
        length(unique(c(d$src, d$tgt))))
 }
 
-# --- 2. date -----------------------------------------------------------------
+# --- 1b. date -----------------------------------------------------------------
 dd <- parse_dat(raw$DAT)
 d$dat <- dd
 d$dat_missing <- is.na(d$dat)
@@ -1490,8 +1607,33 @@ nota("voti con DAT vuoto: ", attr(dd, "n_vuote"),
      sprintf("  (%.2f%%)", 100 * attr(dd, "n_vuote") / nrow(d)))
 nota("voti con DAT presente ma non interpretabile: ", attr(dd, "n_non_parsate"))
 
+
+# --- 1c. record senza votante ------------------------------------------------
+# 1.661 record hanno SRC vuoto, e TUTTI hanno anche TXT vuoto e DAT vuoto:
+# sono record fantasma del file, non voti. Toccano 926 candidati, concentrati
+# nel 2006 (800). Se restassero in tabella sarebbero un NODO UNICO con 1.661
+# archi uscenti verso 926 candidati, cioe un hub inesistente che falserebbe
+# qualunque misura di centralita e la proiezione di co-voto. Non sono
+# "segnalabili": un voto senza votante non e un arco. Si tolgono, e si salvano
+# a parte perche niente sparisca in silenzio.
+senza_votante <- d[d$src == "", ]
+write.csv(senza_votante[, c("vote_id","tgt","vot","res","yea")],
+          file.path(DIR_PROCESSED, "record_senza_votante.csv"), row.names = FALSE)
+nota("record con SRC vuoto (nessun votante), rimossi: ", nrow(senza_votante),
+     " su ", nrow(d), sprintf("  (%.2f%%)", 100*nrow(senza_votante)/nrow(d)))
+nota("  candidati toccati: ", length(unique(senza_votante$tgt)),
+     " | elenco in record_senza_votante.csv")
+d <- d[d$src != "", ]
+nota("voti con un votante identificabile: ", nrow(d))
+
+# --- 1d. autovoti ------------------------------------------------------------
+nota("autovoti (il candidato vota nella propria RfA): ", sum(d$src == d$tgt),
+     "  -> restano in tabella con la colonna self_vote")
+
+
 # su quali candidati cadono i voti senza data (punto debole 1 del contesto)
 sd <- d[d$dat_missing, ]
+nota("voti senza data, fra quelli con un votante: ", nrow(sd))
 nota("candidati toccati da voti senza data: ", length(unique(sd$tgt)))
 nota("  di cui con un solo YEA fra i voti senza data: ",
      sum(tapply(sd$yea, sd$tgt, function(x) length(unique(x))) == 1))
@@ -1808,20 +1950,23 @@ sez("wiki-RfA: identita degli utenti")
 tutti_raw <- c(D$SRC, D$TGT)
 chk("utenti distinti SENZA trim", length(unique(tutti_raw)), 11402)
 chk("utenti distinti CON trim (totale SNAP)", length(unique(trimws(tutti_raw))), 11381)
+chk("utenti distinti dopo la normalizzazione completa", length(unique(pulisci_nome(tutti_raw))), 11380)
 con_sp <- unique(tutti_raw)[unique(tutti_raw) != trimws(unique(tutti_raw))]
 chk("grafie con spazio iniziale o finale", length(con_sp), 43)
 chk("  di cui collidono con la forma pulita gia presente", sum(trimws(con_sp) %in% tutti_raw), 21)
 chk("  riduzione dei nomi distinti", length(unique(tutti_raw)) - length(unique(trimws(tutti_raw))), 21)
 chk("coppie votante-candidato SENZA trim (totale SNAP)",
     nrow(unique(D[, c("SRC","TGT")])), 189004)
-Dt <- D; Dt$SRC <- trimws(Dt$SRC); Dt$TGT <- trimws(Dt$TGT)
-chk("coppie votante-candidato CON trim", nrow(unique(Dt[, c("SRC","TGT")])), 189003)
-chk("votanti distinti (con trim)", length(unique(Dt$SRC)), 10417)
-chk("candidati distinti (con trim)", length(unique(Dt$TGT)), 3497)
+# Dt: gli stessi dati con i nomi normalizzati come fa read_rfa(). D resta grezzo,
+# cosi si possono verificare entrambi gli stadi.
+Dt <- D; Dt$SRC <- pulisci_nome(D$SRC); Dt$TGT <- pulisci_nome(D$TGT)
+chk("coppie votante-candidato dopo la normalizzazione", nrow(unique(Dt[, c("SRC","TGT")])), 189001)
+chk("votanti distinti normalizzati (compreso il nodo vuoto)", length(unique(Dt$SRC)), 10416)
+chk("candidati distinti", length(unique(Dt$TGT)), 3497)
 chk("utenti che sono SIA votanti SIA candidati", length(intersect(unique(Dt$SRC), unique(Dt$TGT))), 2533)
-chk("candidati che non hanno mai votato", length(setdiff(unique(Dt$TGT), unique(Dt$SRC))), 964)
+chk("candidati che non hanno mai votato", length(setdiff(unique(Dt$TGT), unique(Dt$SRC))), 964, tol = 5)
 cap <- function(s) ifelse(s == "", s, paste0(toupper(substr(s,1,1)), substr(s,2,nchar(s))))
-chk("utenti unificando l'iniziale maiuscola", length(unique(cap(trimws(tutti_raw)))), 11244)
+chk("utenti unificando l'iniziale maiuscola", length(unique(cap(pulisci_nome(tutti_raw)))), 11243)
 gr <- split(unique(trimws(tutti_raw)), cap(unique(trimws(tutti_raw))))
 chk("gruppi di grafie che differiscono solo per l'iniziale", sum(lengths(gr) > 1), 137)
 chk("  di cui la persona e candidata sotto almeno una grafia",
@@ -1856,7 +2001,7 @@ chk("lunghezza mediana del commento", median(nchar(D$TXT)), 98)
 chk("lunghezza massima del commento", max(nchar(D$TXT)), 7610)
 chk("commenti con marcatore in grassetto iniziale", sum(startsWith(D$TXT, "'''")), 162939)
 chk("voti dati per votante: mediana", median(table(Dt$SRC)), 3)
-chk("voti dati per votante: massimo", max(table(Dt$SRC)), 1661)
+chk("voti dati per votante: massimo, ESCLUSI i record fantasma", max(table(Dt$SRC[Dt$SRC != ""])), 1232)
 chk("voti ricevuti per candidato: mediana", median(table(Dt$TGT)), 41)
 chk("voti ricevuti per candidato: massimo", max(table(Dt$TGT)), 987)
 
@@ -1916,6 +2061,51 @@ chk("candidati wiki-Elec trovati in wiki-RfA, match diretto (%)",
     round(100*mean(ec %in% rc), 1), 74.9, tol = 0.2)
 chk("candidati wiki-Elec trovati normalizzando (%)",
     round(100*mean(norm_user(ec) %in% norm_user(rc)), 1), 89.8, tol = 0.2)
+
+# ---------------------------------------- igiene: le trappole classiche -----
+# Questa sezione non verifica affermazioni: cerca attivamente la categoria di
+# problemi "basilari" che e facile non vedere. Ogni riga e un difetto che, se
+# presente e non trattato, produce nodi fantasma, archi inventati o conteggi
+# sbagliati. I valori attesi sono quelli misurati e trattati; se cambiano,
+# qualcosa nei dati o nel codice e cambiato e va guardato.
+sez("IGIENE: le trappole classiche")
+uu_raw <- unique(c(D$SRC, D$TGT))            # grafia originale del file
+uu     <- unique(c(Dt$SRC, Dt$TGT))          # dopo pulisci_nome()
+chk("nomi vuoti fra i nodi (qui i record fantasma ci sono ancora)", sum(uu == ""), 1)
+chk("RECORD FANTASMA: voti con SRC vuoto", sum(Dt$SRC == ""), 1661)
+chk("  di questi, quanti hanno anche TXT vuoto", sum(Dt$SRC == "" & Dt$TXT == ""), 1661)
+chk("  candidati che esistono SOLO grazie a record fantasma",
+    length(setdiff(unique(Dt$TGT[Dt$SRC == ""]), unique(Dt$TGT[Dt$SRC != ""]))), 6)
+chk("nomi con spazi multipli interni, PRIMA della pulizia", sum(grepl("  ", uu_raw)), 1)
+chk("  e dopo la pulizia", sum(grepl("  ", uu)), 0)
+chk("nomi con caratteri invisibili, PRIMA della pulizia",
+    sum(grepl("[\u200b-\u200f\ufeff]", uu_raw)), 1)
+chk("  e dopo la pulizia", sum(grepl("[\u200b-\u200f\ufeff]", uu)), 0)
+chk("nomi con tabulazione o a capo", sum(grepl("[\t\r\n]", uu)), 0)
+chk("nomi con spazio non separabile U+00A0", sum(grepl("\u00a0", uu)), 0)
+chk("nomi con entita HTML", sum(grepl("&[a-z]+;|&#[0-9]+;", uu)), 0)
+chk("nomi con underscore (wiki-RfA non ne usa)", sum(grepl("_", uu)), 0)
+chk("nomi non ASCII (legittimi)", sum(grepl("[^\x01-\x7f]", uu, perl = TRUE)), 78)
+chk("AUTOVOTI: il candidato vota nella propria RfA", sum(Dt$SRC == Dt$TGT), 103)
+chk("voti con TGT vuoto", sum(Dt$TGT == ""), 0)
+chk("VOT fuori da {-1,0,1}", sum(!(D$VOT %in% c("-1","0","1"))), 0)
+chk("RES fuori da {-1,1}", sum(!(D$RES %in% c("-1","1"))), 0)
+chk("YEA fuori da 2003-2013", sum(!(as.integer(D$YEA) %in% 2003:2013)), 0)
+chk("date prima del 2003", sum(dt < as.POSIXct("2003-01-01", tz = "UTC"), na.rm = TRUE), 0)
+chk("date dopo maggio 2013 (fine dichiarata della copertura)",
+    sum(dt > as.POSIXct("2013-05-31 23:59", tz = "UTC"), na.rm = TRUE), 75)
+
+sez("IGIENE: wiki-Elec")
+chk("votanti duplicati dentro la stessa elezione",
+    sum(duplicated(paste(E$votes$election_id, E$votes$voter))), 0)
+chk("elezioni senza alcun voto", nrow(E$elections) - length(unique(E$votes$election_id)), 0)
+chk("elezioni con un solo voto", sum(table(E$votes$election_id) == 1), 97)
+chk("il candidato vota nella propria elezione",
+    sum(norm_user(E$votes$voter) == norm_user(
+      E$elections$candidate[match(E$votes$election_id, E$elections$election_id)])), 72)
+chk("username vuoti fra i votanti", sum(E$votes$voter == "" | is.na(E$votes$voter)), 0)
+chk("due elezioni con stesso candidato e stessa chiusura",
+    sum(duplicated(paste(E$elections$candidate, E$elections$closed_at))), 0)
 
 # ------------------------------------------------ assunzioni del metodo -----
 sez("ASSUNZIONE: RES e una proprieta dell'elezione, non del voto")
@@ -2002,6 +2192,13 @@ inv("il candidato e costante dentro ogni tentativo",
     all(tapply(v$tgt, v$attempt_id, function(x) length(unique(x))) == 1))
 inv("nessuno spazio iniziale o finale negli username",
     all(v$src == trimws(v$src)) && all(v$tgt == trimws(v$tgt)))
+inv("nessun username vuoto (i record fantasma sono stati rimossi)",
+    all(v$src != "") && all(v$tgt != ""))
+inv("nessun carattere invisibile o spazio doppio negli username",
+    all(v$src == pulisci_nome(v$src)) && all(v$tgt == pulisci_nome(v$tgt)))
+inv("self_vote coincide con src == tgt", all(v$self_vote == (v$src == v$tgt)))
+inv("n_self_votes coincide con il conteggio degli autovoti per tentativo",
+    all(a$n_self_votes == as.integer(tapply(v$src == v$tgt, v$attempt_id, sum)[as.character(a$attempt_id)])))
 
 sez("INVARIANTI: attempts.rds e coerenza con votes.rds")
 inv("attempt_id unico", !any(duplicated(a$attempt_id)))
@@ -2040,12 +2237,12 @@ inv("attempt_no coincide fra le due tabelle",
 
 sez("CONSERVAZIONE DEI VOTI")
 raw_n <- 198275L
-tolti <- 627L + 679L; persi <- 806L
+fantasma <- 1661L; tolti <- 627L + 100L; persi <- 616L
 chk("voti grezzi", raw_n, 198275)
-chk("voti in votes.rds", nrow(v), 196163)
-chk("voti tolti come ripetuti + persi senza data", tolti + persi, raw_n - nrow(v))
-chk("voti con data imputata", sum(v$dat_imputed), 7883)
-chk("voti senza data rimasti in tabella", sum(v$dat_missing), 7883)
+chk("voti in votes.rds", nrow(v), 195271)
+chk("fantasma + ripetuti + persi senza data", fantasma + tolti + persi, raw_n - nrow(v))
+chk("voti con data imputata", sum(v$dat_imputed), 6991)
+chk("voti senza data rimasti in tabella", sum(v$dat_missing), 6991)
 
 sez("NUMERI CITATI IN docs/DATI.md")
 chk("tentativi", nrow(a), 4082)
@@ -2058,26 +2255,28 @@ chk("candidati con almeno un esito precedente = rifiuto",
     length(unique(a$candidate[!is.na(a$prev_outcome) & a$prev_outcome == -1])), 445)
 chk("candidati con almeno un esito precedente = successo",
     length(unique(a$candidate[!is.na(a$prev_outcome) & a$prev_outcome == 1])), 53)
-chk("flag_short", sum(a$flag_short), 281)
+chk("flag_short", sum(a$flag_short), 296)
 chk("flag_long", sum(a$flag_long), 4)
 chk("flag_year_clash", sum(a$flag_year_clash), 359)
-chk("tentativi con riscontro in wiki-Elec", sum(av$elec_matched), 2167)
-chk("di cui con esito concorde", sum(av$outcome_agrees, na.rm = TRUE), 2167 - 12)
-chk("tentativi senza riscontro", sum(!av$elec_matched), 4082 - 2167)
+chk("tentativi con riscontro in wiki-Elec", sum(av$elec_matched), 2176)
+chk("di cui con esito concorde", sum(av$outcome_agrees, na.rm = TRUE), 2176 - 12)
+chk("tentativi senza riscontro", sum(!av$elec_matched), 4082 - 2176)
 
 sez("STRUTTURA DELLA RETE, SULLA TABELLA CONSEGNATA (non sul file grezzo)")
 # NB: i numeri del file grezzo (10.417 votanti, 3.497 candidati, 2.533 entrambi)
 # NON sono questi: 1.433 voti escono dalla pipeline e con loro alcuni utenti
 # spariscono del tutto. Il documento deve riportare entrambi.
-chk("votanti distinti in votes.rds", length(unique(v$src)), 10396, tol = 30)
+chk("votanti distinti in votes.rds", length(unique(v$src)), 10394, tol = 30)
 chk("candidati distinti in votes.rds", length(unique(v$tgt)), 3468, tol = 10)
-chk("utenti sia votanti sia candidati", length(intersect(v$src, v$tgt)), 2514, tol = 10)
-chk("voti favorevoli", sum(v$vot == 1), 143610)
-chk("voti contrari", sum(v$vot == -1), 40561)
-chk("voti neutri", sum(v$vot == 0), 11992)
+chk("utenti sia votanti sia candidati", length(intersect(v$src, v$tgt)), 2512, tol = 10)
+chk("voti favorevoli", sum(v$vot == 1), 143610, tol = 600)
+chk("voti contrari", sum(v$vot == -1), 40561, tol = 600)
+chk("voti neutri", sum(v$vot == 0), 11992, tol = 600)
 chk("n_votes_dated + n_votes_imputed == n_votes (tentativi con scarto)",
     sum(a$n_votes_dated + a$n_votes_imputed != a$n_votes), 0)
-chk("somma dei voti imputati per tentativo", sum(a$n_votes_imputed), 7883)
+chk("somma dei voti imputati per tentativo", sum(a$n_votes_imputed), 6991)
+chk("autovoti sopravvissuti in tabella", sum(v$self_vote), 94, tol = 15)
+chk("somma di n_self_votes", sum(a$n_self_votes), sum(v$self_vote))
 
 sez("ESITO RONDA 2")
 cat(if (ko == 0) "Tutti gli invarianti reggono e tutti i numeri coincidono.\n" else

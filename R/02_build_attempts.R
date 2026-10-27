@@ -39,6 +39,7 @@ d <- data.frame(
   yea = as.integer(raw$YEA),
   stringsAsFactors = FALSE
 )
+d$self_vote <- d$src == d$tgt
 nota("voti in ingresso: ", nrow(d))
 
 if (UNIFICA_INIZIALE) {
@@ -51,7 +52,7 @@ if (UNIFICA_INIZIALE) {
        length(unique(c(d$src, d$tgt))))
 }
 
-# --- 2. date -----------------------------------------------------------------
+# --- 1b. date -----------------------------------------------------------------
 dd <- parse_dat(raw$DAT)
 d$dat <- dd
 d$dat_missing <- is.na(d$dat)
@@ -59,8 +60,33 @@ nota("voti con DAT vuoto: ", attr(dd, "n_vuote"),
      sprintf("  (%.2f%%)", 100 * attr(dd, "n_vuote") / nrow(d)))
 nota("voti con DAT presente ma non interpretabile: ", attr(dd, "n_non_parsate"))
 
+
+# --- 1c. record senza votante ------------------------------------------------
+# 1.661 record hanno SRC vuoto, e TUTTI hanno anche TXT vuoto e DAT vuoto:
+# sono record fantasma del file, non voti. Toccano 926 candidati, concentrati
+# nel 2006 (800). Se restassero in tabella sarebbero un NODO UNICO con 1.661
+# archi uscenti verso 926 candidati, cioe un hub inesistente che falserebbe
+# qualunque misura di centralita e la proiezione di co-voto. Non sono
+# "segnalabili": un voto senza votante non e un arco. Si tolgono, e si salvano
+# a parte perche niente sparisca in silenzio.
+senza_votante <- d[d$src == "", ]
+write.csv(senza_votante[, c("vote_id","tgt","vot","res","yea")],
+          file.path(DIR_PROCESSED, "record_senza_votante.csv"), row.names = FALSE)
+nota("record con SRC vuoto (nessun votante), rimossi: ", nrow(senza_votante),
+     " su ", nrow(d), sprintf("  (%.2f%%)", 100*nrow(senza_votante)/nrow(d)))
+nota("  candidati toccati: ", length(unique(senza_votante$tgt)),
+     " | elenco in record_senza_votante.csv")
+d <- d[d$src != "", ]
+nota("voti con un votante identificabile: ", nrow(d))
+
+# --- 1d. autovoti ------------------------------------------------------------
+nota("autovoti (il candidato vota nella propria RfA): ", sum(d$src == d$tgt),
+     "  -> restano in tabella con la colonna self_vote")
+
+
 # su quali candidati cadono i voti senza data (punto debole 1 del contesto)
 sd <- d[d$dat_missing, ]
+nota("voti senza data, fra quelli con un votante: ", nrow(sd))
 nota("candidati toccati da voti senza data: ", length(unique(sd$tgt)))
 nota("  di cui con un solo YEA fra i voti senza data: ",
      sum(tapply(sd$yea, sd$tgt, function(x) length(unique(x))) == 1))

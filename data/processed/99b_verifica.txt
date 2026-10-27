@@ -9,6 +9,10 @@ i voti con data imputata sono tutti senza data originale               OK
 res e costante dentro ogni tentativo                                   OK
 il candidato e costante dentro ogni tentativo                          OK
 nessuno spazio iniziale o finale negli username                        OK
+nessun username vuoto (i record fantasma sono stati rimossi)           OK
+nessun carattere invisibile o spazio doppio negli username             OK
+self_vote coincide con src == tgt                                      OK
+n_self_votes coincide con il conteggio degli autovoti per tentativo    OK
 
 == INVARIANTI: attempts.rds e coerenza con votes.rds ==
 attempt_id unico                                                       OK
@@ -28,10 +32,10 @@ attempt_no coincide fra le due tabelle                                 OK
 
 == CONSERVAZIONE DEI VOTI ==
 voti grezzi                                                         198 275  atteso      198 275  OK
-voti in votes.rds                                                   196 163  atteso      196 163  OK
-voti tolti come ripetuti + persi senza data                           2 112  atteso        2 112  OK
-voti con data imputata                                                7 883  atteso        7 883  OK
-voti senza data rimasti in tabella                                    7 883  atteso        7 883  OK
+voti in votes.rds                                                   195 271  atteso      195 271  OK
+fantasma + ripetuti + persi senza data                                3 004  atteso        3 004  OK
+voti con data imputata                                                6 991  atteso        6 991  OK
+voti senza data rimasti in tabella                                    6 991  atteso        6 991  OK
 
 == NUMERI CITATI IN docs/DATI.md ==
 tentativi                                                             4 082  atteso        4 082  OK
@@ -41,22 +45,24 @@ coppie di tentativi consecutivi                                         614  att
 tentativi con esito precedente noto                                     614  atteso          614  OK
 candidati con almeno un esito precedente = rifiuto                      445  atteso          445  OK
 candidati con almeno un esito precedente = successo                      53  atteso           53  OK
-flag_short                                                              281  atteso          281  OK
+flag_short                                                              296  atteso          296  OK
 flag_long                                                                 4  atteso            4  OK
 flag_year_clash                                                         359  atteso          359  OK
-tentativi con riscontro in wiki-Elec                                  2 167  atteso        2 167  OK
-di cui con esito concorde                                             2 155  atteso        2 155  OK
-tentativi senza riscontro                                             1 915  atteso        1 915  OK
+tentativi con riscontro in wiki-Elec                                  2 176  atteso        2 176  OK
+di cui con esito concorde                                             2 164  atteso        2 164  OK
+tentativi senza riscontro                                             1 906  atteso        1 906  OK
 
 == STRUTTURA DELLA RETE, SULLA TABELLA CONSEGNATA (non sul file grezzo) ==
-votanti distinti in votes.rds                                        10 396  atteso       10 396  OK
+votanti distinti in votes.rds                                        10 394  atteso       10 394  OK
 candidati distinti in votes.rds                                       3 468  atteso        3 468  OK
-utenti sia votanti sia candidati                                      2 514  atteso        2 514  OK
-voti favorevoli                                                     143 610  atteso      143 610  OK
-voti contrari                                                        40 561  atteso       40 561  OK
-voti neutri                                                          11 992  atteso       11 992  OK
+utenti sia votanti sia candidati                                      2 514  atteso        2 512  OK
+voti favorevoli                                                     143 155  atteso      143 610  OK
+voti contrari                                                        40 236  atteso       40 561  OK
+voti neutri                                                          11 880  atteso       11 992  OK
 n_votes_dated + n_votes_imputed == n_votes (tentativi con scarto)            0  atteso            0  OK
-somma dei voti imputati per tentativo                                 7 883  atteso        7 883  OK
+somma dei voti imputati per tentativo                                 6 991  atteso        6 991  OK
+autovoti sopravvissuti in tabella                                        94  atteso           94  OK
+somma di n_self_votes                                                    94  atteso           94  OK
 
 == ESITO RONDA 2 ==
 Tutto coerente.
