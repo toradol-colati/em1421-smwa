@@ -1,4 +1,6 @@
-# Percorsi e utilità comuni. Da eseguire dalla radice del repo (source(), non standalone).
+# Shared paths and helpers. Sourced by the other scripts; not meant to be run
+# on its own. All paths are relative to the repository root, so every script
+# must be launched from there.
 
 DIR_RAW       <- file.path("data", "raw")
 DIR_PROCESSED <- file.path("data", "processed")
@@ -9,7 +11,8 @@ FILE_ELEC <- file.path(DIR_RAW, "wikiElec.ElecBs3.txt.gz")
 
 stop_if_missing <- function(path) {
   if (!file.exists(path)) {
-    stop("File assente: ", path, ". Vedi data/raw/README.md per il download.", call. = FALSE)
+    stop("Missing file: ", path, ". See data/raw/README.md for how to get it.",
+         call. = FALSE)
   }
   invisible(TRUE)
 }

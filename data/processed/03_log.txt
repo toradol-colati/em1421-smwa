@@ -1,25 +1,26 @@
-wiki-Elec: 2794 elezioni, chiusure dichiarate da 2004-09-17 a 2008-01-06, voti dal 2004-04-02.
-Il campo T (chiusura) e INAFFIDABILE: scarto fra T e l'ultimo voto della stessa
-  elezione, mediana 102.4 giorni; oltre 30 giorni nel 54% dei casi; oltre 180 giorni in 1217 elezioni; minimo -188.1 giorni (T prima dell'ultimo voto).
-  Per questo l'appaiamento usa gli INSIEMI DI VOTANTI, non le date.
+wiki-Elec: 2794 elections, declared closing times from 2004-09-17 to 2008-01-06, votes from 2004-04-02.
+Field T (closing time) is UNRELIABLE: the gap between T and the last vote
+  of the same election has a median of 102.4 days; it exceeds 30 days in 54% of cases; it exceeds 180 days in 1217 elections; the minimum is -188.1 days (T before the last vote).
+  This is why matching uses VOTER SETS, not dates.
 
-sweep: 2 regole x 17 soglie...
+sweep: 2 rules x 17 thresholds...
 
-SCELTA DELLA SOGLIA
-  elezioni appaiate: 1949 a 4 giorni, 1947 a 7, 1947 a 21, 1899 a 60.
-  conteggio dei tentativi esatto: 94.3% a 4 giorni, 94.6% a 7, 95.5% a 60.
-  Entrambe le metriche sono piatte fra 4 e 21 giorni: la scelta NON e guidata
-  dai dati, ed e questo il risultato di robustezza. Si tiene 7 giorni, valore
-  del precedente pubblico (Kolczynska) e durata nominale di una RfA.
-  Regola scartata (gap_then_res): a 7 giorni produce 1678 tentativi con meno di 5 voti contro 330.
+CHOICE OF THE THRESHOLD
+  matched elections: 1949 at 4 days, 1947 at 7, 1947 at 21, 1899 at 60.
+  exact attempt count: 94.3% at 4 days, 94.6% at 7, 95.5% at 60.
+  Both measures are flat between 4 and 21 days: the choice is NOT driven
+  by the data, and that flatness is itself the robustness result. 7 days
+  is kept, the value of the published precedent (Kolczynska) and the
+  nominal length of an RfA.
+  Discarded rule (gap_then_res): at 7 days it produces 1678 attempts with fewer than 5 votes against 330.
 
---- VALIDAZIONE con res_then_gap e soglia 7 giorni ---
-elezioni appaiate (Jaccard > 0.5): 2177 su 2794  (77.9%)
-  con Jaccard > 0.3: 2353   candidato assente da wiki-RfA: 273  (9.8%)
-  Jaccard mediano sulle appaiate: 0.667
-CONCORDANZA DELL'ESITO: 99.45%  (discordanti: 12 su 2177)
-tentativi distinti appaiati: 2176 su 4082; tentativi che assorbono 2 elezioni: 1
-disaccordo sui singoli votanti (mediane): wiki-Elec ne ha 8 che io non ho, io ne ho 9 che loro non hanno,
-  su una mediana di 41 votanti per elezione. Numeri simili (uguali in 1024 elezioni), liste diverse.
-LIMITE: la validazione copre 2176 tentativi su 4082 (53%). Fuori dal periodo di wiki-Elec, cioe dal 2008 al 2013, non esiste.
-scritti: attempts_validated.rds, 03_match_wikielec.csv
+--- VALIDATION with res_then_gap and a 7-day threshold ---
+elections matched (Jaccard > 0.5): 2177 of 2794  (77.9%)
+  with Jaccard > 0.3: 2353   candidate absent from wiki-RfA: 273  (9.8%)
+  median Jaccard on the matched ones: 0.667
+OUTCOME AGREEMENT: 99.45%  (disagreements: 12 of 2177)
+distinct attempts matched: 2176 of 4082; attempts absorbing two elections: 1
+disagreement on individual voters (medians): wiki-Elec holds 8 that we do not, we hold 9 that it does not,
+  out of a median of 41 voters per election. Similar sizes (identical in 1024 elections), different lists.
+LIMIT: the validation covers 2176 attempts of 4082 (53%). Outside the period covered by wiki-Elec, that is from 2008 to 2013, no validation exists.
+written: attempts_validated.rds, 03_match_wikielec.csv

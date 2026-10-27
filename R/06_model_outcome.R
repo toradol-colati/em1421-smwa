@@ -1,13 +1,14 @@
-# 06 – Esito del tentativo successivo.
+# 06 - Outcome of the next attempt.  [SKELETON]
 # Input : data/processed/features.rds
 # Output: data/processed/model_*.rds
 #
-# Confronto descrittivo per esito precedente, poi regressione logistica parsimoniosa.
-# Vincoli:
-#   - nessun predittore osservato durante t+1;
-#   - coppie di tentativi dello stesso candidato non indipendenti: una coppia per
-#     candidato, oppure raggruppamento per candidato;
-#   - contare i successi a t+1: circa 10 eventi per variabile;
-#   - termine di confronto: tasso di successo al primo tentativo, o un modello con solo
-#     esito precedente e anno;
-#   - l'anno va controllato comunque (gli standard RfA sono cambiati nel tempo).
+# Descriptive comparison by previous outcome, then a parsimonious logistic
+# regression. Constraints:
+#   - no predictor observed during t+1;
+#   - attempt pairs of the same candidate are not independent: keep one pair per
+#     candidate, or cluster by candidate;
+#   - count the successes at t+1: roughly 10 events per variable;
+#   - baseline: first-attempt success rate, or a model with previous outcome and
+#     year only;
+#   - the year must be controlled for in any case: RfA standards changed over
+#     time (success falls from 100% in 2003 to 31% in 2012 in our data).

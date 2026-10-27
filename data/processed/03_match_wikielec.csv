@@ -1,4 +1,4 @@
-"election_id","candidate","outcome","closed_at","ult_voto","jaccard","mio_attempt"
+"election_id","candidate","outcome","closed_at","last_vote","jaccard","my_attempt"
 1,"cjcurrie",1,2004-09-21 01:15:53,2004-09-20 22:20:00,0.741935483870968,680
 2,"zoney",1,2004-09-21 20:49:47,2004-09-21 00:55:00,0.777777777777778,4064
 3,"gerald_farinas",1,2004-09-18 09:54:32,2004-09-18 09:18:00,0.730769230769231,1365

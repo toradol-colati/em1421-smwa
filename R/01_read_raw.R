@@ -1,18 +1,18 @@
-# 01 - Lettura dei file grezzi, nessuna pulizia sostanziale.
+# 01 - Read the two raw files. No substantive cleaning here.
 # Input : data/raw/wiki-RfA.txt.gz, data/raw/wikiElec.ElecBs3.txt.gz
-# Output: data/processed/votes_raw.rds, data/processed/username_case_variants.csv
-# Pacchetti: nessuno (R base).
+# Output: data/processed/votes_raw.rds, data/processed/elec_raw.rds,
+#         data/processed/username_case_variants.csv
+# Packages: none (base R).
 #
-# I due parser stanno in R/00_lib_data.R, cosi sono usabili anche dalla
-# verifica indipendente (R/99_verifica_dati.R).
-# Qui si fa solo il passaggio dal formato di testo alla tabella, piu la
-# normalizzazione degli spazi negli username (vedi NOTA 1). Non si deduplica e non
-# si decide niente di sostanziale: quello e il passo 02.
+# The two parsers live in R/00_lib_data.R so the independent verification
+# (R/99_verify_data.R) can use them too.
+# This script only turns the text formats into tables and normalises username
+# spelling (see NOTE 1 in the library). It does not deduplicate and decides
+# nothing substantive: that is step 02.
 
 source(file.path("R", "00_paths.R"))
 source(file.path("R", "00_lib_data.R"))
 
-# --- esecuzione ---------------------------------------------------------------
 votes_raw <- read_rfa(FILE_RFA)
 dir.create(DIR_PROCESSED, showWarnings = FALSE, recursive = TRUE)
 saveRDS(votes_raw, file.path(DIR_PROCESSED, "votes_raw.rds"))
@@ -23,43 +23,45 @@ saveRDS(elec, file.path(DIR_PROCESSED, "elec_raw.rds"))
 cv <- case_variants(votes_raw)
 write.csv(cv, file.path(DIR_PROCESSED, "username_case_variants.csv"), row.names = FALSE)
 
-# Conteggi di controllo contro i totali pubblicati da SNAP.
-n_voti   <- nrow(votes_raw)
-n_utenti <- length(unique(c(votes_raw$SRC, votes_raw$TGT)))
-cat("voti:                    ", n_voti,   " (SNAP: 198275)",
-    if (n_voti == 198275) " OK" else " DIVERSO", "\n", sep = "")
-cat("utenti distinti:         ", n_utenti,
-    " (atteso 11380: SNAP ne dichiara 11381 perche non unifica uno spazio doppio",
-    " interno e un carattere invisibile, vedi NOTA 1)",
-    if (n_utenti == 11380) " OK" else " DIVERSO", "\n", sep = "")
-# NOTA 3 - le coppie distinte sono 189.003 col trim e 189.004 senza: una sola
-# coppia (December21st2012Freak -> Jeffrey Mall) compare con due grafie che
-# differiscono solo per gli spazi. Quindi i totali pubblicati da SNAP non sono
-# coerenti fra loro: 11.381 utenti e un conteggio post-trim, 189.004 coppie e
-# pre-trim. Da dichiarare nella sezione dati del report.
-cat("coppie votante-candidato:", nrow(unique(votes_raw[, c("SRC", "TGT")])),
-    " (SNAP: 189004, pre-trim; col trim sono 189003)\n", sep = "")
-cat("nomi unificando l'iniziale maiuscola: ",
-    length(unique(capitalizza(c(votes_raw$SRC, votes_raw$TGT)))), "\n", sep = "")
-cat("gruppi di grafie che differiscono solo per l'iniziale: ",
-    length(unique(cv$nome_unificato)),
-    " (elenco in data/processed/username_case_variants.csv)\n", sep = "")
-cat("  di cui la persona e candidata sotto almeno una grafia: ",
-    length(unique(cv$nome_unificato[cv$n_voti_ricevuti > 0])), "\n", sep = "")
-cat("  di cui compaiono come CANDIDATO con due grafie diverse: ",
-    length(unique(cv$nome_unificato[ave(cv$n_voti_ricevuti > 0, cv$nome_unificato,
-                                        FUN = sum) > 1])),
-    "  <- caso distruttivo per la ricostruzione dei tentativi\n", sep = "")
+# Control counts against the totals published by SNAP.
+n_votes  <- nrow(votes_raw)
+n_users  <- length(unique(c(votes_raw$SRC, votes_raw$TGT)))
+cat("--- wiki-RfA ---\n")
+cat("votes:                 ", n_votes, " (SNAP: 198275)",
+    if (n_votes == 198275) " OK" else " MISMATCH", "\n", sep = "")
+cat("distinct users:        ", n_users,
+    " (expected 11380; SNAP reports 11381 because it does not merge one double",
+    " internal space and one invisible character, see NOTE 1)",
+    if (n_users == 11380) " OK" else " MISMATCH", "\n", sep = "")
+# NOTE - distinct pairs are 189,001 after normalisation and 189,004 without it:
+# a couple of pairs appear under two spellings. The SNAP totals are therefore
+# not consistent with each other: 11,381 users is a post-trim count, 189,004
+# pairs is a pre-trim one. This belongs in the data section of the report.
+cat("voter-candidate pairs: ", nrow(unique(votes_raw[, c("SRC", "TGT")])),
+    " (SNAP: 189004, pre-normalisation)\n", sep = "")
+cat("users after merging the first letter: ",
+    length(unique(capitalise_first(c(votes_raw$SRC, votes_raw$TGT)))), "\n", sep = "")
+cat("spelling groups differing only in the first letter: ",
+    length(unique(cv$merged_name)),
+    " (listed in data/processed/username_case_variants.csv)\n", sep = "")
+cat("  of which the person is a candidate under at least one spelling: ",
+    length(unique(cv$merged_name[cv$n_votes_received > 0])), "\n", sep = "")
+cat("  of which the CANDIDATE appears under two spellings: ",
+    length(unique(cv$merged_name[ave(cv$n_votes_received > 0, cv$merged_name,
+                                     FUN = sum) > 1])),
+    "  <- destructive for attempt reconstruction\n", sep = "")
 
 cat("\n--- wiki-Elec ---\n")
-cat("elezioni:", nrow(elec$elections), " (SNAP: 2794)",
-    if (nrow(elec$elections) == 2794) " OK" else " DIVERSO", "\n", sep = "")
-cat("voti:", nrow(elec$votes), "\n", sep = "")
-cat("promozioni:", sum(elec$elections$outcome == 1),
-    "  respinte:", sum(elec$elections$outcome == 0), "  (SNAP: ~1200 / ~1500)\n")
-cat("periodo:", format(min(elec$elections$closed_at, na.rm = TRUE), "%Y-%m-%d"), "->",
-    format(max(elec$elections$closed_at, na.rm = TRUE), "%Y-%m-%d"), "\n")
-cat("candidati distinti:", length(unique(elec$elections$candidate)),
-    "  di cui con piu di un'elezione:",
-    sum(table(elec$elections$candidate) > 1), "\n")
-cat("date di chiusura mancanti:", sum(is.na(elec$elections$closed_at)), "\n")
+cat("elections: ", nrow(elec$elections), " (SNAP: 2794)",
+    if (nrow(elec$elections) == 2794) " OK" else " MISMATCH", "\n", sep = "")
+cat("votes: ", nrow(elec$votes), "\n", sep = "")
+cat("promotions: ", sum(elec$elections$outcome == 1),
+    "   rejections: ", sum(elec$elections$outcome == 0),
+    "   (SNAP: about 1200 / 1500)\n", sep = "")
+cat("declared closing times from ", format(min(elec$elections$closed_at), "%Y-%m-%d"),
+    " to ", format(max(elec$elections$closed_at), "%Y-%m-%d"),
+    "  -- but field T is unreliable, see 03\n", sep = "")
+cat("distinct candidates: ", length(unique(elec$elections$candidate)),
+    "   with more than one election: ",
+    sum(table(elec$elections$candidate) > 1), "\n", sep = "")
+cat("missing closing times: ", sum(is.na(elec$elections$closed_at)), "\n", sep = "")

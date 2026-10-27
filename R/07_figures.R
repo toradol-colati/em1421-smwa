@@ -1,7 +1,8 @@
-# 07 – Figure per il report (ggplot2).
+# 07 - Figures for the report (ggplot2).  [SKELETON]
 # Input : data/processed/features.rds, data/processed/model_*.rds
 # Output: output/figures/
 #
-# Massimo 4 figure o tabelle in TOTALE nel report, ciascuna con didascalia e richiamata
-# nel testo. Per il gruppo piccolo (29 / 9 casi): distribuzioni o boxplot con i punti
-# sovrapposti, non medie nude.
+# At most 4 figures or tables in the whole report, each with a caption and
+# referenced in the text. For the small groups, show the distribution with the
+# points overlaid rather than a bare boxplot. Save with explicit size and dpi so
+# the figure in the report is the one that was inspected.

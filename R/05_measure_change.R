@@ -1,14 +1,15 @@
-# 05 – Misura del cambiamento fra t e t+1.
+# 05 - Measuring the change between attempt t and attempt t+1.  [SKELETON]
 # Input : data/processed/net_*.rds, data/processed/attempts_validated.rds
 # Output: data/processed/features.rds
 #
-# Due blocchi, da tenere separati:
-#   - PREDITTIVO: solo variabili note prima dell'apertura di t+1 (esito e quota di
-#     sostegno a t, posizione del candidato nella rete fino a quel momento, voti dati
-#     dal candidato nelle RfA altrui fra un tentativo e l'altro, tempo trascorso, anno).
-#   - DESCRITTIVO: sostenitori in comune, nuovi sostenitori, diversita delle comunita.
-#     Usano i voti di t+1, quindi non entrano mai nel modello; vanno confrontati con un
-#     modello nullo che tiene fisso il numero di votanti.
+# Two blocks, to be kept strictly apart:
+#   - PREDICTIVE: only variables known before attempt t+1 opens (outcome and
+#     support share at t, the candidate's network position up to that point,
+#     votes the candidate cast in other RfAs between attempts, time elapsed,
+#     year).
+#   - DESCRIPTIVE: shared supporters, new supporters, community diversity.
+#     These use the votes of t+1, so they never enter the model; they are
+#     compared against a null model that holds the number of voters fixed.
 #
-# Controllo obbligatorio prima della regressione (contesto §8 punto 2): correlazione fra
-# in-degree/centralita prima di t+1 e numero di votanti / quota di sostegno a t.
+# Mandatory check before any regression: the correlation between in-degree or
+# centrality before t+1 and the number of voters or support share at t.

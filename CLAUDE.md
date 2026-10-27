@@ -28,7 +28,7 @@ Questo file aggiunge solo ciò che è cambiato o è stato deciso dopo quel docum
 3. **Soglia dei 7 giorni:** RfA chiuse in anticipo (SNOW/NOTNOW) seguite da un rientro rapido possono fondersi col tentativo precedente. Usare wiki-Elec 2003–2007 anche per scegliere la soglia, non solo per validarla.
 
 ## Verificato sui dati il 27/10/2026
-Documentazione completa: `docs/DATI.md`. Qui solo i fatti che cambiano il documento di
+Documentazione completa: `docs/DATA.md`. Qui solo i fatti che cambiano il documento di
 contesto.
 - **198.275 voti** e **11.381 utenti** di wiki-RfA riprodotti esatti, ma gli utenti solo
   applicando `trimws()`: 21 nomi hanno uno spazio in coda. I totali SNAP non sono coerenti
