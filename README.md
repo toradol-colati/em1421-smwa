@@ -35,6 +35,7 @@ The immutable raw files are in `data/raw/`. Generated data are written to
 
 ```text
 R/
+  00_run_all.R               execute the complete pipeline
   00_paths.R                 shared paths and configuration
   00_lib_data.R              parsers, normalisation and attempt helpers
   01_prepare_data.R          single data-preparation entry point
@@ -64,19 +65,27 @@ install.packages(c("igraph", "ggplot2", "Matrix"))
 
 Data preparation uses base R only.
 
-## Run order
+## Run everything
 
-Run all commands from the repository root.
+From the repository root:
 
 ```powershell
 $rscript = "C:\Program Files\R\R-4.5.2\bin\Rscript.exe"
 
-& $rscript R\01_prepare_data.R
-& $rscript R\04_build_networks.R
-& $rscript R\05_measure_change.R
-& $rscript R\06_model_outcome.R
-& $rscript R\07_figures.R
+& $rscript R\00_run_all.R
 ```
+
+`00_run_all.R` executes the decomposed pipeline in order:
+
+```text
+01_prepare_data.R
+04_build_networks.R
+05_measure_change.R
+06_model_outcome.R
+07_figures.R
+```
+
+The individual stages remain separately runnable for inspection and debugging.
 
 Optional verification:
 
