@@ -2,7 +2,7 @@
 # Run it after every change to the scripts, so that the code shown in the
 # document cannot drift from the code that actually runs. It rewrites only the
 # region between the two markers and leaves the rest of the document untouched.
-FILES <- c("R/00_paths.R", "R/00_lib_data.R", "R/01_read_raw.R",
+FILES <- c("R/run_data_prep.R", "R/00_paths.R", "R/00_lib_data.R", "R/01_read_raw.R",
            "R/02_build_attempts.R", "R/03_validate_outcomes.R",
            "R/04_build_networks.R", "R/05_measure_change.R",
            "R/06_model_outcome.R", "R/07_figures.R",

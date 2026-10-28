@@ -46,6 +46,7 @@ The rest of `docs/` holds the original slides and papers, kept for reference.
 CLAUDE.md                 working notes and instructions
 README.md                 this file
 R/                        numbered scripts, to be run in order
+  run_data_prep.R         one command that runs 01, 02 and 03 in order
   00_paths.R              shared paths and the missing-file check
   00_lib_data.R           shared functions: parsers, name normalisation, dates,
                           attempt reconstruction, deduplication, attempt table
@@ -71,7 +72,28 @@ decisions still open for that step. They belong to the network workstream.
 
 ## Running everything
 
-The two SNAP files are in the repository, so no download is needed. From the repository root:
+The two SNAP files are in the repository, so no download is needed. From the repository root,
+one command runs the whole data workstream:
+
+```bash
+Rscript R/run_data_prep.R
+```
+
+It takes about three minutes and prints a summary at the end. The three steps stay separate
+files, because they are three different jobs and because a failure in one must never be
+mistaken for a result of another; the wrapper only orchestrates them. It also guarantees four
+things that plain `source()` calls do not:
+
+- the outputs of the chain are **deleted before anything starts**, so a stale file from an
+  earlier run cannot be picked up by a later step;
+- it **stops at the first error**, names the step that failed and exits non-zero;
+- whatever the failed step had already written is **moved into
+  `data/processed/failed_run_<timestamp>/`** — still available for debugging, but no longer
+  where a result is expected, so it cannot be mistaken for one;
+- at the end it **checks every expected output exists**, so a partial success cannot pass for
+  a complete run.
+
+The three steps can still be run one at a time, which is what you want while developing:
 
 ```bash
 Rscript R/01_read_raw.R

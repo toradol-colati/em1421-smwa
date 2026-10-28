@@ -13,3 +13,6 @@
 
 # Regenerable intermediate produced by R/01_read_raw.R (14 MB)
 data/processed/votes_raw.rds
+
+# Partial outputs quarantined by R/run_data_prep.R when a step fails
+data/processed/failed_run_*/
