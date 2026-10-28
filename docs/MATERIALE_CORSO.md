@@ -713,7 +713,7 @@ La mappatura sul nostro caso, con il nome esatto della categoria da usare nel re
 | **Data filtering** (§5.3) | Escludere 2003 e 2013 (precedente Kołczyńska) e togliere i voti senza data sono **filtri**: vanno contati, giustificati e messi nel report, non applicati in silenzio. "Outliers are sometimes relevant." |
 | **Data cleaning** → internal validity | Ricostruzione dei tentativi e deduplica sono procedure di pulizia che possono **creare** il risultato. È esattamente il problema dei 29 "previously successful": se sono artefatti della ricostruzione, l'intero confronto secondario è un artefatto. Olteanu nomina i bias da cleaning come minaccia alla validità interna: è la citazione da mettere accanto a quel limite. |
 | **Studi osservazionali** (§7.4) | Il tetto interpretativo. Associazioni, non effetti. E la difficoltà di separare influenza e omofilia è la stessa che abbiamo fra "la posizione di rete cambia l'esito" e "chi avrebbe comunque successo si muove in modo diverso nella rete". |
-| **Descriptive statistics** (§7.2) | "Simple counts can mislead if it is unclear what is counted and why." Ogni conteggio del report (414, 394, 29, 9 e i nostri) va accompagnato dalla regola che lo produce. |
+| **Descriptive statistics** (§7.2) | "Simple counts can mislead if it is unclear what is counted and why." Ogni conteggio del report (490 candidati ripetuti, 451 precedentemente respinti, 53 precedentemente approvati, 14 con entrambi gli esiti) va accompagnato dalla regola che lo produce. |
 
 Sull'etica (§9, slide non dettagliate): i dati SNAP sono pubblici, anonimizzati solo per
 username, e gli username sono reali. Nel report non servono nomi di utenti: non citarne

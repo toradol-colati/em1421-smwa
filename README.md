@@ -1,139 +1,180 @@
-# EM1421 — Repeat Requests for Adminship
+# EM1421 - Repeat Requests for Adminship
 
-Group project for **EM1421 Social Media and Web Analytics**, Ca' Foscari University of Venice,
-academic year 2026/2027. Instructor: Pierluigi Zama Ramirez.
+Group project for **EM1421 Social Media and Web Analytics**, Ca' Foscari
+University of Venice, academic year 2026/2027.
 
-**Research question (the approved wording; it must not be rewritten without writing to the
-instructor first):**
-> Among repeat Requests for Adminship candidates, how do changes in voter-community
-> composition, support-coalition overlap and network position differ between previously
-> rejected and previously successful candidates, and how are these changes associated with the
-> next outcome?
+## Research question
 
-Data: SNAP **wiki-RfA** (Wikipedia RfA votes, 2003 – May 2013) as the primary source, SNAP
-**wiki-Elec** (elections up to January 2008) to validate outcomes. The whole analysis is in R
-(igraph, ggplot2). Results are described as associations, not causal effects.
+Among repeat Requests for Adminship candidates, how do changes in
+voter-community composition, support-coalition overlap and network position
+differ between previously rejected and previously successful candidates, and
+how are these changes associated with the next outcome?
 
-Team of two. **Umberto Toraldo** (GitHub `toradol-colati`) is the **data member**: preparing
-both SNAP datasets, cleaning the records, reconstructing candidate attempts, validating the
-outcomes, and delivering analysis-ready vote-level and attempt-level tables. **Mihretab Worku
-Morka** (GitHub `mihretabworku`) is the **network member**: building the voter and co-voting
-networks, measuring communities, support overlap, centrality and brokerage, running the outcome
-analysis and producing the report figures. Jointly: the data and network definitions, the
-literature, interpretation, the report and the final submission package.
+The project is observational. Results are interpreted as associations, not
+causal effects.
 
-Deadline stated in the brief: **2 November 2026, 09:00 CET** (report PDF, code and data, plus a
-confirmation email to the instructor).
+## Team
 
----
+- **Umberto Toraldo**: data preparation, identity cleanup, attempt
+  reconstruction and external validation.
+- **Mihretab Worku Morka**: network construction, coalition measures,
+  statistical models and figures.
+- **Joint work**: research question, literature, interpretation, report and
+  final oral discussion.
 
-## Start here
+## Data
 
-| # | File | Why |
-|---|---|---|
-| 1 | [docs/DATA.md](docs/DATA.md) | **The data workstream, complete.** What the raw data are and where they come from, the eleven defects found and how each was fixed, the delivered tables column by column, what is still open, the two verification rounds, the substantive analysis of the results, and all the R code in an appendix. Everything the network workstream needs in order to start. |
-| 2 | [docs/EM1421_RfA_contesto_nuova_chat.md](docs/EM1421_RfA_contesto_nuova_chat.md) | Project background: state of play, figures, verified literature, open problems and the decisions still to be taken (§11). In Italian. |
-| 3 | [CLAUDE.md](CLAUDE.md) | What changed after that document. In Italian; it also instructs Claude Code. |
-| 4 | [docs/MATERIALE_CORSO.md](docs/MATERIALE_CORSO.md) | All the course slides summarised: definitions, formulas, igraph functions, and where the material constrains our method choices. In Italian. §11 and §12 are the ones to read before writing analysis code. |
-| 5 | [docs/CODICE.md](docs/CODICE.md) | What code we are allowed to write beyond the slides, and the repository conventions. In Italian. |
-| 6 | [docs/EM1421_group_project_brief.pdf](docs/EM1421_group_project_brief.pdf) · [docs/writing_your_project.txt](docs/writing_your_project.txt) · [docs/EM1421_projectsInstructions.txt](docs/EM1421_projectsInstructions.txt) | The approved brief, the criteria the instructor marks against, and the formal rules (max 4 figures, 12,000–20,000 characters, no code in the report, at least 5 scientific references, a paragraph on each member's contribution). |
+- `wiki-RfA.txt.gz`: primary SNAP vote data, 2003-May 2013.
+- `wikiElec.ElecBs3.txt.gz`: independent election data through January 2008,
+  used to validate attempt boundaries and outcomes.
 
-The rest of `docs/` holds the original slides and papers, kept for reference.
+The immutable raw files are in `data/raw/`. The validated processed data are
+written to `data/processed/`, and the final tables and figures are included in
+this branch so the submitted results can be inspected directly.
 
 ## Repository layout
 
-```
-CLAUDE.md                 working notes and instructions
-README.md                 this file
-R/                        numbered scripts, to be run in order
-  run_data_prep.R         one command that runs 01, 02 and 03 in order
-  00_paths.R              shared paths and the missing-file check
-  00_lib_data.R           shared functions: parsers, name normalisation, dates,
-                          attempt reconstruction, deduplication, attempt table
-  01_read_raw.R           read both SNAP files, no substantive cleaning
-  02_build_attempts.R     reconstruct attempts, produce votes.rds and attempts.rds
-  03_validate_outcomes.R  validate against wiki-Elec, choose the threshold
-  04_build_networks.R     voting network and co-voting projection    [SKELETON]
-  05_measure_change.R     measures of change from t to t+1           [SKELETON]
-  06_model_outcome.R      outcome of the next attempt                [SKELETON]
-  07_figures.R            the report figures                         [SKELETON]
-  98_generate_appendix.R  regenerates the code appendix of docs/DATA.md
-  99_verify_data.R        round 1: every claim recomputed from the raw files
-  99b_verify_output.R     round 2: internal invariants of the tables
-data/raw/                 the SNAP files as downloaded, with checksums
-data/processed/           derived tables and logs, produced by the scripts
-output/figures/           figures
-report/                   the report PDF and its sources
-docs/                     brief, instructions, slides, papers, documentation
-```
+```text
+R/
+  00_run_all.R               execute the complete pipeline
+  00_paths.R                 shared paths and configuration
+  00_lib_data.R              parsers, normalisation and attempt helpers
+  run_data_prep.R            single data-preparation entry point
+  01_read_raw.R              read the two SNAP files
+  02_build_attempts.R        reconstruct candidate attempts
+  03_validate_outcomes.R     validate attempts and outcomes
+  04_build_networks.R        build historical co-voting networks
+  05_measure_change.R        measure coalition and network change
+  06_model_outcome.R         descriptive tests and outcome models
+  07_figures.R               generate the four report figures
+  99_verify_data.R           optional raw-data verification
+  99b_verify_output.R        optional output-invariant verification
 
-The scripts marked `[SKELETON]` contain no code yet: only a header with inputs, outputs and the
-decisions still open for that step. They belong to the network workstream.
-
-## Running everything
-
-The two SNAP files are in the repository, so no download is needed. From the repository root,
-one command runs the whole data workstream:
-
-```bash
-Rscript R/run_data_prep.R
+data/raw/                     immutable source data
+data/processed/               generated data and intermediate objects
+output/results/               generated tables and numerical results
+output/figures/               generated report figures
+report/                       final report
+docs/                         brief, course references and method notes
 ```
 
-It takes about three minutes and prints a summary at the end. The three steps stay separate
-files, because they are three different jobs and because a failure in one must never be
-mistaken for a result of another; the wrapper only orchestrates them. It also guarantees four
-things that plain `source()` calls do not:
+## Required R packages
 
-- the outputs of the chain are **deleted before anything starts**, so a stale file from an
-  earlier run cannot be picked up by a later step;
-- it **stops at the first error**, names the step that failed and exits non-zero;
-- whatever the failed step had already written is **moved into
-  `data/processed/failed_run_<timestamp>/`** — still available for debugging, but no longer
-  where a result is expected, so it cannot be mistaken for one;
-- at the end it **checks every expected output exists**, so a partial success cannot pass for
-  a complete run.
-
-The three steps can still be run one at a time, which is what you want while developing:
-
-```bash
-Rscript R/01_read_raw.R
-Rscript R/02_build_attempts.R
-Rscript R/03_validate_outcomes.R
+```r
+install.packages(c("igraph", "ggplot2", "Matrix"))
 ```
 
-Optionally, the two verification rounds:
+Data preparation uses base R only.
 
-```bash
-Rscript R/99_verify_data.R
-Rscript R/99b_verify_output.R
+## Run everything
+
+From the repository root:
+
+```powershell
+$rscript = "C:\Program Files\R\R-4.5.2\bin\Rscript.exe"
+
+& $rscript R\00_run_all.R
 ```
 
-Base R only; nothing else is required for the data workstream. `igraph` and `ggplot2` will be
-needed for the network workstream. The scripts install nothing and make no network calls, so
-the instructor can run them as they are.
+`00_run_all.R` executes the decomposed pipeline in order:
 
-## Conventions
+```text
+run_data_prep.R
+04_build_networks.R
+05_measure_change.R
+06_model_outcome.R
+07_figures.R
+```
 
-- `data/raw/` is **read-only** for the scripts. Every script writes only to `data/processed/`
-  or `output/`.
-- **Do not filter, flag.** Problematic rows stay in the tables with a flag column, so whoever
-  analyses decides what to exclude and the number of exclusions is available for the report.
-- No variable observed **during** attempt t+1 may enter as a predictor of the outcome of t+1.
-  The t+1 coalition variables are for descriptive comparison only, against a null model. This
-  is the brief's "no leakage" rule.
-- Thresholds and parameters are named constants at the top of each script, never numbers buried
-  in the code.
-- The report contains no code and no description of the code.
+The individual stages remain separately runnable for inspection and debugging.
 
-## Status
+Optional verification:
 
-**Done — data workstream.** `data/processed/votes.rds` (195,271 validated votes) and
-`data/processed/attempts.rds` (4,082 attempts, 484 repeat candidates) are ready, documented in
-`docs/DATA.md`, validated against wiki-Elec at 99.45% outcome agreement on 2,177 matched
-elections, and covered by two verification rounds that both pass.
+```powershell
+& $rscript R\99_verify_data.R
+& $rscript R\99b_verify_output.R
+```
 
-**Next, together:** agree on the open decisions in `docs/DATA.md` §14 — first-letter case
-variants above all, because they change both the study population and the node identities — and
-settle the definitions of the two networks: node, edge, direction, weight, time window.
+`run_data_prep.R` runs the data steps in isolated environments, clears stale
+outputs before starting, quarantines partial results after a failure and checks
+that every expected data file exists. The four analysis scripts are
+intentionally separate so each stage can be inspected and rerun.
 
-**Then — network workstream.** Scripts 04 to 07.
+To run only the data workstream:
+
+```powershell
+& $rscript R\run_data_prep.R
+```
+
+## Final data counts
+
+| Quantity | Final value |
+|---|---:|
+| Validated vote records | 195,252 |
+| Reconstructed attempts | 4,081 |
+| Repeat candidates | 490 |
+| All consecutive attempt pairs | 621 |
+| Pairs with valid outcomes | 609 |
+| Pairs after prior rejection | 555 |
+| Pairs after prior success | 54 |
+| Successful next attempts | 251 |
+| Attempts matched to `wiki-Elec` | 2,175 |
+| Validated outcome agreements | 2,163 (99.45%) |
+| Reliable modelling pairs | 528 |
+
+The final reconstruction:
+
+- merges first-letter username variants;
+- removes 1,661 voter-less phantom records;
+- recovers abbreviated and misspelled month names;
+- attributes 6,975 undated votes only where attribution is unambiguous;
+- retains ambiguous and conflicting source information in diagnostic files;
+- excludes 12 high-confidence outcome disagreements from outcome analysis.
+
+## Network construction
+
+Two voters are connected when they cast the same support/oppose direction in at
+least two historical candidate attempts. The graph is undirected and weighted
+by repeated co-voting. Neutral votes and self-votes are excluded from the signed
+co-voting network.
+
+Communities are detected with weighted Louvain. The course's Girvan-Newman
+method is retained as a sensitivity check on the first tractable snapshot.
+Community results are treated as exploratory because dense graphs are sensitive
+to detection method and threshold.
+
+The analysis measures supporter overlap, new and returning supporters,
+effective community breadth, community-mix change, weighted degree, PageRank,
+eigenvector centrality, local clustering and community-level bridge exposure.
+
+## Outcome modelling
+
+The model compares:
+
+1. a vote-share/timing model;
+2. a model augmented with network position.
+
+Both use candidate-grouped five-fold cross-validation and only variables
+available before the next attempt. The final sample contains 528 reliable pairs
+from 424 candidates.
+
+| Model | AUC | Brier |
+|---|---:|---:|
+| Prevalence only | 0.500 | 0.244 |
+| Vote shares and timing | 0.716 | 0.210 |
+| Network-augmented | 0.715 | 0.209 |
+
+Network measures do not materially improve held-out prediction. They are
+therefore interpreted as descriptive measures of coalition composition rather
+than evidence of superior forecasting. The comparison is repeated with and
+without very short attempts.
+
+## Documentation
+
+- `docs/DATA.md`: final data definitions, counts and limitations.
+- `docs/code_evidence_map.md`: code-to-course correspondence and clearly marked
+  project extensions.
+
+The report must not contain code. The processed data, result tables and figures
+are included as a validated snapshot and can also be recreated with
+`R/00_run_all.R`.

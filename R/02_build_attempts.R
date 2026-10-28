@@ -20,9 +20,7 @@
 source(file.path("R", "00_paths.R"))
 source(file.path("R", "00_lib_data.R"))
 
-THRESHOLD_DAYS     <- 7               # gap that separates two attempts
 MODE               <- "res_then_gap"  # grouping rule, see 00_lib_data.R
-MERGE_FIRST_LETTER <- FALSE           # OPEN DECISION: merge first-letter case
                                       # variants (harej/Harej). FALSE keeps the
                                       # SNAP convention of 11,381 nodes.
 
@@ -53,6 +51,7 @@ if (MERGE_FIRST_LETTER) {
   note("usernames: SNAP spelling kept -> distinct nodes: ",
        length(unique(c(d$src, d$tgt))))
 }
+d$self_vote <- d$src == d$tgt
 
 # --- 2. dates ----------------------------------------------------------------
 dd <- parse_dat(raw$DAT)

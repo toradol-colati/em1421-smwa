@@ -35,7 +35,7 @@
 #     the line that produced them is visible.
 #
 # Expected total time: a few minutes, almost all of it in step 03, which sweeps
-# 2 rules x 17 thresholds over the whole dataset.
+# 3 rules x 17 thresholds over the whole dataset.
 
 options(warn = 1)
 t_start <- Sys.time()
@@ -43,10 +43,13 @@ source(file.path("R", "00_paths.R"))
 
 STEPS <- c("01_read_raw.R", "02_build_attempts.R", "03_validate_outcomes.R")
 
-EXPECTED <- c("votes_raw.rds", "elec_raw.rds", "username_case_variants.csv",
-              "votes.rds", "attempts.rds", "records_without_voter.csv",
-              "02_log.txt", "attempts_validated.rds", "03_match_wikielec.csv",
-              "03_threshold_sweep.csv", "03_log.txt")
+EXPECTED <- c(
+  "votes_raw.rds", "elec_raw.rds", "username_case_variants.csv",
+  "votes.rds", "attempts.rds", "records_without_voter.csv",
+  "02_log.txt", "attempts_validated.rds", "03_match_wikielec.csv",
+  "03_threshold_sweep.csv", "03_log.txt", "attempts_analysis.rds",
+  "data_preparation_summary.txt"
+)
 
 dir.create(DIR_PROCESSED, showWarnings = FALSE, recursive = TRUE)
 
@@ -90,7 +93,41 @@ for (i in seq_along(STEPS)) {
               as.numeric(difftime(Sys.time(), t0, units = "secs"))))
 }
 
-# --- 3. check that everything expected is on disk ----------------------------
+v <- readRDS(file.path(DIR_PROCESSED, "votes.rds"))
+a <- readRDS(file.path(DIR_PROCESSED, "attempts_validated.rds"))
+
+# --- 3. create the analysis table used by stages 04-07 ----------------------
+outcome_mismatch <- !is.na(a$elec_matched) &
+  a$elec_matched &
+  !is.na(a$outcome_agrees) &
+  !a$outcome_agrees
+a$outcome_analysis <- a$outcome
+a$outcome_analysis[outcome_mismatch] <- NA_integer_
+a$year_analysis <- a$year_from_date
+saveRDS(a, file.path(DIR_PROCESSED, "attempts_analysis.rds"))
+
+repeat_counts <- table(a$candidate)
+summary_lines <- c(
+  paste("Validated vote rows:", nrow(v)),
+  paste("Attempts:", nrow(a)),
+  paste("Repeat candidates:", sum(repeat_counts >= 2L)),
+  paste("Consecutive attempt pairs:", sum(repeat_counts[repeat_counts >= 2L] - 1L)),
+  paste("Externally matched attempts:", sum(a$elec_matched)),
+  paste(
+    "Outcome disagreements excluded from outcome analysis:",
+    sum(outcome_mismatch)
+  ),
+  paste("Self-votes retained in votes table:", sum(v$self_vote)),
+  paste("Neutral votes retained in votes table:", sum(v$vot == 0L)),
+  "First-letter username variants are merged.",
+  "Network analysis excludes self-votes and neutral votes."
+)
+writeLines(
+  summary_lines,
+  file.path(DIR_PROCESSED, "data_preparation_summary.txt")
+)
+
+# --- 4. check that everything expected is on disk ---------------------------
 missing <- EXPECTED[!file.exists(file.path(DIR_PROCESSED, EXPECTED))]
 if (length(missing) > 0) {
   cat("\nINCOMPLETE RUN. These expected outputs are missing:\n  ",
@@ -98,8 +135,6 @@ if (length(missing) > 0) {
   quit(status = 1, save = "no")
 }
 
-v <- readRDS(file.path(DIR_PROCESSED, "votes.rds"))
-a <- readRDS(file.path(DIR_PROCESSED, "attempts.rds"))
 av <- readRDS(file.path(DIR_PROCESSED, "attempts_validated.rds"))
 cat(sprintf("\n=============== DONE in %.1f min ===============\n",
             as.numeric(difftime(Sys.time(), t_start, units = "mins"))))

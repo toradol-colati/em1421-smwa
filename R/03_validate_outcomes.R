@@ -27,9 +27,9 @@ source(file.path("R", "00_paths.R"))
 source(file.path("R", "00_lib_data.R"))
 
 GRID           <- c(1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 14, 18, 21, 28, 35, 45, 60)
-MODES          <- c("res_then_gap", "gap_then_res")
+MODES          <- c("res_then_gap", "gap_then_res", "gap_only")
 J_MIN          <- 0.5   # minimum voter overlap to call it the same election
-CHOSEN_THRESHOLD <- 7
+CHOSEN_THRESHOLD <- THRESHOLD_DAYS
 
 log_lines <- character(0)
 note <- function(...) { s <- paste0(...); log_lines <<- c(log_lines, s); cat(s, "\n", sep = "") }
@@ -41,6 +41,10 @@ d <- data.frame(src = raw$SRC, tgt = raw$TGT,
                 vot = as.integer(raw$VOT), res = as.integer(raw$RES),
                 yea = as.integer(raw$YEA), dat = parse_dat(raw$DAT),
                 stringsAsFactors = FALSE)
+if (MERGE_FIRST_LETTER) {
+  d$src <- capitalise_first(d$src)
+  d$tgt <- capitalise_first(d$tgt)
+}
 
 ev <- elec$votes; ev$voter_k <- norm_user(ev$voter)
 set_el <- split(ev$voter_k, ev$election_id)
@@ -72,8 +76,13 @@ evaluate <- function(mode, threshold) {
   v$src_k <- norm_user(v$src)
   set_at <- split(v$src_k, v$attempt_id)
   idx <- match(as.integer(names(set_at)), v$attempt_id)
+  outcome_by_attempt <- tapply(v$res, v$attempt_id, function(x) {
+    values <- unique(x)
+    if (length(values) == 1L) values else NA_integer_
+  })
   info <- data.frame(attempt_id = as.integer(names(set_at)),
-                     cand_k = norm_user(v$tgt[idx]), outcome = v$res[idx],
+                     cand_k = norm_user(v$tgt[idx]),
+                     outcome = as.integer(outcome_by_attempt[names(set_at)]),
                      n_votes = lengths(set_at), stringsAsFactors = FALSE)
   per <- split(info$attempt_id, info$cand_k)
   best <- rep(NA_real_, nrow(ele)); bid <- rep(NA_integer_, nrow(ele))
@@ -100,7 +109,10 @@ evaluate <- function(mode, threshold) {
              matched = sum(ok),
              matched_share = mean(ok),
              median_jaccard = median(best[ok]),
-             outcome_agreement = mean((mo == 1) == (ele$outcome[ok] == 1)),
+             outcome_agreement = mean(
+               (mo == 1) == (ele$outcome[ok] == 1),
+               na.rm = TRUE
+             ),
              under_split = sum(duplicated(bid[ok])),
              comparable_candidates = length(common),
              count_agreement = mean(n_true[common] == n_mine[common]),

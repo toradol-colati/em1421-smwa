@@ -1,0 +1,2 @@
+Base model: next_success ~ previous_success + previous_support_share_10 +      log2_previous_supporters + log2_days_between + year_centered
+Network model: next_success ~ previous_success + previous_support_share_10 +      log2_previous_supporters + log2_days_between + year_centered +      previous_support_effective_communities + log2_previous_supporter_weighted_degree

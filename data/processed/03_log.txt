@@ -3,10 +3,10 @@ Field T (closing time) is UNRELIABLE: the gap between T and the last vote
   of the same election has a median of 102.4 days; it exceeds 30 days in 54% of cases; it exceeds 180 days in 1217 elections; the minimum is -188.1 days (T before the last vote).
   This is why matching uses VOTER SETS, not dates.
 
-sweep: 2 rules x 17 thresholds...
+sweep: 3 rules x 17 thresholds...
 
 CHOICE OF THE THRESHOLD
-  matched elections: 1949 at 4 days, 1947 at 7, 1947 at 21, 1899 at 60.
+  matched elections: 1949 at 4 days, 1947 at 7, 1947 at 21, 1897 at 60.
   exact attempt count: 94.3% at 4 days, 94.6% at 7, 95.5% at 60.
   Both measures are flat between 4 and 21 days: the choice is NOT driven
   by the data, and that flatness is itself the robustness result. 7 days
@@ -15,12 +15,12 @@ CHOICE OF THE THRESHOLD
   Discarded rule (gap_then_res): at 7 days it produces 1678 attempts with fewer than 5 votes against 330.
 
 --- VALIDATION with res_then_gap and a 7-day threshold ---
-elections matched (Jaccard > 0.5): 2177 of 2794  (77.9%)
-  with Jaccard > 0.3: 2353   candidate absent from wiki-RfA: 273  (9.8%)
+elections matched (Jaccard > 0.5): 2176 of 2794  (77.9%)
+  with Jaccard > 0.3: 2352   candidate absent from wiki-RfA: 273  (9.8%)
   median Jaccard on the matched ones: 0.667
-OUTCOME AGREEMENT: 99.45%  (disagreements: 12 of 2177)
-distinct attempts matched: 2176 of 4082; attempts absorbing two elections: 1
+OUTCOME AGREEMENT: 99.45%  (disagreements: 12 of 2176)
+distinct attempts matched: 2175 of 4081; attempts absorbing two elections: 1
 disagreement on individual voters (medians): wiki-Elec holds 8 that we do not, we hold 9 that it does not,
-  out of a median of 41 voters per election. Similar sizes (identical in 1024 elections), different lists.
-LIMIT: the validation covers 2176 attempts of 4082 (53%). Outside the period covered by wiki-Elec, that is from 2008 to 2013, no validation exists.
+  out of a median of 41 voters per election. Similar sizes (identical in 1023 elections), different lists.
+LIMIT: the validation covers 2175 attempts of 4081 (53%). Outside the period covered by wiki-Elec, that is from 2008 to 2013, no validation exists.
 written: attempts_validated.rds, 03_match_wikielec.csv

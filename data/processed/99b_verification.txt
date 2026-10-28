@@ -24,7 +24,7 @@ support_share == n_support / (n_support + n_oppose)                    OK
 opened_at <= closed_at                                                 OK
 duration_days matches the difference between the two dates             OK
 attempt_no is a contiguous 1..k for every candidate                    OK
-attempt_no ordina per data di opened                                   OK
+attempt_no is ordered by opened_at                                     OK
 prev_outcome is the outcome of the candidate's previous attempt        OK
 flag_short == (n_votes < 5)                                            OK
 flag_long == (duration_days > 14)                                      OK
@@ -32,37 +32,37 @@ attempt_no agrees across the two tables                                OK
 
 == VOTE CONSERVATION ==
 raw records                                                         198 275  expected      198 275  OK
-votes in votes.rds                                                  195 271  expected      195 271  OK
-phantom + ripetuti + lost senza data                                  3 004  expected        3 004  OK
-votes with an imputed date                                            6 991  expected        6 991  OK
-undated votes kept in the table                                       6 991  expected        6 991  OK
+votes in votes.rds                                                  195 252  expected      195 252  OK
+phantom + duplicate + undated losses                                  3 023  expected        3 023  OK
+votes with an imputed date                                            6 975  expected        6 975  OK
+undated votes kept in the table                                       6 975  expected        6 975  OK
 
 == FIGURES QUOTED IN docs/DATA.md ==
-attempts                                                              4 082  expected        4 082  OK
-repeat candidates (2+ attempts)                                         484  expected          484  OK
-candidates with 3+ attempts                                              90  expected           90  OK
-consecutive attempt pairs                                               614  expected          614  OK
-attempts with a known previous outcome                                  614  expected          614  OK
-candidates with at least one previous rejection                         445  expected          445  OK
+attempts                                                              4 081  expected        4 081  OK
+repeat candidates (2+ attempts)                                         490  expected          490  OK
+candidates with 3+ attempts                                              91  expected           91  OK
+consecutive attempt pairs                                               621  expected          621  OK
+attempts with a known previous outcome                                  621  expected          621  OK
+candidates with at least one previous rejection                         451  expected          451  OK
 candidates with at least one previous success                            53  expected           53  OK
-flag_short                                                              296  expected          296  OK
+flag_short                                                              297  expected          297  OK
 flag_long                                                                 4  expected            4  OK
-flag_year_clash                                                         359  expected          359  OK
-attempts matched in wiki-Elec                                         2 176  expected        2 176  OK
-of which the outcome agrees                                           2 164  expected        2 164  OK
+flag_year_clash                                                         363  expected          363  OK
+attempts matched in wiki-Elec                                         2 175  expected        2 175  OK
+of which the outcome agrees                                           2 163  expected        2 163  OK
 attempts with no external match                                       1 906  expected        1 906  OK
 
 == NETWORK STRUCTURE, ON THE DELIVERED TABLE (not on the raw file) ==
-distinct voters in votes.rds                                         10 394  expected       10 394  OK
-distinct candidates in votes.rds                                      3 468  expected        3 468  OK
-users who are both voters and candidates                              2 514  expected        2 512  OK
-support votes                                                       143 155  expected      143 610  OK
-oppose votes                                                         40 236  expected       40 561  OK
-neutral votes                                                        11 880  expected       11 992  OK
+distinct voters in votes.rds                                         10 300  expected       10 300  OK
+distinct candidates in votes.rds                                      3 460  expected        3 460  OK
+users who are both voters and candidates                              2 549  expected        2 549  OK
+support votes                                                       143 154  expected      143 154  OK
+oppose votes                                                         40 220  expected       40 220  OK
+neutral votes                                                        11 878  expected       11 878  OK
 attempts where n_votes_dated + n_votes_imputed != n_votes                 0  expected            0  OK
-sum of imputed votes across attempts                                  6 991  expected        6 991  OK
-self-votes surviving in the table                                        94  expected           94  OK
-sum of n_self_votes                                                      94  expected           94  OK
+sum of imputed votes across attempts                                  6 975  expected        6 975  OK
+self-votes surviving in the table                                        98  expected           98  OK
+sum of n_self_votes                                                      98  expected           98  OK
 
 == ROUND 2 RESULT ==
 Everything consistent.

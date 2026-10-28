@@ -19,7 +19,7 @@ distinct candidates                                                   3 497  exp
 users who are BOTH voters AND candidates                              2 533  expected        2 533  OK
 candidates who never voted                                              964  expected          964  OK
 users after merging the first letter                                 11 243  expected       11 243  OK
-groups di grafie che differiscono solo per l'iniziale                   137  expected          137  OK
+groups of spellings differing only in first-letter case                 137  expected          137  OK
   of which the person is a candidate under some spelling                 90  expected           90  OK
   of which the CANDIDATE appears under two spellings                      8  expected            8  OK
 
@@ -72,7 +72,7 @@ votes with an impossible year (>2008)                                    11  exp
 elections closed before September 2004                                    0  expected            0  OK
 elections closed in 2007                                              2 180  expected        2 180  OK
 
-== wiki-Elec: il field_rows T e inaffidabile ==
+== wiki-Elec: the T field is unreliable ==
 gap T - last vote: median (days)                                        102  expected          102  OK
 elections with T more than 30 days later                              1 512  expected        1 512  OK
 elections with T more than 180 days later                             1 217  expected        1 217  OK
