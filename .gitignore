@@ -11,3 +11,6 @@
 
 # data/ is deliberately NOT ignored: the submission requires the data together
 # with the code (instructions, section 5).
+
+# Partial outputs quarantined by R/run_data_prep.R after a failed run
+data/processed/failed_run_*/

@@ -6,7 +6,7 @@
 # This keeps the analysis modular while providing one reproducible entry point.
 
 steps <- c(
-  "R/01_prepare_data.R",
+  "R/run_data_prep.R",
   "R/04_build_networks.R",
   "R/05_measure_change.R",
   "R/06_model_outcome.R",

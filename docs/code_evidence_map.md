@@ -14,7 +14,7 @@ required by the SNAP file formats.
 | `parse_dat()` | Parses full and abbreviated month names without depending on locale | Data audit found 7,080 dates that a full-month parser would lose |
 | `reconstruct_attempts()` | Groups by candidate/outcome and a time gap, with a gap-only sensitivity rule | Published precedent plus validation against `wiki-Elec` |
 | `R/03_validate_outcomes.R` | Compares reconstructed voter sets with independent elections using Jaccard overlap | The neighborhood-overlap idea is taught in the network-context lecture |
-| `R/01_prepare_data.R` | Applies analysis exclusions and creates `attempts_analysis.rds` | Project no-leakage and data-quality requirements |
+| `R/run_data_prep.R` | Runs the ordered data stages and creates `attempts_analysis.rds` | Project no-leakage and data-quality requirements |
 
 ## Network construction
 

@@ -39,7 +39,7 @@ R/
   00_run_all.R               execute the complete pipeline
   00_paths.R                 shared paths and configuration
   00_lib_data.R              parsers, normalisation and attempt helpers
-  01_prepare_data.R          single data-preparation entry point
+  run_data_prep.R            single data-preparation entry point
   01_read_raw.R              read the two SNAP files
   02_build_attempts.R        reconstruct candidate attempts
   03_validate_outcomes.R     validate attempts and outcomes
@@ -79,7 +79,7 @@ $rscript = "C:\Program Files\R\R-4.5.2\bin\Rscript.exe"
 `00_run_all.R` executes the decomposed pipeline in order:
 
 ```text
-01_prepare_data.R
+run_data_prep.R
 04_build_networks.R
 05_measure_change.R
 06_model_outcome.R
@@ -95,8 +95,16 @@ Optional verification:
 & $rscript R\99b_verify_output.R
 ```
 
-`01_prepare_data.R` runs the internal data steps in order. The four analysis
-scripts are intentionally separate so each stage can be inspected and rerun.
+`run_data_prep.R` runs the data steps in isolated environments, clears stale
+outputs before starting, quarantines partial results after a failure and checks
+that every expected data file exists. The four analysis scripts are
+intentionally separate so each stage can be inspected and rerun.
+
+To run only the data workstream:
+
+```powershell
+& $rscript R\run_data_prep.R
+```
 
 ## Final data counts
 

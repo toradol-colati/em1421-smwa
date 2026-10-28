@@ -8,13 +8,14 @@ Umberto Toraldo, with the following decisions fixed for the network analysis.
 From the repository root:
 
 ```powershell
-& "C:\Program Files\R\R-4.5.2\bin\Rscript.exe" R\01_prepare_data.R
+& "C:\Program Files\R\R-4.5.2\bin\Rscript.exe" R\run_data_prep.R
 & "C:\Program Files\R\R-4.5.2\bin\Rscript.exe" R\99_verify_data.R
 & "C:\Program Files\R\R-4.5.2\bin\Rscript.exe" R\99b_verify_output.R
 ```
 
-The first command executes the ordered internal steps and creates the analysis
-tables. The two verification scripts are optional audit checks.
+The first command executes the ordered internal steps with stale-output
+protection and creates the analysis tables. The two verification scripts are
+optional audit checks.
 The validated files in `data/processed/` are committed so the prepared tables
 can be inspected directly. They can also be recreated from `data/raw/`.
 

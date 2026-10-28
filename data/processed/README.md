@@ -1,9 +1,9 @@
 # Generated data
 
-This directory is populated by `R/01_prepare_data.R`:
+This directory is populated by `R/run_data_prep.R`:
 
 ```powershell
-& "C:\Program Files\R\R-4.5.2\bin\Rscript.exe" R\01_prepare_data.R
+& "C:\Program Files\R\R-4.5.2\bin\Rscript.exe" R\run_data_prep.R
 ```
 
 The `.rds`, `.csv` and `.txt` files in this folder are the validated snapshot
