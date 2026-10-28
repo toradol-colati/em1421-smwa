@@ -175,12 +175,11 @@ without very short attempts.
 - `docs/EM1421_projectsInstructions.txt`: official project requirements.
 - `docs/writing_your_project.txt`: instructor's report-writing guidance.
 - `docs/DATA.md`: final data definitions, counts and limitations.
-- `docs/code_evidence_map.md`: code-to-course correspondence and clearly marked
-  project extensions.
 
 The report must not contain code. The processed data, result tables and figures
 are included as a validated snapshot and can also be recreated with
 `R/00_run_all.R`.
 
-Course slides, exam preparation and internal working notes are preserved on the
-`archive/course-and-working-notes` branch rather than in the submission tree.
+Course slides, exam preparation, the code-to-course evidence map and internal
+working notes are preserved on the `archive/course-and-working-notes` branch
+rather than in the submission tree.
