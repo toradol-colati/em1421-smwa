@@ -74,7 +74,7 @@ inv("duration_days matches the difference between the two dates",
 inv("attempt_no is a contiguous 1..k for every candidate",
     all(tapply(a$attempt_no, a$candidate,
                function(x) identical(sort(as.integer(x)), seq_along(x)))))
-inv("attempt_no ordina per data di opened",
+inv("attempt_no is ordered by opened_at",
     all(tapply(seq_len(nrow(a)), a$candidate, function(i)
       !is.unsorted(a$opened_at[i][order(a$attempt_no[i])]))))
 inv("prev_outcome is the outcome of the candidate's previous attempt",
@@ -91,45 +91,45 @@ inv("attempt_no agrees across the two tables",
 
 sect("VOTE CONSERVATION")
 raw_n <- 198275L
-phantom <- 1661L; removed <- 627L + 100L; lost <- 616L
+phantom <- 1661L; removed <- 630L + 100L; lost <- 632L
 chk("raw records", raw_n, 198275)
-chk("votes in votes.rds", nrow(v), 195271)
-chk("phantom + ripetuti + lost senza data", phantom + removed + lost, raw_n - nrow(v))
-chk("votes with an imputed date", sum(v$dat_imputed), 6991)
-chk("undated votes kept in the table", sum(v$dat_missing), 6991)
+chk("votes in votes.rds", nrow(v), 195252)
+chk("phantom + duplicate + undated losses", phantom + removed + lost, raw_n - nrow(v))
+chk("votes with an imputed date", sum(v$dat_imputed), 6975)
+chk("undated votes kept in the table", sum(v$dat_missing), 6975)
 
 sect("FIGURES QUOTED IN docs/DATA.md")
-chk("attempts", nrow(a), 4082)
+chk("attempts", nrow(a), 4081)
 repeats <- table(a$candidate)
-chk("repeat candidates (2+ attempts)", sum(repeats > 1), 484)
-chk("candidates with 3+ attempts", sum(repeats > 2), 90)
-chk("consecutive attempt pairs", sum(repeats[repeats > 1] - 1), 614)
-chk("attempts with a known previous outcome", sum(!is.na(a$prev_outcome)), 614)
+chk("repeat candidates (2+ attempts)", sum(repeats > 1), 490)
+chk("candidates with 3+ attempts", sum(repeats > 2), 91)
+chk("consecutive attempt pairs", sum(repeats[repeats > 1] - 1), 621)
+chk("attempts with a known previous outcome", sum(!is.na(a$prev_outcome)), 621)
 chk("candidates with at least one previous rejection",
-    length(unique(a$candidate[!is.na(a$prev_outcome) & a$prev_outcome == -1])), 445)
+    length(unique(a$candidate[!is.na(a$prev_outcome) & a$prev_outcome == -1])), 451)
 chk("candidates with at least one previous success",
     length(unique(a$candidate[!is.na(a$prev_outcome) & a$prev_outcome == 1])), 53)
-chk("flag_short", sum(a$flag_short), 296)
+chk("flag_short", sum(a$flag_short), 297)
 chk("flag_long", sum(a$flag_long), 4)
-chk("flag_year_clash", sum(a$flag_year_clash), 359)
-chk("attempts matched in wiki-Elec", sum(av$elec_matched), 2176)
-chk("of which the outcome agrees", sum(av$outcome_agrees, na.rm = TRUE), 2176 - 12)
-chk("attempts with no external match", sum(!av$elec_matched), 4082 - 2176)
+chk("flag_year_clash", sum(a$flag_year_clash), 363)
+chk("attempts matched in wiki-Elec", sum(av$elec_matched), 2175)
+chk("of which the outcome agrees", sum(av$outcome_agrees, na.rm = TRUE), 2175 - 12)
+chk("attempts with no external match", sum(!av$elec_matched), 4081 - 2175)
 
 sect("NETWORK STRUCTURE, ON THE DELIVERED TABLE (not on the raw file)")
 # NB: the raw-file figures (10,417 voters, 3,497 candidates, 2,533 both) are NOT
 # these: thousands of records leave the pipeline and with them some users
 # disappear entirely. The document must report both.
-chk("distinct voters in votes.rds", length(unique(v$src)), 10394, tol = 30)
-chk("distinct candidates in votes.rds", length(unique(v$tgt)), 3468, tol = 10)
-chk("users who are both voters and candidates", length(intersect(v$src, v$tgt)), 2512, tol = 10)
-chk("support votes", sum(v$vot == 1), 143610, tol = 600)
-chk("oppose votes", sum(v$vot == -1), 40561, tol = 600)
-chk("neutral votes", sum(v$vot == 0), 11992, tol = 600)
+chk("distinct voters in votes.rds", length(unique(v$src)), 10300, tol = 30)
+chk("distinct candidates in votes.rds", length(unique(v$tgt)), 3460, tol = 10)
+chk("users who are both voters and candidates", length(intersect(v$src, v$tgt)), 2549, tol = 10)
+chk("support votes", sum(v$vot == 1), 143154, tol = 600)
+chk("oppose votes", sum(v$vot == -1), 40220, tol = 600)
+chk("neutral votes", sum(v$vot == 0), 11878, tol = 600)
 chk("attempts where n_votes_dated + n_votes_imputed != n_votes",
     sum(a$n_votes_dated + a$n_votes_imputed != a$n_votes), 0)
-chk("sum of imputed votes across attempts", sum(a$n_votes_imputed), 6991)
-chk("self-votes surviving in the table", sum(v$self_vote), 94, tol = 15)
+chk("sum of imputed votes across attempts", sum(a$n_votes_imputed), 6975)
+chk("self-votes surviving in the table", sum(v$self_vote), 98)
 chk("sum of n_self_votes", sum(a$n_self_votes), sum(v$self_vote))
 
 sect("ROUND 2 RESULT")

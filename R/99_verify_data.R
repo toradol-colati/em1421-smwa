@@ -51,7 +51,7 @@ chk("candidates who never voted", length(setdiff(unique(Dt$TGT), unique(Dt$SRC))
 cap <- function(s) ifelse(s == "", s, paste0(toupper(substr(s,1,1)), substr(s,2,nchar(s))))
 chk("users after merging the first letter", length(unique(cap(clean_name(all_names_raw)))), 11243)
 gr <- split(unique(trimws(all_names_raw)), cap(unique(trimws(all_names_raw))))
-chk("groups di grafie che differiscono solo per l'iniziale", sum(lengths(gr) > 1), 137)
+chk("groups of spellings differing only in first-letter case", sum(lengths(gr) > 1), 137)
 chk("  of which the person is a candidate under some spelling",
     sum(vapply(gr, function(f) length(f) > 1 && any(f %in% Dt$TGT), TRUE)), 90)
 chk("  of which the CANDIDATE appears under two spellings",
@@ -124,7 +124,7 @@ chk("elections closed before September 2004",
     sum(E$elections$closed_at < as.POSIXct("2004-09-01", tz = "UTC")), 0)
 chk("elections closed in 2007", sum(format(E$elections$closed_at, "%Y") == "2007"), 2180)
 
-sect("wiki-Elec: il field_rows T e inaffidabile")
+sect("wiki-Elec: the T field is unreliable")
 ul <- vapply(split(as.numeric(E$votes$dat), E$votes$election_id)[
                as.character(E$elections$election_id)],
              function(x) max(x[x < as.numeric(as.POSIXct("2009-01-01", tz="UTC"))]), 0)

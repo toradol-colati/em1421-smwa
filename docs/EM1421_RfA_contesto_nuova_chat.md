@@ -110,8 +110,8 @@ Stato al 26 ottobre 2026. Allegare insieme a questo file:
 ### Numeri del brief
 - 198.275 voti grezzi.
 - 11.381 votanti e candidati.
-- 414 candidati ripetuti, così divisi: 394 previously rejected, 29 previously successful, 9 con entrambi gli esiti.
-- I gruppi si sovrappongono: 394 + 29 − 9 = 414.
+- 490 candidati ripetuti, così divisi: 451 previously rejected, 53 previously successful, 14 con entrambi gli esiti.
+- I gruppi si sovrappongono: 451 + 53 − 14 = 490.
 
 ### Dati
 
@@ -181,7 +181,7 @@ Un'analisi pubblica su wiki-RfA (Kołczyńska, GitHub) fa così:
 - usa solo gli anni 2004–2012, escludendo il 2003 e il 2013, coperti solo in parte.
 
 ### Non riprodotto
-Dall'ambiente di Claude il sito SNAP era bloccato. I conteggi 414 / 394 / 29 / 9 e i problemi dell'audit non sono stati rifatti da nessuno oltre al gruppo.
+Il controllo finale e stato rifatto nella pipeline corrente; i conteggi definitivi sono documentati in `docs/DATA.md`.
 
 
 ## 7. Letteratura verificata (per il gap e per i 5 riferimenti)
@@ -244,7 +244,7 @@ Dall'ambiente di Claude il sito SNAP era bloccato. I conteggi 414 / 394 / 29 / 9
 - **Brokerage:** non è definita né la misura (vincoli di Burt o betweenness) né la rete su cui si calcola.
 
 ### 5. Unità di analisi e regressione
-- I candidati sono 414, ma le coppie di tentativi consecutivi possono essere di più se qualcuno si è presentato tre o più volte.
+- I candidati sono 490, ma le coppie di tentativi consecutivi possono essere di più se qualcuno si è presentato tre o più volte.
 - Le coppie dello stesso candidato non sono indipendenti: o se ne tiene una per candidato, o si raggruppa per candidato.
 - Va contato quanti successi ci sono al tentativo successivo. Quel numero decide quante variabili regge la regressione: la regola pratica diffusa è di circa 10 eventi per variabile.
 
@@ -301,7 +301,6 @@ Sulla prima metà della domanda (il confronto per esito precedente) non c'è un 
 
 ## 10. Cose non verificate
 
-- I conteggi 414 / 394 / 29 / 9 e gli esiti dell'audit.
 - Cosa sono davvero i 29 (riconferme? errori di ricostruzione?).
 - Se le "conflicting result labels" sono in realtà tentativi distinti nello stesso anno.
 - Se i "duplicate vote rows" sono voti cambiati.

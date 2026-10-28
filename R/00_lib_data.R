@@ -144,7 +144,9 @@ read_elec <- function(path) {
 # collapses repeated blanks and trims the edges. It does not touch letter case:
 # that is an open decision (MERGE_FIRST_LETTER in 02).
 clean_name <- function(x) {
-  x <- gsub("[​-‏﻿]", "", x)   # direction marks and similar
+  for (code_point in c(0x200B:0x200F, 0xFEFF)) {
+    x <- gsub(intToUtf8(code_point), "", x, fixed = TRUE)
+  }
   x <- gsub("[[:space:]]+", " ", x)           # repeated or exotic blanks -> one
   trimws(x)
 }
@@ -211,7 +213,8 @@ parse_dat <- function(x) {
 }
 
 # --- attempt reconstruction ---------------------------------------------------
-# Two rules, compared against wiki-Elec in 03 instead of being picked by feel.
+# Three rules are compared against wiki-Elec in 03 instead of being picked by
+# feel.
 #
 # "gap_then_res": sort by date within the candidate and open a new attempt when
 #   the gap exceeds the threshold or RES changes. DISCARDED after testing: a
@@ -232,20 +235,27 @@ parse_dat <- function(x) {
 #
 # Undated votes cannot be ordered: they stay out and are attached afterwards,
 # only where the attribution is unambiguous (see 02).
+#
+# "gap_only": group only by candidate and date gap, and mark an attempt with
+#   mixed RES values as outcome-unknown. This is the sensitivity rule that avoids
+#   using the potentially inconsistent RES field to define boundaries.
 reconstruct_attempts <- function(d, threshold_days, mode = "res_then_gap") {
   stopifnot(all(c("tgt", "vot", "res", "yea", "dat") %in% names(d)))
-  stopifnot(mode %in% c("res_then_gap", "gap_then_res"))
+  stopifnot(mode %in% c("res_then_gap", "gap_then_res", "gap_only"))
   d <- d[!is.na(d$dat), ]
   if (nrow(d) == 0) return(d)
   if (mode == "res_then_gap") {
     d <- d[order(d$tgt, d$res, d$dat), ]
     n <- nrow(d)
     group_change <- c(TRUE, d$tgt[-1] != d$tgt[-n] | d$res[-1] != d$res[-n])
-  } else {
+  } else if (mode == "gap_then_res") {
     d <- d[order(d$tgt, d$dat), ]
     n <- nrow(d)
     group_change <- c(TRUE, d$tgt[-1] != d$tgt[-n] | d$res[-1] != d$res[-n])
-    group_change[1] <- TRUE
+  } else {
+    d <- d[order(d$tgt, d$dat), ]
+    n <- nrow(d)
+    group_change <- c(TRUE, d$tgt[-1] != d$tgt[-n])
   }
   gap_days <- c(NA_real_, as.numeric(difftime(d$dat[-1], d$dat[-n], units = "days")))
   is_new <- group_change | (!group_change & gap_days > threshold_days)

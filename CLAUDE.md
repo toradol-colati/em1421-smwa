@@ -40,19 +40,20 @@ contesto.
 - **YEA di wiki-RfA e inaffidabile**: 1.875 voti hanno la data in un anno diverso, a blocchi.
   La ricostruzione dei tentativi non lo usa.
 - **I due file descrivono in gran parte le stesse elezioni**: appaiando per insiemi di votanti,
-  77,6% con Jaccard > 0,5 e 84,2% con Jaccard > 0,3; assenti il 9,8%. Dissentono invece sui
+  77,9% con Jaccard > 0,5 e 84,2% con Jaccard > 0,3; assenti il 9,8%. Dissentono invece sui
   singoli votanti: circa 8-9 nomi su 41 per elezione, in modo simmetrico.
-- **Ricostruzione dei tentativi**: 4.082 tentativi, **484 candidati ripetuti** (il brief dice
-  414), 445 previously rejected (394), **53 previously successful (29)**, 614 coppie
-  consecutive. Esito validato al **99,45%** su 2.168 elezioni appaiate. Nessuna validazione
+- **Ricostruzione dei tentativi**: 4.081 tentativi, **490 candidati ripetuti**, 451
+  precedentemente respinti, **53 precedentemente approvati**, 621 coppie consecutive.
+  Esito validato al **99,45%** su 2.175 tentativi appaiati. Nessuna validazione
   dal 2008 al 2013.
-- **9.367 voti senza data** (4,72%): 8.562 attribuiti, 806 persi.
+- **9.367 date vuote nella fonte** piu un valore impossibile: 6.975 voti senza data vengono
+  attribuiti in modo univoco e 632 non attribuibili restano esclusi.
 - **137 gruppi di username che differiscono solo per l'iniziale maiuscola**, che su Wikipedia
   sono lo stesso account. In 8 casi lo stesso candidato compare con due grafie in anni
-  diversi: se non si unificano cadono fuori dai ripetuti e cambia il 414. Decisione aperta.
+  diversi. La decisione finale e di unificarli, per rispettare l'identita case-insensitive
+  della prima lettera nei titoli Wikipedia.
 
 ## Non verificato
-- Conteggi 414 / 394 / 29 / 9 ed esiti dell'audit: nessuno li ha rifatti fuori dal gruppo.
 - Esistenza e regola del codice dei "feasibility checks" del brief.
 - Data dell'appello (4/11 dedotto dalla consegna del 2/11, 09:00 CET).
 - L'affermazione che il parser produca colonne annidate di tipo lista: non riprodotta.

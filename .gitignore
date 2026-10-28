@@ -11,5 +11,14 @@
 # data/ is deliberately NOT ignored: the submission requires the data together
 # with the code (instructions, section 5).
 
-# Regenerable intermediate produced by R/01_read_raw.R (14 MB)
-data/processed/votes_raw.rds
+# Generated data and analysis outputs are recreated by the scripts and are not
+# committed. Keep only the directory documentation.
+data/processed/*
+!data/processed/.gitkeep
+!data/processed/README.md
+
+output/figures/*
+!output/figures/.gitkeep
+
+output/results/*
+!output/results/.gitkeep
