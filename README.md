@@ -28,8 +28,9 @@ causal effects.
 - `wikiElec.ElecBs3.txt.gz`: independent election data through January 2008,
   used to validate attempt boundaries and outcomes.
 
-The immutable raw files are in `data/raw/`. Generated data are written to
-`data/processed/` and are not committed.
+The immutable raw files are in `data/raw/`. The validated processed data are
+written to `data/processed/`, and the final tables and figures are included in
+this branch so the submitted results can be inspected directly.
 
 ## Repository layout
 
@@ -166,5 +167,6 @@ without very short attempts.
 - `docs/code_evidence_map.md`: code-to-course correspondence and clearly marked
   project extensions.
 
-The report must not contain code. Generated data, results and figures must be
-recreated by the scripts and are excluded from Git.
+The report must not contain code. The processed data, result tables and figures
+are included as a validated snapshot and can also be recreated with
+`R/00_run_all.R`.

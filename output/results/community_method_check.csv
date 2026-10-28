@@ -1,0 +1,4 @@
+"method","cutoff_year","network_voters","covoting_edges","communities","modularity"
+"Weighted Louvain",2004,29,87,4,0.184997530864198
+"Weighted Girvan-Newman",2004,29,87,10,0.156904244625335
+"Unweighted Girvan-Newman",2004,29,87,2,0.0213370326331087

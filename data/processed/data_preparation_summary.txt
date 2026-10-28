@@ -1,0 +1,10 @@
+Validated vote rows: 195252
+Attempts: 4081
+Repeat candidates: 490
+Consecutive attempt pairs: 621
+Externally matched attempts: 2175
+Outcome disagreements excluded from outcome analysis: 12
+Self-votes retained in votes table: 98
+Neutral votes retained in votes table: 11878
+First-letter username variants are merged.
+Network analysis excludes self-votes and neutral votes.

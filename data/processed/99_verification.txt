@@ -1,0 +1,123 @@
+
+== wiki-RfA: parsed independently of the pipeline parser ==
+total lines in the file                                           1 586 200  expected    1 586 200  OK
+discarded lines that are NOT blank separators                             0  expected            0  OK
+records (= votes)                                                   198 275  expected      198 275  OK
+records whose field count is not 7                                        0  expected            0  OK
+
+== wiki-RfA: user identity ==
+distinct users WITHOUT trimming                                      11 402  expected       11 402  OK
+distinct users WITH trimming (SNAP total)                            11 381  expected       11 381  OK
+distinct users after full normalisation                              11 380  expected       11 380  OK
+spellings with a leading or trailing blank                               43  expected           43  OK
+  of which collide with the clean form already present                   21  expected           21  OK
+  reduction in distinct names                                            21  expected           21  OK
+voter-candidate pairs WITHOUT trimming (SNAP total)                 189 004  expected      189 004  OK
+voter-candidate pairs after normalisation                           189 001  expected      189 001  OK
+distinct voters, normalised (empty node included)                    10 416  expected       10 416  OK
+distinct candidates                                                   3 497  expected        3 497  OK
+users who are BOTH voters AND candidates                              2 533  expected        2 533  OK
+candidates who never voted                                              964  expected          964  OK
+users after merging the first letter                                 11 243  expected       11 243  OK
+groups of spellings differing only in first-letter case                 137  expected          137  OK
+  of which the person is a candidate under some spelling                 90  expected           90  OK
+  of which the CANDIDATE appears under two spellings                      8  expected            8  OK
+
+== wiki-RfA: fields ==
+support votes (VOT=1)                                               144 451  expected      144 451  OK
+oppose votes (VOT=-1)                                                41 176  expected       41 176  OK
+neutral votes (VOT=0)                                                12 648  expected       12 648  OK
+rejected outcome (RES=-1)                                            74 987  expected       74 987  OK
+approved outcome (RES=1)                                            123 288  expected      123 288  OK
+empty DAT                                                             9 367  expected        9 367  OK
+DAT with an unrecognised format                                           0  expected            0  OK
+DAT with an impossible value (hour 31)                                    1  expected            1  OK
+votes with an abbreviated month (May excluded: identical in both forms)        7 077  expected        7 077  OK
+  votes whose month is 'May'                                         18 603  expected       18 603  OK
+votes with the month misspelled in the source                             3  expected            3  OK
+dates a %B parser would lose                                          7 080  expected        7 080  OK
+votes whose date year differs from YEA                                1 875  expected        1 875  OK
+votes dated 2003                                                        155  expected          155  OK
+votes dated 2013                                                      3 348  expected        3 348  OK
+fully identical rows                                                    595  expected          595  OK
+empty comments                                                        7 190  expected        7 190  OK
+median comment length                                                    98  expected           98  OK
+maximum comment length                                                7 610  expected        7 610  OK
+comments starting with a bold marker                                162 939  expected      162 939  OK
+votes cast per voter: median                                              3  expected            3  OK
+votes cast per voter: maximum, phantom records EXCLUDED               1 232  expected        1 232  OK
+votes received per candidate: median                                     41  expected           41  OK
+votes received per candidate: maximum                                   987  expected          987  OK
+
+== wiki-Elec: format defects ==
+lines read by readLines()                                           128 016  expected      128 016  OK
+lines where readLines() LEAVES a CR                                       0  expected            0  OK
+CRLF byte pairs in the first 3 MB of the file                        83 859  expected       83 859  OK
+lines that are not valid UTF-8                                           19  expected           19  OK
+elections                                                             2 794  expected        2 794  OK
+votes                                                               114 040  expected      114 040  OK
+distinct voters                                                       6 210  expected        6 210  OK
+promotions                                                            1 248  expected        1 248  OK
+rejections                                                            1 546  expected        1 546  OK
+distinct candidates                                                   2 391  expected        2 391  OK
+nominator = UNKNOWN                                                   2 117  expected        2 117  OK
+declared self-nominations                                                85  expected           85  OK
+votes per election: median                                               34  expected           34  OK
+votes per election: maximum                                             370  expected          370  OK
+support votes                                                        83 962  expected       83 962  OK
+oppose votes                                                         23 118  expected       23 118  OK
+neutral votes                                                         6 960  expected        6 960  OK
+missing closing times                                                     0  expected            0  OK
+votes with an impossible year (>2008)                                    11  expected           11  OK
+elections closed before September 2004                                    0  expected            0  OK
+elections closed in 2007                                              2 180  expected        2 180  OK
+
+== wiki-Elec: the T field is unreliable ==
+gap T - last vote: median (days)                                        102  expected          102  OK
+elections with T more than 30 days later                              1 512  expected        1 512  OK
+elections with T more than 180 days later                             1 217  expected        1 217  OK
+minimum gap (T before the last vote)                                   -188  expected         -188  OK
+
+== spellings across the two files ==
+wiki-Elec: candidates with an underscore                                408  expected          408  OK
+wiki-Elec: candidates with a space                                        0  expected            0  OK
+wiki-RfA: candidates with an underscore                                   0  expected            0  OK
+wiki-RfA: candidates with a space                                       606  expected          606  OK
+wiki-Elec candidates found in wiki-RfA, direct match (%)               75.1  expected         74.9  OK
+wiki-Elec candidates found after normalisation (%)                     89.8  expected         89.8  OK
+
+== HYGIENE: the classic traps ==
+empty names among the nodes (phantom records still present here)            1  expected            1  OK
+PHANTOM RECORDS: votes with an empty SRC                              1 661  expected        1 661  OK
+  of these, how many also have an empty TXT                           1 661  expected        1 661  OK
+  candidates that exist ONLY through phantom records                      6  expected            6  OK
+names with multiple internal blanks, BEFORE cleaning                      1  expected            1  OK
+  and after cleaning                                                      0  expected            0  OK
+names with invisible characters, BEFORE cleaning                          1  expected            1  OK
+  and after cleaning                                                      0  expected            0  OK
+names with a tab or newline                                               0  expected            0  OK
+names with a non-breaking space U+00A0                                    0  expected            0  OK
+names with HTML entities                                                  0  expected            0  OK
+names with an underscore (wiki-RfA uses none)                             0  expected            0  OK
+non-ASCII names (legitimate)                                             78  expected           78  OK
+SELF-VOTES: the candidate votes in their own RfA                        103  expected          103  OK
+votes with an empty TGT                                                   0  expected            0  OK
+VOT outside {-1,0,1}                                                      0  expected            0  OK
+RES outside {-1,1}                                                        0  expected            0  OK
+YEA outside 2003-2013                                                     0  expected            0  OK
+dates before 2003                                                         0  expected            0  OK
+dates after May 2013 (declared end of coverage)                          75  expected           75  OK
+
+== HYGIENE: wiki-Elec ==
+duplicate voters within the same election                                 0  expected            0  OK
+elections with no votes at all                                            0  expected            0  OK
+elections with a single vote                                             97  expected           97  OK
+the candidate votes in their own election                                72  expected           72  OK
+empty usernames among the voters                                          0  expected            0  OK
+two elections with the same candidate and closing time                    0  expected            0  OK
+
+== ASSUMPTION: RES is a property of the election, not of the vote ==
+  elections examined: 2048 | RES not constant: 307 (15.0%)
+
+== RESULT ==
+Every claim matches.

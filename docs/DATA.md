@@ -15,8 +15,8 @@ From the repository root:
 
 The first command executes the ordered internal steps and creates the analysis
 tables. The two verification scripts are optional audit checks.
-Generated files in `data/processed/` are intentionally excluded from Git and
-must be recreated from `data/raw/`.
+The validated files in `data/processed/` are committed so the prepared tables
+can be inspected directly. They can also be recreated from `data/raw/`.
 
 ## Canonical choices
 
