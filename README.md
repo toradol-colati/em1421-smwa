@@ -179,7 +179,3 @@ without very short attempts.
 The report must not contain code. The processed data, result tables and figures
 are included as a validated snapshot and can also be recreated with
 `R/00_run_all.R`.
-
-Course slides, exam preparation, the code-to-course evidence map and internal
-working notes are preserved on the `archive/course-and-working-notes` branch
-rather than in the submission tree.
