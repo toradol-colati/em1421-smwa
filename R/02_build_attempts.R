@@ -148,12 +148,12 @@ if (any(!is.na(undated$attempt_id))) {
 # because it can be checked. The first deduplication (step 8) could not see
 # these, because the undated votes only enter here: another bug caught by the
 # invariant checks.
-v <- v[order(v$attempt_id, v$src, v$dat_imputed, v$dat), ]
+v <- v[order(v$attempt_id, v$src, v$dat_imputed, v$dat, method = "radix"), ]
 dup_second <- duplicated(v[, c("attempt_id", "src")])
 note("votes removed in the second deduplication (same voter, one dated and one ",
      "imputed within the same attempt): ", sum(dup_second))
 v <- v[!dup_second, ]
-v <- v[order(v$attempt_id, v$src), ]
+v <- v[order(v$attempt_id, v$src, method = "radix"), ]
 
 a_dated <- a
 a <- build_attempts(v)

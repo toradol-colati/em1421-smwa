@@ -193,29 +193,55 @@ chk("two elections with the same candidate and closing time",
 
 # ------------------------------------------------ assunzioni del metodo -----
 sect("ASSUMPTION: RES is a property of the election, not of the vote")
-# For each matched wiki-Elec election, do the corresponding wiki-RfA votes all
-# carry the same RES? If not, grouping by RES would be wrong.
-Dt$dat <- dt; Dt$kc <- norm_user(Dt$TGT); Dt$kv <- norm_user(Dt$SRC)
+# Grouping by (candidate, RES) rests on this assumption, so it is tested here.
+# TWO tests, and only the second one is valid.
+#
+# (1) Across ALL candidates: for each wiki-Elec election, take the wiki-RfA
+#     votes of that election's voters for that candidate and check whether RES
+#     is constant. This gives 15.0% non-constant, and that figure is an
+#     ARTEFACT: a candidate with several elections shares voters between their
+#     own elections, so selecting votes by voter membership pulls in the votes
+#     of the OTHER election, which legitimately carry a different RES. Reported
+#     only to show why it must not be quoted.
+#
+# (2) Restricted to candidates who have a SINGLE election in wiki-Elec, where
+#     there is no ambiguity about which election is meant. This is the valid
+#     test: 2.3% non-constant. In those cases the rule splits one election in
+#     two, and that is the residual error of the method.
+#
+# The exposure is bounded independently: the gap_only rule in 03 does not use
+# RES to set boundaries at all, and at a 7-day threshold it yields 4,063
+# attempts against 4,081, so the whole question moves 18 attempts out of 4,081.
+Dt$kc <- norm_user(Dt$TGT); Dt$kv <- norm_user(Dt$SRC)
 ev <- E$votes; ev$kv <- norm_user(ev$voter)
 ele <- E$elections; ele$kc <- norm_user(ele$candidate)
 set_el <- split(ev$kv, ev$election_id)
-res_mixed <- 0L; examined <- 0L
+n_el <- table(ele$kc)
 idx_c <- split(seq_len(nrow(Dt)), Dt$kc)
-for (r in seq_len(nrow(ele))) {
-  ii <- idx_c[[ele$kc[r]]]; if (is.null(ii)) next
-  s <- set_el[[as.character(ele$election_id[r])]]
-  jj <- ii[Dt$kv[ii] %in% s]
-  if (length(jj) < 10) next
-  examined <- examined + 1L
-  if (length(unique(Dt$RES[jj])) > 1) res_mixed <- res_mixed + 1L
+run_res_test <- function(single_election_only) {
+  sel <- if (single_election_only) which(n_el[ele$kc] == 1) else seq_len(nrow(ele))
+  mixed <- 0L; examined <- 0L
+  for (r in sel) {
+    ii <- idx_c[[ele$kc[r]]]; if (is.null(ii)) next
+    jj <- ii[Dt$kv[ii] %in% set_el[[as.character(ele$election_id[r])]]]
+    if (length(jj) < 10) next
+    examined <- examined + 1L
+    if (length(unique(Dt$RES[jj])) > 1) mixed <- mixed + 1L
+  }
+  c(examined = examined, mixed = mixed)
 }
-cat(sprintf("  elections examined (>=10 voters found again): %d\n", examined))
-cat(sprintf("  of which RES is NOT constant across their wiki-RfA votes: %d (%.1f%%)\n",
-            res_mixed, 100*res_mixed/examined))
-cat("  NB: a high value here would invalidate grouping by (candidate, RES).\n")
+t_all <- run_res_test(FALSE); t_one <- run_res_test(TRUE)
+cat(sprintf("  (1) all candidates      : %d examined, %d with non-constant RES (%.1f%%)  <- CONTAMINATED, do not quote\n",
+            t_all[1], t_all[2], 100*t_all[2]/t_all[1]))
+cat(sprintf("  (2) one-election only   : %d examined, %d with non-constant RES (%.1f%%)  <- THE VALID FIGURE\n",
+            t_one[1], t_one[2], 100*t_one[2]/t_one[1]))
 log_lines <- c(log_lines,
-  sprintf("  elections examined: %d | RES not constant: %d (%.1f%%)",
-          examined, res_mixed, 100*res_mixed/examined))
+  sprintf("  (1) all candidates: %d examined, %d non-constant RES (%.1f%%) - CONTAMINATED",
+          t_all[1], t_all[2], 100*t_all[2]/t_all[1]),
+  sprintf("  (2) one-election candidates only: %d examined, %d non-constant RES (%.1f%%) - VALID",
+          t_one[1], t_one[2], 100*t_one[2]/t_one[1]))
+chk("valid RES test: non-constant share, one-election candidates (%)",
+    round(100*t_one[2]/t_one[1], 1), 2.3, tol = 0.1)
 
 sect("RESULT")
 cat(if (ko == 0) "Every verified claim matches.\n" else

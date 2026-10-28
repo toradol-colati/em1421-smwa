@@ -212,6 +212,19 @@ parse_dat <- function(x) {
   res
 }
 
+# NOTE ON ORDERING - every order() call on usernames below passes
+# method = "radix". Without it, order() sorts character vectors using the
+# machine's collation locale, so the SAME data produces a DIFFERENT attempt_id
+# numbering on a different machine: measured, 3,763 of 4,081 attempt_id values
+# differed between a Windows run and a macOS run of identical code on identical
+# data. The attempts themselves were identical - same set, same attempt_no, all
+# 19 substantive columns equal - but the ids were permuted, which breaks any
+# cross-reference between a committed CSV (03_match_wikielec.csv carries
+# my_attempt, output/results/attempt_pairs.csv carries previous_attempt_id and
+# next_attempt_id) and a locally regenerated table. "radix" sorts by byte, which
+# is locale-independent, and makes the whole pipeline byte-reproducible: checked
+# by running it under LC_COLLATE=it_IT and LC_COLLATE=C.
+
 # --- attempt reconstruction ---------------------------------------------------
 # Three rules are compared against wiki-Elec in 03 instead of being picked by
 # feel.
@@ -245,15 +258,15 @@ reconstruct_attempts <- function(d, threshold_days, mode = "res_then_gap") {
   d <- d[!is.na(d$dat), ]
   if (nrow(d) == 0) return(d)
   if (mode == "res_then_gap") {
-    d <- d[order(d$tgt, d$res, d$dat), ]
+    d <- d[order(d$tgt, d$res, d$dat, method = "radix"), ]
     n <- nrow(d)
     group_change <- c(TRUE, d$tgt[-1] != d$tgt[-n] | d$res[-1] != d$res[-n])
   } else if (mode == "gap_then_res") {
-    d <- d[order(d$tgt, d$dat), ]
+    d <- d[order(d$tgt, d$dat, method = "radix"), ]
     n <- nrow(d)
     group_change <- c(TRUE, d$tgt[-1] != d$tgt[-n] | d$res[-1] != d$res[-n])
   } else {
-    d <- d[order(d$tgt, d$dat), ]
+    d <- d[order(d$tgt, d$dat, method = "radix"), ]
     n <- nrow(d)
     group_change <- c(TRUE, d$tgt[-1] != d$tgt[-n])
   }
@@ -265,7 +278,7 @@ reconstruct_attempts <- function(d, threshold_days, mode = "res_then_gap") {
   ap <- tapply(as.numeric(d$dat), d$attempt_id, min)
   first_tbl <- data.frame(attempt_id = as.integer(names(ap)), opened = as.numeric(ap))
   first_tbl$tgt <- d$tgt[match(first_tbl$attempt_id, d$attempt_id)]
-  first_tbl <- first_tbl[order(first_tbl$tgt, first_tbl$opened), ]
+  first_tbl <- first_tbl[order(first_tbl$tgt, first_tbl$opened, method = "radix"), ]
   first_tbl$attempt_no <- ave(first_tbl$opened, first_tbl$tgt, FUN = seq_along)
   d$attempt_no <- first_tbl$attempt_no[match(d$attempt_id, first_tbl$attempt_id)]
   d
@@ -278,7 +291,7 @@ reconstruct_attempts <- function(d, threshold_days, mode = "res_then_gap") {
 # the duplicate is signal rather than noise. Returns the cleaned table and the
 # number of rows removed.
 dedup_votes <- function(d) {
-  o <- order(d$attempt_id, d$src, d$dat)
+  o <- order(d$attempt_id, d$src, d$dat, method = "radix")
   d <- d[o, ]
   keep_row <- !duplicated(d[, c("attempt_id", "src")], fromLast = TRUE)
   attr(d, "n_rows_removed") <- sum(!keep_row)
@@ -327,5 +340,5 @@ build_attempts <- function(v) {
   a$year_from_date <- as.integer(format(a$opened_at, "%Y"))
   key <- paste(a$candidate, a$year_from_date, a$outcome)
   a$flag_year_clash <- key %in% key[duplicated(key)]
-  a[order(a$candidate, a$attempt_no), ]
+  a[order(a$candidate, a$attempt_no, method = "radix"), ]
 }

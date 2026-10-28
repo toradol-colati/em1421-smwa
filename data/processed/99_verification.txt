@@ -117,7 +117,9 @@ empty usernames among the voters                                          0  exp
 two elections with the same candidate and closing time                    0  expected            0  OK
 
 == ASSUMPTION: RES is a property of the election, not of the vote ==
-  elections examined: 2048 | RES not constant: 307 (15.0%)
+  (1) all candidates: 2048 examined, 307 non-constant RES (15.0%) - CONTAMINATED
+  (2) one-election candidates only: 1522 examined, 35 non-constant RES (2.3%) - VALID
+valid RES test: non-constant share, one-election candidates (%)          2.3  expected          2.3  OK
 
 == RESULT ==
 Every claim matches.
