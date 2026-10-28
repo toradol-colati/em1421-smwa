@@ -138,10 +138,25 @@ least two historical candidate attempts. The graph is undirected and weighted
 by repeated co-voting. Neutral votes and self-votes are excluded from the signed
 co-voting network.
 
-Communities are detected with weighted Louvain. The course's Girvan-Newman
-method is retained as a sensitivity check on the first tractable snapshot.
-Community results are treated as exploratory because dense graphs are sensitive
-to detection method and threshold.
+Communities are detected with weighted Louvain. The course presents
+Girvan-Newman as its example of a *divisive* method and states that it suits
+networks of a few thousand nodes, naming *agglomerative* methods as the
+alternative beyond that; Louvain is the standard agglomerative method, so this
+follows the syllabus rather than departing from it.
+
+The substitution is measured, not assumed: `R/97_community_method_check.R` runs
+both methods on the three smallest snapshots and writes
+`output/results/community_method_check.csv`. Girvan-Newman needs 198 seconds on
+10,053 edges, does not finish within ten minutes on 66,698, and where it does
+finish it returns 247 communities among 375 voters with modularity 0.018, that
+is no community structure at all. Louvain finds 3 communities with modularity
+0.213 on the same graph in 0.01 seconds. The largest snapshot in the analysis
+has 6,228 voters and 771,356 edges.
+
+Community results are nonetheless treated as exploratory: the two methods could
+not be compared on a snapshot large enough to be representative, so the check
+shows that Girvan-Newman is unusable here, not that Louvain's partition is
+correct.
 
 The analysis measures supporter overlap, new and returning supporters,
 effective community breadth, community-mix change, weighted degree, PageRank,

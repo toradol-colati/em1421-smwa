@@ -7,6 +7,7 @@ FILES <- c("R/00_run_all.R", "R/run_data_prep.R",
            "R/02_build_attempts.R", "R/03_validate_outcomes.R",
            "R/04_build_networks.R", "R/05_measure_change.R",
            "R/06_model_outcome.R", "R/07_figures.R",
+           "R/97_community_method_check.R",
            "R/99_verify_data.R", "R/99b_verify_output.R",
            "R/98_generate_appendix.R")
 doc <- "docs/DATA_FULL.md"

@@ -45,6 +45,7 @@ exists. The three steps can also be run one at a time.
   - [16. Divergence from the figures in the brief](#16-divergence-from-the-figures-in-the-brief)
   - [17. My own errors, found while reviewing the work](#17-my-own-errors-found-while-reviewing-the-work)
   - [17-bis. Decisions taken downstream, and what they imply](#17-bis-decisions-taken-downstream-and-what-they-imply)
+  - [17-ter. Community detection: why Louvain, and how it is defended](#17-ter-community-detection-why-louvain-and-how-it-is-defended)
   - [18. The independent checks, and the errors they caught](#18-the-independent-checks-and-the-errors-they-caught)
   - [19. Do the results make sense? Substantive analysis](#19-do-the-results-make-sense-substantive-analysis)
   - [20. Appendix: all the R code](#20-appendix-all-the-r-code)
@@ -1145,6 +1146,95 @@ seven-day threshold it yields **4,063 attempts against 4,081**, matching the sam
 elections. So the entire exposure of the main rule to the `RES` problem is bounded at
 **18 attempts out of 4,081, that is 0.4%**. This is the right answer to that limitation: not a
 disclaimer, a measurement.
+
+## 17-ter. Community detection: why Louvain, and how it is defended
+
+The analysis detects communities with **Louvain**, while the course teaches **Girvan-Newman**.
+That substitution is the one methodological choice most likely to be challenged, so it is
+settled here with measurements rather than assertions. The evidence is produced by
+`R/97_community_method_check.R` and stored in `output/results/community_method_check.csv`.
+
+### The course points to this class of method itself
+
+The slides on graph partitioning classify methods into two families: **divisive**, which
+identify and remove the edges between dense regions, and **agglomerative**, which find nodes
+belonging to the same region and merge them. Girvan-Newman is presented as the divisive
+example. Then the same lecture states its limit: it *"works well for networks of moderate size
+(few thousands nodes)"*, and beyond that recomputing betweenness at every step is expensive —
+naming as the alternatives either approximating betweenness **or using agglomerative methods**.
+
+Louvain is the standard agglomerative method. So the substitution is not a departure from the
+syllabus: it is the remedy the syllabus names at exactly the point where it declares its own
+example unsuitable.
+
+### Our networks are far past the stated limit
+
+The co-voting snapshots grow as history accumulates:
+
+| Snapshot | Voters | Co-voting edges |
+|---|---:|---:|
+| 2004 | 29 | 87 |
+| 2005 | 375 | 10,053 |
+| 2006 | 1,189 | 66,698 |
+| 2008 | 3,865 | 393,084 |
+| 2013 | **6,228** | **771,356** |
+
+The limit quoted in the slides is a few thousand *nodes*; the binding constraint for
+Girvan-Newman is the *edge* count, and the final snapshot has three quarters of a million
+edges.
+
+### Measured, not assumed
+
+Both methods were run on the three smallest snapshots:
+
+| Snapshot | Nodes | Edges | Louvain | Girvan-Newman | Agreement |
+|---|---:|---:|---|---|---:|
+| 2004 | 29 | 87 | 4 communities, modularity 0.185, 0.00 s | 11 communities, modularity 0.052, 0.0 s | 0.087 |
+| 2005 | 375 | 10,053 | 3 communities, modularity 0.213, 0.01 s | 247 communities, modularity 0.018, **198 s** | 0.012 |
+| 2006 | 1,189 | 66,698 | 3 communities, modularity 0.270, 0.09 s | **did not finish in 600 s** | — |
+
+Agreement is the adjusted Rand index between the two partitions.
+
+Two things follow, and the second matters more than the first.
+
+**Girvan-Newman does not scale here.** It takes 198 seconds on 10,053 edges and does not finish
+in ten minutes on 66,698. Its cost grows roughly with the square of the edge count times the
+node count, so the 2013 snapshot — 11.6 times the edges and 5.2 times the nodes of 2006 —
+is several hundred times more expensive again. It is not a question of waiting longer.
+
+**More importantly, it returns a degenerate answer.** On the 2005 snapshot it does finish, and
+it reports **247 communities among 375 voters, with modularity 0.018**. Modularity near zero
+means no community structure was found at all: the method is shattering the graph into
+fragments. Louvain, on the same graph, finds 3 communities with modularity 0.213. This is the
+expected behaviour of a divisive method on a dense projection — when a graph is dense, almost
+every edge carries similar betweenness, so removing the maximum one is close to removing an
+edge at random.
+
+So the low agreement between the two partitions is not evidence that the result is fragile and
+method-dependent. It is evidence that one of the two methods **found nothing**, which is what
+the course warns about when it sends dense or large graphs to agglomerative methods.
+
+### How to state it in the report, and answer it at the oral
+
+> Communities are detected with Louvain. The course presents Girvan-Newman as its example of a
+> divisive method and states that it suits networks of a few thousand nodes, naming
+> agglomerative methods as the alternative beyond that; Louvain is the standard agglomerative
+> method. Our co-voting snapshots reach 6,228 voters and 771,356 edges. Run as a check on the
+> three smallest snapshots, Girvan-Newman needed 198 seconds on 10,053 edges, did not terminate
+> within ten minutes on 66,698, and where it did terminate it returned 247 communities among
+> 375 voters with modularity 0.018, that is no community structure. Community results are
+> reported as exploratory.
+
+If asked *"why not the method we taught you"*, the answer is in three steps: the course's own
+taxonomy and its own stated limit; our measured network sizes; and the measured failure of
+Girvan-Newman on the smallest snapshots, where it is degenerate rather than merely slow.
+
+**What remains honestly weak**, and should be conceded rather than defended: the two methods
+could not be compared on a snapshot large enough to be representative, because the course's
+method does not run there. The comparison therefore shows that Girvan-Newman is unusable, not
+that Louvain's partition is correct. That is why the community measures are reported as
+exploratory and why the headline result does not rest on them — the network-augmented model
+performs no better than the model without network variables.
 
 ## 18. The independent checks, and the errors they caught
 
@@ -3770,6 +3860,121 @@ ggsave(
 )
 ````
 
+### `R/97_community_method_check.R`
+
+````r
+# 97 - Does the course's community-detection method work on these networks?
+#
+#   Rscript R/97_community_method_check.R
+#
+# WHY THIS EXISTS
+# The course teaches one community-detection algorithm, Girvan-Newman
+# (cluster_edge_betweenness), and the analysis uses Louvain
+# (cluster_louvain). That substitution has to be defended, not assumed, so this
+# script measures it instead of asserting it: it rebuilds the co-voting
+# snapshots with the same rule as 04_build_networks.R and runs both methods on
+# the three smallest ones, recording communities found, modularity, running
+# time, and how much the two partitions agree (adjusted Rand index).
+#
+# The course itself points the way. It classifies partitioning methods as
+# divisive and agglomerative, presents Girvan-Newman as the divisive example,
+# and states that it "works well for networks of moderate size (few thousands
+# nodes)" while beyond that recomputing betweenness at each step is expensive -
+# citing as the alternatives either approximating betweenness or using
+# agglomerative methods. Louvain is the standard agglomerative method, so this
+# is not a departure from the syllabus but the remedy the syllabus names.
+#
+# Output: output/results/community_method_check.csv
+# Expected running time: about 15 minutes, nearly all of it Girvan-Newman.
+
+suppressPackageStartupMessages({library(igraph); library(Matrix)})
+source(file.path("R", "00_paths.R"))
+
+CUTOFFS      <- c(2004, 2005, 2006)   # the three smallest snapshots
+GN_TIMEOUT_S <- 600                   # give-up time for Girvan-Newman
+
+votes <- readRDS(file.path(DIR_PROCESSED, "votes.rds"))
+attempts <- readRDS(file.path(DIR_PROCESSED, "attempts_analysis.rds"))
+votes <- votes[!is.na(votes$attempt_id) & votes$vot %in% c(-1L, 1L) & !votes$self_vote, ]
+ai <- match(votes$attempt_id, attempts$attempt_id)
+votes$voter <- votes$src
+votes$vote  <- votes$vot
+votes$year  <- attempts$year_from_date[ai]
+all_voters  <- sort(unique(votes$voter))
+
+# Same construction as 04_build_networks.R: two voters are linked when they cast
+# the same direction in at least two historical attempts, weighted by how often.
+build_snapshot <- function(cutoff_year) {
+  h <- votes[votes$year < cutoff_year, c("attempt_id", "voter", "vote")]
+  gk <- paste(h$attempt_id, h$vote, sep = "|")
+  inc <- sparseMatrix(i = match(gk, unique(gk)), j = match(h$voter, all_voters),
+                      x = 1, dims = c(length(unique(gk)), length(all_voters)))
+  pr <- crossprod(inc); diag(pr) <- 0
+  e <- summary(pr); e <- e[e$i < e$j & e$x >= 2, ]
+  graph_from_data_frame(
+    data.frame(from = all_voters[e$i], to = all_voters[e$j],
+               weight = e$x, stringsAsFactors = FALSE),
+    directed = FALSE)
+}
+
+# Adjusted Rand index, computed directly to avoid another dependency.
+adjusted_rand <- function(a, b) {
+  tb <- table(a, b); n <- sum(tb)
+  s_ij <- sum(choose(tb, 2)); s_i <- sum(choose(rowSums(tb), 2)); s_j <- sum(choose(colSums(tb), 2))
+  expected <- s_i * s_j / choose(n, 2)
+  (s_ij - expected) / ((s_i + s_j) / 2 - expected)
+}
+
+rows <- list()
+for (cut in CUTOFFS) {
+  g <- build_snapshot(cut)
+  cat(sprintf("\nsnapshot %d: %d nodes, %d edges\n", cut, vcount(g), ecount(g)))
+  set.seed(1421 + cut)
+  t0 <- Sys.time()
+  lv <- cluster_louvain(g, weights = E(g)$weight)
+  t_lv <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
+  cat(sprintf("  Louvain       : %d communities, modularity %.3f, %.2f s\n",
+              length(sizes(lv)), modularity(lv), t_lv))
+
+  t0 <- Sys.time()
+  gn <- tryCatch({
+    setTimeLimit(cpu = GN_TIMEOUT_S, elapsed = GN_TIMEOUT_S, transient = TRUE)
+    r <- suppressWarnings(cluster_edge_betweenness(g, weights = E(g)$weight))
+    setTimeLimit(); r
+  }, error = function(e) { setTimeLimit(); NULL })
+  t_gn <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
+
+  if (is.null(gn)) {
+    cat(sprintf("  Girvan-Newman : did not finish within %d s\n", GN_TIMEOUT_S))
+    rows[[length(rows) + 1]] <- data.frame(
+      cutoff_year = cut, nodes = vcount(g), edges = ecount(g),
+      louvain_communities = length(sizes(lv)), louvain_modularity = modularity(lv),
+      louvain_seconds = round(t_lv, 2),
+      gn_communities = NA_integer_, gn_modularity = NA_real_,
+      gn_seconds = NA_real_, gn_completed = FALSE, adjusted_rand = NA_real_)
+  } else {
+    ar <- adjusted_rand(membership(lv), membership(gn))
+    cat(sprintf("  Girvan-Newman : %d communities, modularity %.3f, %.1f s\n",
+                length(sizes(gn)), modularity(gn), t_gn))
+    cat(sprintf("  agreement between the two partitions (adjusted Rand): %.3f\n", ar))
+    rows[[length(rows) + 1]] <- data.frame(
+      cutoff_year = cut, nodes = vcount(g), edges = ecount(g),
+      louvain_communities = length(sizes(lv)), louvain_modularity = modularity(lv),
+      louvain_seconds = round(t_lv, 2),
+      gn_communities = length(sizes(gn)), gn_modularity = modularity(gn),
+      gn_seconds = round(t_gn, 1), gn_completed = TRUE, adjusted_rand = ar)
+  }
+}
+
+out <- do.call(rbind, rows)
+dir.create(file.path("output", "results"), showWarnings = FALSE, recursive = TRUE)
+write.csv(out, file.path("output", "results", "community_method_check.csv"), row.names = FALSE)
+cat("\nwritten: output/results/community_method_check.csv\n")
+cat("For reference, the largest snapshot in the analysis has 6,228 nodes and\n")
+cat("771,356 edges, that is 11.6 times the edges of the 2006 snapshot on which\n")
+cat("Girvan-Newman already failed to finish.\n")
+````
+
 ### `R/99_verify_data.R`
 
 ````r
@@ -4182,6 +4387,7 @@ FILES <- c("R/00_run_all.R", "R/run_data_prep.R",
            "R/02_build_attempts.R", "R/03_validate_outcomes.R",
            "R/04_build_networks.R", "R/05_measure_change.R",
            "R/06_model_outcome.R", "R/07_figures.R",
+           "R/97_community_method_check.R",
            "R/99_verify_data.R", "R/99b_verify_output.R",
            "R/98_generate_appendix.R")
 doc <- "docs/DATA_FULL.md"
