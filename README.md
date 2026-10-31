@@ -190,6 +190,8 @@ without very short attempts.
 - `docs/EM1421_projectsInstructions.txt`: official project requirements.
 - `docs/writing_your_project.txt`: instructor's report-writing guidance.
 - `docs/DATA.md`: final data definitions, counts and limitations.
+- `report/EM1421_Repeat_RfA_Report.pdf`: submission-ready final report.
+- `report/report_source.md`: editable manuscript used to produce the report.
 
 The report must not contain code. The processed data, result tables and figures
 are included as a validated snapshot and can also be recreated with
