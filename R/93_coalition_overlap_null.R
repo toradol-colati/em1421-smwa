@@ -31,6 +31,7 @@ B <- 200   # null replicates per pair
 votes <- readRDS(file.path(DIR_PROCESSED, "votes.rds"))
 attempts <- readRDS(file.path(DIR_PROCESSED, "attempts_analysis.rds"))
 pairs <- readRDS(file.path(DIR_PROCESSED, "attempt_pairs.rds"))
+pairs <- pairs[!pairs$fragment_pair, ]   # fragments: see 05_measure_change.R
 
 v2 <- votes[!is.na(votes$attempt_id) & !votes$self_vote, ]
 ai <- match(v2$attempt_id, attempts$attempt_id)
@@ -70,7 +71,7 @@ for (r in seq_len(nrow(pairs))) {
     jaccard(s_prev, draw)
   }, 0)
   rows[[length(rows) + 1]] <- data.frame(
-    pair_id = r,
+    pair_id = pairs$pair_id[r],
     candidate = pairs$candidate[r],
     previous_outcome = pairs$previous_outcome[r],
     next_outcome = pairs$next_outcome[r],
@@ -112,5 +113,5 @@ cat("Coalitions are largely rebuilt between attempts, with a weak but detectable
 cat("core that returns.\n\n")
 
 dir.create(file.path("output", "results"), showWarnings = FALSE, recursive = TRUE)
-write.csv(out, file.path("output", "results", "coalition_overlap_null.csv"), row.names = FALSE)
+write.csv(out, file.path("output", "results", "coalition_overlap_null.csv"), row.names = FALSE, fileEncoding = "UTF-8")
 cat("\nwritten: output/results/coalition_overlap_null.csv\n")

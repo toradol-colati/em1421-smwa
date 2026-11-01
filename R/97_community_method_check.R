@@ -11,7 +11,8 @@
 # the three smallest ones, recording communities found, modularity, running
 # time, and how much the two partitions agree (adjusted Rand index).
 #
-# The course itself points the way. It classifies partitioning methods as
+# Lecture 3, "Strong and Weak Ties" (section "General Approaches to Graph
+# Partitioning"), points the way. It classifies partitioning methods as
 # divisive and agglomerative, presents Girvan-Newman as the divisive example,
 # and states that it "works well for networks of moderate size (few thousands
 # nodes)" while beyond that recomputing betweenness at each step is expensive -
@@ -20,7 +21,8 @@
 # is not a departure from the syllabus but the remedy the syllabus names.
 #
 # Output: output/results/community_method_check.csv
-# Expected running time: about 15 minutes, nearly all of it Girvan-Newman.
+# Expected running time: about 30 minutes, nearly all of it Girvan-Newman
+# (two variants, each stopped after GN_TIMEOUT_S on a snapshot).
 
 suppressPackageStartupMessages({library(igraph); library(Matrix)})
 source(file.path("R", "00_paths.R"))
@@ -71,40 +73,47 @@ for (cut in CUTOFFS) {
   cat(sprintf("  Louvain       : %d communities, modularity %.3f, %.2f s\n",
               length(sizes(lv)), modularity(lv), t_lv))
 
-  t0 <- Sys.time()
-  gn <- tryCatch({
-    setTimeLimit(cpu = GN_TIMEOUT_S, elapsed = GN_TIMEOUT_S, transient = TRUE)
-    r <- suppressWarnings(cluster_edge_betweenness(g, weights = E(g)$weight))
-    setTimeLimit(); r
-  }, error = function(e) { setTimeLimit(); NULL })
-  t_gn <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
+  # Two ways to give Girvan-Newman the edges, both valid. In edge betweenness
+  # igraph reads weights as edge LENGTHS, so co-vote counts must never be
+  # passed as they are: that makes the strongest ties the longest.
+  #   - "unweighted": weights = NA, as in the course lab ("Networks in R":
+  #     edge_betweenness(net, directed=T, weights=NA));
+  #   - "inverse weight": length = 1 / co-vote count, so strong ties are short.
+  # Both partitions are scored with the same weighted modularity as Louvain.
+  variants <- list(unweighted = NA, `inverse weight` = 1 / E(g)$weight)
+  for (variant in names(variants)) {
+    t0 <- Sys.time()
+    gn <- tryCatch({
+      setTimeLimit(cpu = GN_TIMEOUT_S, elapsed = GN_TIMEOUT_S, transient = TRUE)
+      r <- suppressWarnings(cluster_edge_betweenness(g, weights = variants[[variant]]))
+      setTimeLimit(); r
+    }, error = function(e) { setTimeLimit(); NULL })
+    t_gn <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
 
-  if (is.null(gn)) {
-    cat(sprintf("  Girvan-Newman : did not finish within %d s\n", GN_TIMEOUT_S))
+    done <- !is.null(gn)
+    gn_q <- if (done) modularity(g, membership(gn), weights = E(g)$weight) else NA_real_
+    ar   <- if (done) adjusted_rand(membership(lv), membership(gn)) else NA_real_
+    if (done) {
+      cat(sprintf("  Girvan-Newman (%s): %d communities, modularity %.3f, %.1f s, adjusted Rand vs Louvain %.3f\n",
+                  variant, length(sizes(gn)), gn_q, t_gn, ar))
+    } else {
+      cat(sprintf("  Girvan-Newman (%s): did not finish within %d s\n", variant, GN_TIMEOUT_S))
+    }
     rows[[length(rows) + 1]] <- data.frame(
       cutoff_year = cut, nodes = vcount(g), edges = ecount(g),
       louvain_communities = length(sizes(lv)), louvain_modularity = modularity(lv),
       louvain_seconds = round(t_lv, 2),
-      gn_communities = NA_integer_, gn_modularity = NA_real_,
-      gn_seconds = NA_real_, gn_completed = FALSE, adjusted_rand = NA_real_)
-  } else {
-    ar <- adjusted_rand(membership(lv), membership(gn))
-    cat(sprintf("  Girvan-Newman : %d communities, modularity %.3f, %.1f s\n",
-                length(sizes(gn)), modularity(gn), t_gn))
-    cat(sprintf("  agreement between the two partitions (adjusted Rand): %.3f\n", ar))
-    rows[[length(rows) + 1]] <- data.frame(
-      cutoff_year = cut, nodes = vcount(g), edges = ecount(g),
-      louvain_communities = length(sizes(lv)), louvain_modularity = modularity(lv),
-      louvain_seconds = round(t_lv, 2),
-      gn_communities = length(sizes(gn)), gn_modularity = modularity(gn),
-      gn_seconds = round(t_gn, 1), gn_completed = TRUE, adjusted_rand = ar)
+      gn_variant = variant,
+      gn_communities = if (done) length(sizes(gn)) else NA_integer_,
+      gn_modularity = gn_q,
+      gn_seconds = if (done) round(t_gn, 1) else NA_real_,
+      gn_completed = done, adjusted_rand = ar)
   }
 }
 
 out <- do.call(rbind, rows)
 dir.create(file.path("output", "results"), showWarnings = FALSE, recursive = TRUE)
-write.csv(out, file.path("output", "results", "community_method_check.csv"), row.names = FALSE)
+write.csv(out, file.path("output", "results", "community_method_check.csv"), row.names = FALSE, fileEncoding = "UTF-8")
 cat("\nwritten: output/results/community_method_check.csv\n")
 cat("For reference, the largest snapshot in the analysis has 6,228 nodes and\n")
-cat("771,356 edges, that is 11.6 times the edges of the 2006 snapshot on which\n")
-cat("Girvan-Newman already failed to finish.\n")
+cat("771,356 edges, 11.6 times the edges of the 2006 snapshot.\n")

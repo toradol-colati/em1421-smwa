@@ -164,7 +164,7 @@ outcome_validation$wiki_success <- as.integer(outcome_validation$elec_outcome ==
 write.csv(
   outcome_validation,
   file.path("output", "results", "outcome_validation.csv"),
-  row.names = FALSE
+  row.names = FALSE, fileEncoding = "UTF-8"
 )
 
 vote_maps <- split(setNames(votes$vote, votes$voter), votes$attempt_id)
@@ -335,6 +335,17 @@ pairs$next_group <- factor(
 )
 pairs$next_success <- as.integer(pairs$next_outcome == 1L)
 
+# Fragment pairs. Attempt boundaries are inferred from vote dates, so a late
+# vote or a stray record can become a separate "attempt". A pair is a fragment
+# when either attempt has fewer than 5 votes (flag_short, 00_lib_data.R) or the
+# second attempt starts before the first one ends. A 1-vote attempt has
+# supporter overlap 0 and new-supporter share 1 whatever the voters do, so
+# fragments would manufacture the overlap differences under study. They stay in
+# this table, flagged, and every later script analyses !fragment_pair only.
+pairs$fragment_pair <- (pairs$previous_short_attempt |
+  pairs$next_short_attempt |
+  pairs$days_between < 0) %in% TRUE
+
 assert_condition(!anyDuplicated(pairs$pair_id), "Pair IDs are not unique.")
 assert_condition(
   all(is.na(pairs$supporter_jaccard) |
@@ -371,7 +382,7 @@ saveRDS(pairs, file.path(DIR_PROCESSED, "attempt_pairs.rds"))
 write.csv(
   pairs,
   file.path("output", "results", "attempt_pairs.csv"),
-  row.names = FALSE
+  row.names = FALSE, fileEncoding = "UTF-8"
 )
 
 cat("Attempt pairs written:", nrow(pairs), "\n")

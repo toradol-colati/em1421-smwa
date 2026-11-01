@@ -1,26 +1,22 @@
-# 94 - How coalitions grow: the T(k) curve of lecture 4, applied to RfA.
+# 94 - Membership closure in repeat RfAs: the T(k) curve.
 #
 #   Rscript R/94_recruitment_curve.R
 #
 # WHY THIS EXISTS
-# The research question asks how support coalitions change between one attempt
-# and the next. The course supplies a procedure for exactly that shape of
-# question: Kossinets and Watts take two snapshots, count how many contacts a
-# pair already shares in the first, and measure the fraction that form a link
-# by the second, then plot that fraction T(k) against a deliberately simple
-# baseline in which each shared contact acts independently,
-# T_baseline(k) = 1 - (1 - p)^k. The real curve bending above or below that
-# line is the result.
+# Lecture 4, "Networks in their Surrounding Contexts", section "Tracking Link
+# Formation: Membership Closure", asks: "What is the probability that a person
+# becomes involved with a particular focus as a function of the number of
+# friends who are already involved in it?" Its Wikipedia example plots the
+# "probability a person edits a Wikipedia article as a function of the number
+# of prior editors with whom they have communicated".
 #
 # TRANSPOSED HERE
-#   For a candidate with consecutive attempts t and t+1:
+#   The focus is a candidate's support coalition. For consecutive attempts t
+#   and t+1 of the same candidate:
 #     - S_t is the set of voters who SUPPORTED the candidate at attempt t;
-#     - for a voter v who did NOT vote at t, k is how many of v's co-voters
-#       belong to S_t;
+#     - for a voter v who did NOT vote at t, k is the number of v's co-voters
+#       (historical co-voting network) who belong to S_t;
 #     - T(k) is the fraction of such voters who support the candidate at t+1.
-#   This is the course's focal closure: the attempt is a focus in Feld's sense,
-#   and the question is whether the coalition recruits through the existing
-#   coalition's own neighbourhood.
 #
 # THE DESIGN POINT THAT MAKES IT MEANINGFUL
 # The co-voting network is built only from attempts in years STRICTLY BEFORE
@@ -30,10 +26,14 @@
 # candidate at t, which is the very thing being predicted.
 #
 # BASELINE
-# p is estimated from the single-contact rate, p_hat = T(1), and the curve
-# 1 - (1 - p_hat)^k is reported next to the observed one. Above the line means
-# contacts reinforce each other; below means diminishing returns, which is what
-# the course found for focal closure as opposed to triadic closure.
+# The lecture compares T(k) with "an intentionally simplified baseline model"
+# in which each connection gives "an independent probability p", so
+# T_baseline(k) = 1 - (1 - p)^k. That form assumes T(0) is close to 0 ("T(0) is
+# very close to 0" in the Kossinets-Watts data). Here T(0) is not 0, so the
+# baseline below keeps the background rate T(0) and adds an independent p per
+# connection (see the computation at the end of the script). Observed above the
+# baseline means connections reinforce each other; below means the
+# "diminishing returns" the lecture reports for focal closure.
 #
 # Output: output/results/recruitment_curve.csv
 
@@ -45,6 +45,7 @@ K_MAX <- 12   # k values reported separately; above this they are pooled
 votes <- readRDS(file.path(DIR_PROCESSED, "votes.rds"))
 attempts <- readRDS(file.path(DIR_PROCESSED, "attempts_analysis.rds"))
 pairs <- readRDS(file.path(DIR_PROCESSED, "attempt_pairs.rds"))
+pairs <- pairs[!pairs$fragment_pair, ]   # fragments: see 05_measure_change.R
 
 v2 <- votes[!is.na(votes$attempt_id) & votes$vot %in% c(-1L, 1L) & !votes$self_vote, ]
 ai <- match(v2$attempt_id, attempts$attempt_id)
@@ -97,7 +98,10 @@ for (r in seq_len(nrow(pairs))) {
 
   # eligible: voters with at least one co-voting tie before t, who did NOT vote
   # at t, and who are not the candidate
-  has_tie <- diff(A@p) > 0
+  # rowSums, not diff(A@p): crossprod() returns a symmetric matrix that stores
+  # only its upper triangle, so diff(A@p) would count only co-voters with an
+  # alphabetically earlier username and drop about 7% of eligible voters.
+  has_tie <- Matrix::rowSums(A) > 0
   excluded <- unique(c(voters_of(prev_id), match(pairs$candidate[r], all_voters)))
   elig <- which(has_tie)
   elig <- elig[!(elig %in% excluded)]
@@ -119,8 +123,17 @@ for (r in seq_len(nrow(pairs))) {
 
 k_labels <- c(as.character(0:(K_MAX - 1)), paste0(K_MAX, "+"))
 observed <- k_hits / k_n
-p_hat <- observed[2]                              # T(1)
-baseline <- 1 - (1 - p_hat) ^ (0:K_MAX)
+# Baseline. Lecture 4 ("Networks in their Surrounding Contexts") compares T(k)
+# with 1 - (1 - p)^k, where each of the k connections independently produces
+# the event with probability p. That form assumes T(0) is close to 0, as in the
+# Kossinets-Watts data. Here voters with no connection into the coalition still
+# support the candidate (T(0) > 0), so the baseline keeps that background rate
+# p0 and lets each connection add an independent chance p on top of it:
+#   T_baseline(k) = 1 - (1 - p0) * (1 - p)^k,   with p fitted so that the
+#   baseline equals the observed T(1).
+p0    <- observed[1]                                # T(0)
+p_hat <- 1 - (1 - observed[2]) / (1 - p0)           # per-connection effect
+baseline <- 1 - (1 - p0) * (1 - p_hat) ^ (0:K_MAX)
 
 out <- data.frame(
   k = k_labels,
@@ -133,9 +146,9 @@ out <- data.frame(
 )
 
 cat(sprintf("pairs used: %d of %d\n", used_pairs, nrow(pairs)))
-cat(sprintf("p estimated from T(1): %.5f\n\n", p_hat))
+cat(sprintf("background rate T(0): %.5f   per-connection p: %.5f\n\n", p0, p_hat))
 print(format(out, digits = 4), row.names = FALSE)
 
 dir.create(file.path("output", "results"), showWarnings = FALSE, recursive = TRUE)
-write.csv(out, file.path("output", "results", "recruitment_curve.csv"), row.names = FALSE)
+write.csv(out, file.path("output", "results", "recruitment_curve.csv"), row.names = FALSE, fileEncoding = "UTF-8")
 cat("\nwritten: output/results/recruitment_curve.csv\n")

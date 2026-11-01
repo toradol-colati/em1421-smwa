@@ -37,6 +37,11 @@ pairs <- readRDS(file.path(DIR_PROCESSED, "attempt_pairs.rds"))
 attempts <- readRDS(file.path(DIR_PROCESSED, "attempts_analysis.rds"))
 network_objects <- readRDS(file.path(DIR_PROCESSED, "network_objects.rds"))
 
+# Fragment pairs are flagged in 05_measure_change.R; all comparisons and
+# models below use the remaining pairs.
+pairs_all <- pairs
+pairs <- pairs_all[!pairs_all$fragment_pair, ]
+
 cliff_delta <- function(failure_values, success_values) {
   failure_values <- failure_values[is.finite(failure_values)]
   success_values <- success_values[is.finite(success_values)]
@@ -108,7 +113,7 @@ group_comparison <- rbind(
 write.csv(
   group_comparison,
   file.path("output", "results", "group_comparison.csv"),
-  row.names = FALSE
+  row.names = FALSE, fileEncoding = "UTF-8"
 )
 
 model_columns <- c(
@@ -121,7 +126,7 @@ model_columns <- c(
   "days_between",
   "next_attempt_year"
 )
-model_data_all <- pairs[complete.cases(pairs[, model_columns]), ]
+model_data_all <- pairs_all[complete.cases(pairs_all[, model_columns]), ]
 model_data_all$previous_success <-
   as.integer(model_data_all$previous_outcome == 1L)
 model_data_all$previous_support_share_10 <-
@@ -134,10 +139,7 @@ model_data_all$log2_days_between <-
   log2(1 + pmax(model_data_all$days_between, 0))
 model_data_all$year_centered <- model_data_all$next_attempt_year -
   min(model_data_all$next_attempt_year)
-model_data <- model_data_all[
-  !model_data_all$previous_short_attempt &
-    !model_data_all$next_short_attempt,
-]
+model_data <- model_data_all[!model_data_all$fragment_pair, ]
 
 base_model_formula <- next_success ~
   previous_success +
@@ -204,7 +206,7 @@ coefficient_table$term_label <- unname(coefficient_labels[
 write.csv(
   coefficient_table,
   file.path("output", "results", "model_coefficients.csv"),
-  row.names = FALSE
+  row.names = FALSE, fileEncoding = "UTF-8"
 )
 
 auc_value <- function(actual, probability) {
@@ -292,7 +294,7 @@ model_export_columns <- c(
 write.csv(
   model_data[, model_export_columns],
   file.path("output", "results", "model_data.csv"),
-  row.names = FALSE
+  row.names = FALSE, fileEncoding = "UTF-8"
 )
 writeLines(
   c(
@@ -322,13 +324,13 @@ performance <- data.frame(
 write.csv(
   performance,
   file.path("output", "results", "model_performance.csv"),
-  row.names = FALSE
+  row.names = FALSE, fileEncoding = "UTF-8"
 )
 
 all_base_evaluation <- evaluate_model(model_data_all, base_model_formula)
 all_network_evaluation <- evaluate_model(model_data_all, network_model_formula)
 performance_sensitivity <- data.frame(
-  sample = rep(c("Excluding short attempts", "All complete pairs"), each = 2L),
+  sample = rep(c("Excluding fragment pairs", "All complete pairs"), each = 2L),
   model = rep(c("Vote shares and timing", "Network-augmented"), 2L),
   observations = c(
     nrow(model_data), nrow(model_data),
@@ -351,7 +353,7 @@ performance_sensitivity <- data.frame(
 write.csv(
   performance_sensitivity,
   file.path("output", "results", "model_performance_sensitivity.csv"),
-  row.names = FALSE
+  row.names = FALSE, fileEncoding = "UTF-8"
 )
 
 all_pair_count <- sum(pmax(table(attempts$candidate) - 1L, 0L))
@@ -359,23 +361,27 @@ sample_flow <- data.frame(
   stage = c(
     "Reconstructed attempts", "Repeat candidates",
     "All consecutive attempt pairs", "Pairs with valid outcomes",
+    "Fragment pairs excluded",
     "Pairs used in descriptive comparisons", "Pairs used in outcome models"
   ),
   count = c(
     nrow(attempts), sum(table(attempts$candidate) >= 2L),
-    all_pair_count, nrow(pairs), nrow(pairs), nrow(model_data)
+    all_pair_count, nrow(pairs_all), sum(pairs_all$fragment_pair),
+    nrow(pairs), nrow(model_data)
   ),
   stringsAsFactors = FALSE
 )
 write.csv(
   sample_flow,
   file.path("output", "results", "sample_flow.csv"),
-  row.names = FALSE
+  row.names = FALSE, fileEncoding = "UTF-8"
 )
 
 summary_lines <- c(
   paste("All consecutive attempt pairs:", all_pair_count),
-  paste("Pairs with valid outcomes:", nrow(pairs)),
+  paste("Pairs with valid outcomes:", nrow(pairs_all)),
+  paste("Fragment pairs excluded:", sum(pairs_all$fragment_pair)),
+  paste("Pairs analysed:", nrow(pairs)),
   paste("Pairs after prior success:", sum(pairs$previous_outcome == 1L)),
   paste("Pairs after prior rejection:", sum(pairs$previous_outcome == -1L)),
   paste("Next-attempt successes:", sum(pairs$next_success == 1L)),
@@ -403,7 +409,7 @@ summary_lines <- c(
   sprintf("Prevalence-only Brier score: %.3f",
           performance$brier_score[performance$model == "Prevalence only"]),
   "Network snapshots use same-direction co-voting before the target year.",
-  "Louvain is the main method; Girvan-Newman is checked only on the first snapshot and is method-sensitive.",
+  "Louvain is the main method; Girvan-Newman is compared on the three smallest snapshots in 97_community_method_check.R.",
   "Network measures showed no material improvement in held-out prediction; AUC and Brier differences were negligible and mixed.",
   "Model predictors use only information available before the next attempt.",
   "All estimates describe association, not a causal effect."

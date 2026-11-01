@@ -1,10 +1,9 @@
-# 04 - Historical signed voter co-voting networks.
+# 04 - Historical voter co-voting networks (same-direction votes).
 #
 # Input : data/processed/votes.rds
 #         data/processed/attempts_analysis.rds
 # Output: data/processed/network_objects.rds
 #         output/results/network_summary.csv
-#         output/results/community_method_check.csv
 # Packages: igraph, Matrix
 
 set.seed(1421)
@@ -221,48 +220,11 @@ network_summary <- do.call(rbind, lapply(snapshots, `[[`, "summary"))
 write.csv(
   network_summary,
   file.path("output", "results", "network_summary.csv"),
-  row.names = FALSE
+  row.names = FALSE, fileEncoding = "UTF-8"
 )
 
-small_graph <- snapshots[[1]]$graph
-set.seed(1421)
-girvan_newman <- cluster_edge_betweenness(
-  small_graph,
-  weights = 1 / E(small_graph)$weight,
-  directed = FALSE
-)
-set.seed(1421)
-girvan_newman_unweighted <- cluster_edge_betweenness(
-  small_graph,
-  weights = NA,
-  directed = FALSE
-)
-community_method_check <- data.frame(
-  method = c(
-    "Weighted Louvain",
-    "Weighted Girvan-Newman",
-    "Unweighted Girvan-Newman"
-  ),
-  cutoff_year = network_summary$cutoff_year[1],
-  network_voters = vcount(small_graph),
-  covoting_edges = ecount(small_graph),
-  communities = c(
-    network_summary$communities_nonempty[1],
-    length(unique(membership(girvan_newman))),
-    length(unique(membership(girvan_newman_unweighted)))
-  ),
-  modularity = c(
-    network_summary$modularity[1],
-    modularity(girvan_newman),
-    modularity(girvan_newman_unweighted)
-  ),
-  stringsAsFactors = FALSE
-)
-write.csv(
-  community_method_check,
-  file.path("output", "results", "community_method_check.csv"),
-  row.names = FALSE
-)
+# The Girvan-Newman comparison lives in 97_community_method_check.R, which
+# writes output/results/community_method_check.csv.
 
 saveRDS(
   list(

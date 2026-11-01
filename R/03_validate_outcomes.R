@@ -125,7 +125,7 @@ evaluate <- function(mode, threshold) {
 note("sweep: ", length(MODES), " rules x ", length(GRID), " thresholds...")
 res <- do.call(rbind, lapply(MODES, function(m)
   do.call(rbind, lapply(GRID, function(s) evaluate(m, s)))))
-write.csv(res, file.path(DIR_PROCESSED, "03_threshold_sweep.csv"), row.names = FALSE)
+write.csv(res, file.path(DIR_PROCESSED, "03_threshold_sweep.csv"), row.names = FALSE, fileEncoding = "UTF-8")
 pr <- res
 for (cc in c("matched_share", "median_jaccard", "outcome_agreement", "count_agreement"))
   pr[[cc]] <- round(pr[[cc]], 4)
@@ -199,7 +199,7 @@ a$outcome_agrees <- ifelse(a$elec_matched, (a$outcome == 1) == (a$elec_outcome =
 saveRDS(a, file.path(DIR_PROCESSED, "attempts_validated.rds"))
 write.csv(ele[, c("election_id", "candidate", "outcome", "closed_at", "last_vote",
                   "jaccard", "my_attempt")],
-          file.path(DIR_PROCESSED, "03_match_wikielec.csv"), row.names = FALSE)
+          file.path(DIR_PROCESSED, "03_match_wikielec.csv"), row.names = FALSE, fileEncoding = "UTF-8")
 note("LIMIT: the validation covers ", sum(a$elec_matched), " attempts of ", nrow(a),
      sprintf(" (%.0f%%)", 100 * mean(a$elec_matched)),
      ". Outside the period covered by wiki-Elec, that is from 2008 to 2013,",

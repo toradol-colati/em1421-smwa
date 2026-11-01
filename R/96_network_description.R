@@ -124,7 +124,9 @@ for (cut in cutoffs) {
     dmat <- dmat[is.finite(dmat) & dmat > 0]
     d_mean <- mean(dmat); d_max <- max(dmat)
   } else {
-    d_mean <- mean_distance(gc, directed = FALSE)
+    # weights = NA: path length counts steps, as in Lecture 2 ("Graphs").
+    # Without it igraph treats the co-vote counts as edge lengths.
+    d_mean <- mean_distance(gc, directed = FALSE, weights = NA)
     d_max <- diameter(gc, directed = FALSE, weights = NA)
   }
   t_path <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
@@ -153,7 +155,7 @@ for (cut in cutoffs) {
 
 out <- do.call(rbind, rows)
 dir.create(file.path("output", "results"), showWarnings = FALSE, recursive = TRUE)
-write.csv(out, file.path("output", "results", "network_description.csv"), row.names = FALSE)
+write.csv(out, file.path("output", "results", "network_description.csv"), row.names = FALSE, fileEncoding = "UTF-8")
 
 # degree distribution of the last co-voting snapshot as well
 g_last <- build_snapshot(max(cutoffs))
@@ -164,5 +166,5 @@ dd <- rbind(dd, data.frame(
   value = c(min(d_last), quantile(d_last, .25), median(d_last), mean(d_last),
             quantile(d_last, .75), quantile(d_last, .9), quantile(d_last, .99),
             max(d_last))))
-write.csv(dd, file.path("output", "results", "degree_distribution.csv"), row.names = FALSE)
+write.csv(dd, file.path("output", "results", "degree_distribution.csv"), row.names = FALSE, fileEncoding = "UTF-8")
 cat("\nwritten: output/results/network_description.csv and degree_distribution.csv\n")

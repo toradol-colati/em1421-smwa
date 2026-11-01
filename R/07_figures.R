@@ -34,6 +34,7 @@ if (any(!file.exists(required))) {
 }
 
 pairs <- readRDS(file.path(DIR_PROCESSED, "attempt_pairs.rds"))
+pairs <- pairs[!pairs$fragment_pair, ]   # fragments: see 05_measure_change.R
 network_objects <- readRDS(file.path(DIR_PROCESSED, "network_objects.rds"))
 model_objects <- readRDS(file.path(DIR_PROCESSED, "model_objects.rds"))
 

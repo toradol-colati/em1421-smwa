@@ -7,10 +7,10 @@ Umberto Toraldo, with the following decisions fixed for the network analysis.
 
 From the repository root:
 
-```powershell
-& "C:\Program Files\R\R-4.5.2\bin\Rscript.exe" R\run_data_prep.R
-& "C:\Program Files\R\R-4.5.2\bin\Rscript.exe" R\99_verify_data.R
-& "C:\Program Files\R\R-4.5.2\bin\Rscript.exe" R\99b_verify_output.R
+```bash
+Rscript R/run_data_prep.R
+Rscript R/99_verify_data.R
+Rscript R/99b_verify_output.R
 ```
 
 The first command executes the ordered internal steps with stale-output

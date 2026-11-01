@@ -3,7 +3,7 @@
 #   Rscript R/95_weak_ties.R
 #
 # WHY THIS EXISTS
-# Lecture 3 is built on Granovetter's hypothesis and on the two measurements
+# Lecture 3, "Strong and Weak Ties", is built on Granovetter's hypothesis and on the two measurements
 # Onnela et al. used to test it on a large network. Both are directly
 # computable here, and both yield a statement about RfA rather than a
 # coefficient. The co-voting edge has a natural strength - the number of
@@ -25,10 +25,12 @@
 #   shrank it gradually. That is the sense in which weak ties are the
 #   connective tissue. Here the same is done in two per cent steps.
 #
-# Both tests need a comparison point, so each is also run on a
-# degree-preserving rewiring of the same graph with the weights reshuffled,
+# Test 1 has a comparison point: the same graph with the weights reshuffled,
 # which keeps the degree sequence and the weight distribution but destroys any
-# relation between the two.
+# relation between tie strength and neighborhood overlap. For speed it uses a
+# random sample of EDGE_SAMPLE edges. Test 2 uses all edges and has no
+# reshuffled comparison; note that many edges share the minimum weight (2), so
+# the order of removal among them is arbitrary.
 #
 # Output: output/results/weak_ties_overlap.csv
 #         output/results/weak_ties_percolation.csv
@@ -130,7 +132,7 @@ for (cut in SNAPSHOTS) {
 
 dir.create(file.path("output", "results"), showWarnings = FALSE, recursive = TRUE)
 write.csv(do.call(rbind, overlap_rows),
-          file.path("output", "results", "weak_ties_overlap.csv"), row.names = FALSE)
+          file.path("output", "results", "weak_ties_overlap.csv"), row.names = FALSE, fileEncoding = "UTF-8")
 write.csv(do.call(rbind, perc_rows),
-          file.path("output", "results", "weak_ties_percolation.csv"), row.names = FALSE)
+          file.path("output", "results", "weak_ties_percolation.csv"), row.names = FALSE, fileEncoding = "UTF-8")
 cat("\nwritten: output/results/weak_ties_overlap.csv and weak_ties_percolation.csv\n")

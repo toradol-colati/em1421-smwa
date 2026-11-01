@@ -21,7 +21,7 @@ elec <- read_elec(FILE_ELEC)
 saveRDS(elec, file.path(DIR_PROCESSED, "elec_raw.rds"))
 
 cv <- case_variants(votes_raw)
-write.csv(cv, file.path(DIR_PROCESSED, "username_case_variants.csv"), row.names = FALSE)
+write.csv(cv, file.path(DIR_PROCESSED, "username_case_variants.csv"), row.names = FALSE, fileEncoding = "UTF-8")
 
 # Control counts against the totals published by SNAP.
 n_votes  <- nrow(votes_raw)
