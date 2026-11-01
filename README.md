@@ -52,6 +52,7 @@ R/
   95_weak_ties.R             strength of weak ties: neighborhood overlap, giant component
   96_network_description.R   clustering coefficient, average path length, giant component
   97_community_method_check.R Girvan-Newman compared with Louvain
+  92_short_attempt_check.R   which short attempts match wiki-Elec
   98_generate_appendix.R     copies the code into docs/DATA_FULL.md
   99_verify_data.R           optional raw-data verification
   99b_verify_output.R        optional output-invariant verification
@@ -91,6 +92,7 @@ run_data_prep.R
 05_measure_change.R
 06_model_outcome.R
 07_figures.R
+92_short_attempt_check.R
 93_coalition_overlap_null.R
 94_recruitment_curve.R
 95_weak_ties.R
@@ -98,7 +100,8 @@ run_data_prep.R
 97_community_method_check.R
 ```
 
-The slowest steps are 96 (about 10 minutes) and 97 (about 30 minutes).
+A full run took about 50 minutes on a laptop, most of it in 97 (Girvan-Newman).
+The log of the run that produced the committed outputs is `output/logs/run_all_log.txt`.
 
 The individual stages remain separately runnable for inspection and debugging.
 
@@ -128,12 +131,11 @@ Rscript R/run_data_prep.R
 | Reconstructed attempts | 4,081 |
 | Repeat candidates | 490 |
 | All consecutive attempt pairs | 621 |
-| Pairs with valid outcomes | 609 |
-| Fragment pairs excluded | 96 |
-| Pairs analysed | 513 |
-| Pairs after prior rejection | 486 |
-| Pairs after prior success | 27 |
-| Successful next attempts | 206 |
+| Pairs with valid outcomes (all valid sample) | 609 |
+| Negative-interval pairs | 17 |
+| Chronological sample (main descriptive results) | 592 |
+| Strict sample (outcome model) | 513 |
+| Pairs after prior success (all / chronological / strict) | 54 / 52 / 27 |
 | Attempts matched to `wiki-Elec` | 2,175 |
 | Validated outcome agreements | 2,163 (99.45%) |
 | Modelling pairs (candidates) | 513 (409) |
@@ -146,8 +148,11 @@ The final reconstruction:
 - attributes 6,975 undated votes only where attribution is unambiguous;
 - retains ambiguous and conflicting source information in diagnostic files;
 - excludes 12 high-confidence outcome disagreements from outcome analysis;
-- excludes fragment pairs, where either attempt has fewer than five votes or the
-  second attempt starts before the first ends (one request split in two).
+- reports every pair comparison for three samples: all 609 valid pairs; the
+  chronological sample (592), without pairs whose second attempt starts before
+  the first ends; and the strict sample (513), also without attempts of fewer
+  than five votes. `R/92_short_attempt_check.R` shows which short attempts
+  match wiki-Elec.
 
 ## Network construction
 
@@ -165,9 +170,11 @@ size, and names agglomerative methods as the alternative for larger ones.
 snapshots. Girvan-Newman is run twice: unweighted, as in the course lab, and
 with tie strength entered as closeness (1 / weight). igraph reads edge-betweenness
 weights as lengths, so co-vote counts must never be passed unchanged. On the
-2004 snapshot, the inverse-weight version reaches modularity 0.093 against 0.185
-for Louvain (computed in Python on the same data; rerun the script for the R
-values). Community results are treated as exploratory.
+2004 snapshot, the inverse-weight version reaches modularity 0.093 and the
+unweighted one 0.017, against 0.185 for Louvain; on 2005 the unweighted version
+returns 85 communities with modularity 0.000, and the other 2005 and 2006 runs do
+not finish within ten minutes. Each run is a separate R process with a hard
+timeout. Community results are treated as exploratory.
 
 The analysis measures supporter overlap, new and returning supporters,
 effective community breadth, community-mix change, weighted degree, PageRank,
@@ -181,19 +188,19 @@ The model compares:
 2. a model augmented with network position.
 
 Both use candidate-grouped five-fold cross-validation and only variables
-available before the next attempt. The final sample contains 513 pairs from 409
-candidates.
+available before the next attempt. The model sample is the strict sample, 513
+pairs from 409 candidates.
 
 | Model | AUC | Brier |
 |---|---:|---:|
 | Prevalence only | 0.500 | 0.241 |
-| Vote shares and timing | 0.705 | 0.212 |
-| Network-augmented | 0.706 | 0.211 |
+| Vote shares and timing | 0.697 | 0.215 |
+| Network-augmented | 0.698 | 0.215 |
 
 Network measures do not materially improve held-out prediction. They are
 therefore interpreted as descriptive measures of coalition composition rather
 than evidence of superior forecasting. The comparison is repeated with and
-without fragment pairs.
+in all three samples (`model_performance_sensitivity.csv`).
 
 ## Documentation
 
@@ -203,6 +210,8 @@ without fragment pairs.
 - `docs/DATA.md`: final data definitions, counts and limitations.
 - `report/EM1421_Repeat_RfA_Report.pdf`: submission-ready final report.
 - `report/report_source.md`: editable manuscript used to produce the report.
+- `report/build_pdf.py`: rebuilds the PDF from the manuscript and figures
+  (`python report/build_pdf.py`, needs reportlab).
 
 The report must not contain code. The processed data, result tables and figures
 are included as a validated snapshot and can also be recreated with

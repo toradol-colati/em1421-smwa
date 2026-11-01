@@ -1,0 +1,473 @@
+
+===== Running R/run_data_prep.R =====
+Cleared 13 output file(s) from a previous run.
+
+=============== STEP 1 of 3: 01_read_raw.R ===============
+--- wiki-RfA ---
+votes:                 198275 (SNAP: 198275) OK
+distinct users:        11380 (expected 11380; SNAP reports 11381 because it does not merge one double internal space and one invisible character, see NOTE 1) OK
+voter-candidate pairs: 189001 (SNAP: 189004, pre-normalisation)
+users after merging the first letter: 11243
+spelling groups differing only in the first letter: 137 (listed in data/processed/username_case_variants.csv)
+  of which the person is a candidate under at least one spelling: 90
+  of which the CANDIDATE appears under two spellings: 8  <- destructive for attempt reconstruction
+
+--- wiki-Elec ---
+elections: 2794 (SNAP: 2794) OK
+votes: 114040
+promotions: 1248   rejections: 1546   (SNAP: about 1200 / 1500)
+declared closing times from 2004-09-17 to 2008-01-06  -- but field T is unreliable, see 03
+distinct candidates: 2391   with more than one election: 323
+missing closing times: 0
+--- 01_read_raw.R finished in 21.5 s ---
+
+=============== STEP 2 of 3: 02_build_attempts.R ===============
+incoming records: 198275
+usernames: first letter merged -> distinct nodes: 11243
+records with an empty DAT field: 9367  (4.72% of all records)
+DAT present but not interpretable: 1  (unrecognised format: 0 | impossible value, e.g. hour 31: 1)
+phantom records with an empty SRC, removed: 1661 of 198275  (0.84%)
+  candidates touched: 926 | listed in records_without_voter.csv
+votes with an identifiable voter: 196614
+self-votes (the candidate voting in their own RfA): 107  -> kept in the table, flagged by the self_vote column
+undated votes, among those with a voter: 7707
+candidates touched by undated votes: 1761
+  of which with a single YEA among their undated votes: 1685
+fully identical rows (same voter, candidate, vote, outcome, year, date): 46
+rule: res_then_gap; threshold: 7 days
+dated votes used in the reconstruction: 188907
+attempts reconstructed: 4081
+candidates with at least one attempt: 3460
+votes removed because the same voter appears more than once in the same attempt (most recent kept): 630
+validated votes: 188277
+undated votes attributed unambiguously: 7075 of 7707
+undated votes that cannot be attributed (dropped): 632
+votes removed in the second deduplication (same voter, one dated and one imputed within the same attempt): 100
+attempts: 4081
+repeat candidates (2+ attempts): 490   (the project brief states 414)
+  of which with 3+ attempts: 91
+consecutive attempt pairs: 621
+flagged attempts: few votes (<5): 297 | duration >14 days: 4 | same candidate/year/outcome: 363
+  preceded by a rejection: 565 | preceded by a success: 56
+written: votes.rds (195252 rows), attempts.rds (4081 rows)
+--- 02_build_attempts.R finished in 11.5 s ---
+
+=============== STEP 3 of 3: 03_validate_outcomes.R ===============
+wiki-Elec: 2794 elections, declared closing times from 2004-09-17 to 2008-01-06. Earliest last-vote of an election: 2004-04-02.
+Field T (closing time) is UNRELIABLE: the gap between T and the last vote
+  of the same election has a median of 102.4 days; it exceeds 30 days in 54% of cases; it exceeds 180 days in 1217 elections; the minimum is -188.1 days (T before the last vote).
+  This is why matching uses VOTER SETS, not dates.
+
+sweep: 3 rules x 17 thresholds...
+         mode threshold n_attempts matched matched_share median_jaccard
+ res_then_gap         1       5730    1740        0.6228         0.6550
+ res_then_gap         2       4385    1912        0.6843         0.6607
+ res_then_gap         3       4184    1945        0.6961         0.6610
+ res_then_gap         4       4126    1949        0.6976         0.6610
+ res_then_gap         5       4096    1947        0.6969         0.6613
+ res_then_gap         6       4087    1947        0.6969         0.6613
+ res_then_gap         7       4081    1947        0.6969         0.6613
+ res_then_gap         8       4076    1948        0.6972         0.6613
+ res_then_gap        10       4067    1948        0.6972         0.6613
+ res_then_gap        12       4061    1948        0.6972         0.6613
+ res_then_gap        14       4057    1948        0.6972         0.6613
+ res_then_gap        18       4051    1948        0.6972         0.6612
+ res_then_gap        21       4047    1947        0.6969         0.6613
+ res_then_gap        28       4033    1937        0.6933         0.6614
+ res_then_gap        35       4023    1927        0.6897         0.6615
+ res_then_gap        45       4007    1909        0.6832         0.6610
+ res_then_gap        60       3990    1897        0.6790         0.6604
+ gap_then_res         1       7031    1727        0.6181         0.6552
+ gap_then_res         2       5705    1897        0.6790         0.6613
+ gap_then_res         3       5504    1930        0.6908         0.6614
+ gap_then_res         4       5446    1934        0.6922         0.6614
+ gap_then_res         5       5416    1932        0.6915         0.6615
+ gap_then_res         6       5407    1932        0.6915         0.6615
+ gap_then_res         7       5401    1932        0.6915         0.6615
+ gap_then_res         8       5396    1933        0.6918         0.6615
+ gap_then_res        10       5387    1933        0.6918         0.6615
+ gap_then_res        12       5381    1933        0.6918         0.6615
+ gap_then_res        14       5377    1933        0.6918         0.6615
+ gap_then_res        18       5371    1933        0.6918         0.6614
+ gap_then_res        21       5367    1932        0.6915         0.6615
+ gap_then_res        28       5353    1922        0.6879         0.6615
+ gap_then_res        35       5343    1912        0.6843         0.6615
+ gap_then_res        45       5327    1894        0.6779         0.6615
+ gap_then_res        60       5310    1882        0.6736         0.6612
+     gap_only         1       5703    1740        0.6228         0.6550
+     gap_only         2       4367    1912        0.6843         0.6607
+     gap_only         3       4166    1945        0.6961         0.6610
+     gap_only         4       4108    1949        0.6976         0.6610
+     gap_only         5       4078    1947        0.6969         0.6613
+     gap_only         6       4069    1947        0.6969         0.6613
+     gap_only         7       4063    1947        0.6969         0.6613
+     gap_only         8       4058    1948        0.6972         0.6613
+     gap_only        10       4049    1948        0.6972         0.6613
+     gap_only        12       4043    1948        0.6972         0.6613
+     gap_only        14       4039    1948        0.6972         0.6613
+     gap_only        18       4033    1948        0.6972         0.6612
+     gap_only        21       4029    1947        0.6969         0.6613
+     gap_only        28       4012    1937        0.6933         0.6614
+     gap_only        35       3998    1925        0.6890         0.6615
+     gap_only        45       3976    1899        0.6797         0.6613
+     gap_only        60       3948    1875        0.6711         0.6610
+ outcome_agreement under_split comparable_candidates count_agreement over under
+            0.9971           1                  1427          0.6931  437     1
+            0.9969           1                  1584          0.9053  149     1
+            0.9964           1                  1618          0.9351  104     1
+            0.9964           1                  1621          0.9426   92     1
+            0.9964           1                  1620          0.9457   87     1
+            0.9964           1                  1620          0.9457   87     1
+            0.9964           1                  1620          0.9463   86     1
+            0.9964           1                  1621          0.9469   85     1
+            0.9964           1                  1621          0.9469   85     1
+            0.9964           1                  1621          0.9476   84     1
+            0.9964           1                  1621          0.9482   83     1
+            0.9964           1                  1621          0.9482   83     1
+            0.9964           1                  1620          0.9494   81     1
+            0.9964           1                  1615          0.9517   77     1
+            0.9964           1                  1610          0.9528   75     1
+            0.9963           1                  1602          0.9538   73     1
+            0.9963           1                  1597          0.9549   71     1
+            0.9977           1                  1427          0.6931  437     1
+            0.9974           1                  1583          0.9059  148     1
+            0.9969           1                  1617          0.9357  103     1
+            0.9969           1                  1620          0.9432   91     1
+            0.9969           1                  1619          0.9463   86     1
+            0.9969           1                  1619          0.9463   86     1
+            0.9969           1                  1619          0.9469   85     1
+            0.9969           1                  1620          0.9475   84     1
+            0.9969           1                  1620          0.9475   84     1
+            0.9969           1                  1620          0.9481   83     1
+            0.9969           1                  1620          0.9488   82     1
+            0.9969           1                  1620          0.9488   82     1
+            0.9969           1                  1619          0.9500   80     1
+            0.9969           1                  1614          0.9523   76     1
+            0.9969           1                  1609          0.9534   74     1
+            0.9968           1                  1601          0.9544   72     1
+            0.9968           1                  1596          0.9555   70     1
+            0.9977           1                  1427          0.6931  437     1
+            0.9974           1                  1584          0.9059  148     1
+            0.9969           1                  1618          0.9357  103     1
+            0.9969           1                  1621          0.9432   91     1
+            0.9969           1                  1620          0.9463   86     1
+            0.9969           1                  1620          0.9463   86     1
+            0.9969           1                  1620          0.9469   85     1
+            0.9969           1                  1621          0.9476   84     1
+            0.9969           1                  1621          0.9476   84     1
+            0.9969           1                  1621          0.9482   83     1
+            0.9969           1                  1621          0.9488   82     1
+            0.9969           1                  1621          0.9488   82     1
+            0.9969           1                  1620          0.9500   80     1
+            0.9969           1                  1615          0.9523   76     1
+            0.9969           1                  1609          0.9534   74     1
+            0.9968           1                  1597          0.9543   72     1
+            0.9973           1                  1584          0.9564   68     1
+ fragments_lt5
+          1566
+           603
+           434
+           380
+           347
+           337
+           330
+           326
+           317
+           313
+           311
+           304
+           302
+           297
+           295
+           294
+           290
+          2906
+          1951
+          1782
+          1728
+          1695
+          1685
+          1678
+          1674
+          1665
+          1661
+          1659
+          1652
+          1650
+          1645
+          1643
+          1642
+          1638
+          1559
+           601
+           432
+           378
+           345
+           335
+           328
+           324
+           315
+           311
+           309
+           302
+           300
+           294
+           292
+           291
+           286
+
+CHOICE OF THE THRESHOLD
+  matched elections: 1949 at 4 days, 1947 at 7, 1947 at 21, 1897 at 60.
+  exact attempt count: 94.3% at 4 days, 94.6% at 7, 95.5% at 60.
+  Both measures are flat between 4 and 21 days: the choice is NOT driven
+  by the data, and that flatness is itself the robustness result. 7 days
+  is kept, the value of the published precedent (Kolczynska) and the
+  nominal length of an RfA.
+  Discarded rule (gap_then_res): at 7 days it produces 1678 attempts with fewer than 5 votes against 330.
+
+--- VALIDATION with res_then_gap and a 7-day threshold ---
+elections matched (Jaccard > 0.5): 2176 of 2794  (77.9%)
+  with Jaccard > 0.3: 2352   candidate absent from wiki-RfA: 273  (9.8%)
+  median Jaccard on the matched ones: 0.667
+OUTCOME AGREEMENT: 99.45%  (disagreements: 12 of 2176)
+distinct attempts matched: 2175 of 4081; attempts absorbing two elections: 1
+disagreement on individual voters (medians): wiki-Elec holds 8 that we do not, we hold 9 that it does not,
+  out of a median of 41 voters per election. Similar sizes (identical in 1023 elections), different lists.
+LIMIT: the validation covers 2175 attempts of 4081 (53%). Outside the period covered by wiki-Elec, that is from 2008 to 2013, no validation exists.
+written: attempts_validated.rds, 03_match_wikielec.csv
+--- 03_validate_outcomes.R finished in 113.9 s ---
+
+=============== DONE in 2.5 min ===============
+votes.rds               195252 validated votes
+attempts.rds              4081 attempts, 490 repeat candidates
+attempts_validated.rds    2175 attempts with an external match
+
+Full documentation of what these tables contain: docs/DATA.md
+Optional verification rounds:
+  Rscript R/99_verify_data.R      claims recomputed from the raw files
+  Rscript R/99b_verify_output.R   internal invariants of the tables
+
+===== Running R/04_build_networks.R =====
+
+===== Running R/05_measure_change.R =====
+Attempt pairs written: 609 
+
+===== Running R/06_model_outcome.R =====
+Model observations: 513 
+
+===== Running R/07_figures.R =====
+
+===== Running R/92_short_attempt_check.R =====
+               table              group   n short_attempts matched_to_wiki_elec
+      short attempts recorded rejection 241            241                   66
+      short attempts   recorded success  56             56                    0
+ short-attempt pairs    after rejection  54             61                   13
+ short-attempt pairs      after success  25             35                    0
+        strict pairs    after rejection 486              0                   NA
+        strict pairs      after success  27              0                   NA
+ one_vote one_vote_matched next_success median_days_between
+       47               15           NA                  NA
+       27                0           NA                  NA
+       NA               NA            5           102.94028
+       NA               NA           25            16.12431
+       NA               NA          197           141.81840
+       NA               NA            9           497.32639
+
+written: output/results/short_attempt_check.csv
+
+===== Running R/93_coalition_overlap_null.R =====
+pairs tested: 389 of 609 consecutive pairs
+(a pair is tested when both attempts have at least three supporters and the
+ pool of voters active that year is larger than the coalition being drawn)
+
+
+--- sample: all ---
+all pairs                          n=389 | observed median 0.0769 | null median 0.0256 | ratio median 2.4 | zero overlap 10% | above own p95 56%
+  previous outcome -1              n=359 | observed median 0.0800 | null median 0.0261 | ratio median 2.5 | zero overlap  9% | above own p95 58%
+  previous outcome +1              n= 30 | observed median 0.0205 | null median 0.0175 | ratio median 1.2 | zero overlap 30% | above own p95 23%
+  next outcome -1                  n=186 | observed median 0.0662 | null median 0.0198 | ratio median 2.6 | zero overlap 17% | above own p95 46%
+  next outcome +1                  n=203 | observed median 0.0958 | null median 0.0335 | ratio median 2.2 | zero overlap  4% | above own p95 65%
+
+--- sample: chronological ---
+all pairs                          n=374 | observed median 0.0732 | null median 0.0255 | ratio median 2.4 | zero overlap 11% | above own p95 54%
+  previous outcome -1              n=344 | observed median 0.0774 | null median 0.0260 | ratio median 2.5 | zero overlap  9% | above own p95 56%
+  previous outcome +1              n= 30 | observed median 0.0205 | null median 0.0175 | ratio median 1.2 | zero overlap 30% | above own p95 23%
+  next outcome -1                  n=186 | observed median 0.0662 | null median 0.0198 | ratio median 2.6 | zero overlap 17% | above own p95 46%
+  next outcome +1                  n=188 | observed median 0.0835 | null median 0.0335 | ratio median 2.1 | zero overlap  5% | above own p95 62%
+
+--- sample: strict ---
+all pairs                          n=371 | observed median 0.0741 | null median 0.0256 | ratio median 2.4 | zero overlap 10% | above own p95 54%
+  previous outcome -1              n=344 | observed median 0.0774 | null median 0.0260 | ratio median 2.5 | zero overlap  9% | above own p95 56%
+  previous outcome +1              n= 27 | observed median 0.0227 | null median 0.0212 | ratio median 1.2 | zero overlap 22% | above own p95 26%
+  next outcome -1                  n=186 | observed median 0.0662 | null median 0.0198 | ratio median 2.6 | zero overlap 17% | above own p95 46%
+  next outcome +1                  n=185 | observed median 0.0870 | null median 0.0350 | ratio median 2.1 | zero overlap  3% | above own p95 63%
+
+written: output/results/coalition_overlap_null.csv
+
+===== Running R/94_recruitment_curve.R =====
+
+--- sample: all ---
+pairs used: 502 of 609
+background rate T(0): 0.00129   per-connection p: 0.00222
+
+ sample   k eligible_voters recruited observed_rate independent_baseline
+    all   0          698529       900      0.001288             0.001288
+    all   1          181582       637      0.003508             0.003508
+    all   2           96289       461      0.004788             0.005723
+    all   3           58983       330      0.005595             0.007933
+    all   4           41525       256      0.006165             0.010137
+    all   5           30339       209      0.006889             0.012337
+    all   6           23794       215      0.009036             0.014532
+    all   7           18883       199      0.010539             0.016723
+    all   8           14847       172      0.011585             0.018908
+    all   9           12314       175      0.014211             0.021088
+    all  10           10314       126      0.012216             0.023264
+    all  11            8545       114      0.013341             0.025435
+    all 12+           70458      2148      0.030486             0.027601
+ ratio_observed_to_baseline
+                     1.0000
+                     1.0000
+                     0.8366
+                     0.7053
+                     0.6081
+                     0.5584
+                     0.6218
+                     0.6302
+                     0.6127
+                     0.6739
+                     0.5251
+                     0.5245
+                     1.1045
+
+--- sample: chronological ---
+pairs used: 485 of 592
+background rate T(0): 0.00130   per-connection p: 0.00225
+
+        sample   k eligible_voters recruited observed_rate independent_baseline
+ chronological   0          690211       900      0.001304             0.001304
+ chronological   1          179379       637      0.003551             0.003551
+ chronological   2           94917       461      0.004857             0.005793
+ chronological   3           58076       330      0.005682             0.008030
+ chronological   4           40757       255      0.006257             0.010262
+ chronological   5           29609       209      0.007059             0.012489
+ chronological   6           23298       214      0.009185             0.014711
+ chronological   7           18420       199      0.010803             0.016928
+ chronological   8           14511       172      0.011853             0.019141
+ chronological   9           12063       174      0.014424             0.021348
+ chronological  10           10116       125      0.012357             0.023550
+ chronological  11            8374       114      0.013614             0.025747
+ chronological 12+           68402      2148      0.031403             0.027939
+ ratio_observed_to_baseline
+                     1.0000
+                     1.0000
+                     0.8384
+                     0.7076
+                     0.6097
+                     0.5652
+                     0.6244
+                     0.6382
+                     0.6193
+                     0.6757
+                     0.5247
+                     0.5287
+                     1.1240
+
+--- sample: strict ---
+pairs used: 456 of 513
+background rate T(0): 0.00124   per-connection p: 0.00219
+
+ sample   k eligible_voters recruited observed_rate independent_baseline
+ strict   0          649108       804      0.001239             0.001239
+ strict   1          175947       603      0.003427             0.003427
+ strict   2           93995       460      0.004894             0.005611
+ strict   3           57486       330      0.005741             0.007790
+ strict   4           40405       255      0.006311             0.009964
+ strict   5           29373       209      0.007115             0.012133
+ strict   6           23070       214      0.009276             0.014298
+ strict   7           18313       199      0.010867             0.016458
+ strict   8           14428       172      0.011921             0.018613
+ strict   9           12010       174      0.014488             0.020764
+ strict  10           10067       125      0.012417             0.022910
+ strict  11            8353       114      0.013648             0.025051
+ strict 12+           68351      2148      0.031426             0.027187
+ ratio_observed_to_baseline
+                     1.0000
+                     1.0000
+                     0.8722
+                     0.7369
+                     0.6334
+                     0.5864
+                     0.6488
+                     0.6603
+                     0.6405
+                     0.6978
+                     0.5420
+                     0.5448
+                     1.1559
+
+written: output/results/recruitment_curve.csv
+
+===== Running R/95_weak_ties.R =====
+
+=== snapshot 2008: 3865 nodes, 393084 edges ===
+  overlap vs strength [observed]: bin 1 = 0.195, bin 20 = 0.423, Spearman rho = 0.462
+  overlap vs strength [weights reshuffled]: bin 1 = 0.256, bin 20 = 0.257, Spearman rho = 0.008
+  percolation [weakest first  ]: giant component falls below half after 78% of edges
+  percolation [strongest first]: giant component falls below half after more than 90% of edges
+
+=== snapshot 2013: 6228 nodes, 771356 edges ===
+  overlap vs strength [observed]: bin 1 = 0.181, bin 20 = 0.396, Spearman rho = 0.433
+  overlap vs strength [weights reshuffled]: bin 1 = 0.238, bin 20 = 0.237, Spearman rho = -0.003
+  percolation [weakest first  ]: giant component falls below half after 78% of edges
+  percolation [strongest first]: giant component falls below half after more than 90% of edges
+
+written: output/results/weak_ties_overlap.csv and weak_ties_percolation.csv
+
+===== Running R/96_network_description.R =====
+=== voting network (voter -> candidate) ===
+                      [,1]                       
+network               "voting (directed, signed)"
+nodes                 "11211"                    
+edges                 "195154"                   
+voters                "10279"                    
+candidates            "3460"                     
+both_roles            "2528"                     
+density               "0.001552843"              
+giant_component_share "1"                        
+components            "1"                        
+reciprocity           "0.07468973"               
+2004: n=   29 m=     87  C=0.410 vs null 0.374 (x1.10)  <d>=1.92 vs random 1.88  [0s]
+2005: n=  375 m=  10053  C=0.505 vs null 0.461 (x1.09)  <d>=1.99 vs random 1.49  [0s]
+2006: n= 1189 m=  66698  C=0.455 vs null 0.393 (x1.16)  <d>=2.04 vs random 1.50  [1s]
+2007: n= 2571 m= 238509  C=0.436 vs null 0.369 (x1.18)  <d>=2.10 vs random 1.50  [1s]
+2008: n= 3865 m= 393084  C=0.394 vs null 0.313 (x1.26)  <d>=2.14 vs random 1.55  [2s]
+2009: n= 4747 m= 522858  C=0.377 vs null 0.287 (x1.32)  <d>=2.16 vs random 1.57  [2s]
+2010: n= 5325 m= 616848  C=0.368 vs null 0.272 (x1.35)  <d>=2.17 vs random 1.58  [3s]
+2011: n= 5713 m= 687627  C=0.364 vs null 0.264 (x1.38)  <d>=2.19 vs random 1.58  [3s]
+2012: n= 5964 m= 731776  C=0.361 vs null 0.259 (x1.40)  <d>=2.20 vs random 1.58  [4s]
+2013: n= 6228 m= 771356  C=0.357 vs null 0.252 (x1.42)  <d>=2.18 vs random 1.58  [4s]
+
+written: output/results/network_description.csv and degree_distribution.csv
+
+===== Running R/97_community_method_check.R =====
+
+snapshot 2004: 29 nodes, 87 edges
+  Louvain       : 4 communities, modularity 0.185, 0.00 s
+  Girvan-Newman (unweighted): 2 communities, modularity 0.017, 0.5 s, adjusted Rand vs Louvain -0.016
+  Girvan-Newman (inverse weight): 10 communities, modularity 0.093, 0.5 s, adjusted Rand vs Louvain 0.113
+
+snapshot 2005: 375 nodes, 10053 edges
+  Louvain       : 3 communities, modularity 0.213, 0.02 s
+  Girvan-Newman (unweighted): 85 communities, modularity 0.000, 250.2 s, adjusted Rand vs Louvain -0.011
+  Girvan-Newman (inverse weight): did not finish within 600 s
+
+snapshot 2006: 1189 nodes, 66698 edges
+  Louvain       : 3 communities, modularity 0.270, 0.10 s
+  Girvan-Newman (unweighted): did not finish within 600 s
+  Girvan-Newman (inverse weight): did not finish within 600 s
+
+written: output/results/community_method_check.csv
+For reference, the largest snapshot in the analysis has 6,228 nodes and
+771,356 edges, 11.6 times the edges of the 2006 snapshot.
+
+Project pipeline completed successfully.

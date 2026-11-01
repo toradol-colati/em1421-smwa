@@ -1,4 +1,7 @@
-"cutoff_year","nodes","edges","louvain_communities","louvain_modularity","louvain_seconds","gn_communities","gn_modularity","gn_seconds","gn_completed","adjusted_rand"
-2004,29,87,4,0.184997530864198,0,11,0.0517432098765433,0,TRUE,0.0865570901818636
-2005,375,10053,3,0.212575124315002,0.01,247,0.0182243817736072,197.6,TRUE,0.0121319536701108
-2006,1189,66698,3,0.269696026810767,0.08,NA,NA,NA,FALSE,NA
+"cutoff_year","nodes","edges","louvain_communities","louvain_modularity","louvain_seconds","gn_variant","gn_communities","gn_modularity","gn_seconds","gn_completed","adjusted_rand"
+2004,29,87,4,0.184997530864198,0,"unweighted",2,0.0167901234567902,0.5,TRUE,-0.0157255182273052
+2004,29,87,4,0.184997530864198,0,"inverse weight",10,0.0932641975308642,0.5,TRUE,0.112718098148609
+2005,375,10053,3,0.212575124315002,0.02,"unweighted",85,0.000458128755983308,250.2,TRUE,-0.0114605197353613
+2005,375,10053,3,0.212575124315002,0.02,"inverse weight",NA,NA,NA,FALSE,NA
+2006,1189,66698,3,0.269696026810767,0.1,"unweighted",NA,NA,NA,FALSE,NA
+2006,1189,66698,3,0.269696026810767,0.1,"inverse weight",NA,NA,NA,FALSE,NA

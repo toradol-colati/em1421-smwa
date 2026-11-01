@@ -2,7 +2,7 @@
 "voting","in","min",0
 "voting","in","q25",0
 "voting","in","median",0
-"voting","in","mean",17.4073677638045
+"voting","in","mean",17.4073677638034
 "voting","in","q75",11
 "voting","in","q90",64
 "voting","in","q99",185.9
@@ -10,7 +10,7 @@
 "voting","out","min",0
 "voting","out","q25",1
 "voting","out","median",2
-"voting","out","mean",17.4073677638013
+"voting","out","mean",17.4073677638034
 "voting","out","q75",11
 "voting","out","q90",45
 "voting","out","q99",231.799999999999
@@ -18,7 +18,7 @@
 "co-voting (last snapshot)","undirected","min",1
 "co-voting (last snapshot)","undirected","q25",28
 "co-voting (last snapshot)","undirected","median",103.5
-"co-voting (last snapshot)","undirected","mean",247.705844572896
+"co-voting (last snapshot)","undirected","mean",247.705844572897
 "co-voting (last snapshot)","undirected","q75",324
 "co-voting (last snapshot)","undirected","q90",671
 "co-voting (last snapshot)","undirected","q99",1655.73

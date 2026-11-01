@@ -3,5 +3,8 @@
 "Repeat candidates",490
 "All consecutive attempt pairs",621
 "Pairs with valid outcomes",609
-"Pairs used in descriptive comparisons",609
-"Pairs used in outcome models",528
+"Negative-interval pairs",17
+"Short-attempt pairs (not negative-interval)",79
+"Chronological sample",592
+"Strict sample",513
+"Pairs used in outcome models",513

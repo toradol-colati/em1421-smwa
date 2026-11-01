@@ -1,5 +1,13 @@
 # Review checks (Python)
 
+**Superseded by the R run.** All numbers in the report now come from
+`Rscript R/00_run_all.R` (log: `output/logs/run_all_log.txt`). These Python
+checks were written before R was available. The R run reproduced their counts
+exactly (371 null-testable strict pairs, the full T(k) table, path lengths 1.92
+and 1.99, Girvan-Newman 0.093 and 0.017 on 2004). The model AUC differs (Python
+0.705, R 0.697) because R assigns cross-validation folds at random, while the
+Python check reused the earlier folds; the R value is the reported one.
+
 These scripts recompute, from the project's own `data/processed/*.rds`, the
 results changed by the fixes on this branch. They exist because R was not
 available when the fixes were made. They are evidence, not part of the
