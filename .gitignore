@@ -14,3 +14,7 @@
 
 # Partial outputs quarantined by R/run_data_prep.R after a failed run
 data/processed/failed_run_*/
+
+# Old data extracted by review/check_attempt_ids.py
+review/_old_data/
+__pycache__/

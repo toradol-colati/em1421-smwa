@@ -1,0 +1,6 @@
+  all pairs (current data)           n = 389  above own 95th percentile  55.3%  overlap exactly 0  10.3%  median observed 0.077  median null 0.026
+  without fragment pairs             n = 371  above own 95th percentile  53.9%  overlap exactly 0  10.0%  median observed 0.074  median null 0.026
+    previously rejected              n = 344  above own 95th percentile  56.1%  overlap exactly 0   9.0%  median observed 0.077  median null 0.026
+    previously successful            n =  27  above own 95th percentile  25.9%  overlap exactly 0  22.2%  median observed 0.023  median null 0.020
+    next rejected                    n = 186  above own 95th percentile  46.8%  overlap exactly 0  16.7%  median observed 0.066  median null 0.019
+    next successful                  n = 185  above own 95th percentile  61.1%  overlap exactly 0   3.2%  median observed 0.087  median null 0.034
