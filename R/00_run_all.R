@@ -14,6 +14,7 @@ steps <- c(
   "R/05_measure_change.R",          # consecutive pairs, coalition measures
   "R/06_model_outcome.R",           # group comparisons, outcome models
   "R/07_figures.R",                 # Figures 1-4
+  "R/92_short_attempt_check.R",     # which short attempts match wiki-Elec
   "R/93_coalition_overlap_null.R",  # supporter overlap against a random baseline
   "R/94_recruitment_curve.R",       # membership closure, T(k)
   "R/95_weak_ties.R",               # strength of weak ties

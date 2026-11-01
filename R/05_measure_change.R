@@ -335,16 +335,23 @@ pairs$next_group <- factor(
 )
 pairs$next_success <- as.integer(pairs$next_outcome == 1L)
 
-# Fragment pairs. Attempt boundaries are inferred from vote dates, so a late
-# vote or a stray record can become a separate "attempt". A pair is a fragment
-# when either attempt has fewer than 5 votes (flag_short, 00_lib_data.R) or the
-# second attempt starts before the first one ends. A 1-vote attempt has
-# supporter overlap 0 and new-supporter share 1 whatever the voters do, so
-# fragments would manufacture the overlap differences under study. They stay in
-# this table, flagged, and every later script analyses !fragment_pair only.
-pairs$fragment_pair <- (pairs$previous_short_attempt |
-  pairs$next_short_attempt |
-  pairs$days_between < 0) %in% TRUE
+# Three named populations of pairs. None is chosen silently: 06, 07, 93 and 94
+# report results for each.
+#   negative_interval : the second attempt starts before the first ends, so the
+#                       two are not consecutive requests (17 pairs).
+#   short_attempt_pair: either attempt has fewer than 5 votes (flag_short in
+#                       00_lib_data.R). Such an attempt can be a real
+#                       early-closed request; with so few recorded votes,
+#                       supporter overlap is close to 0 by construction.
+#   sample            : "all" (all valid outcomes), "chronological" (excludes
+#                       negative_interval) and "strict" (also excludes
+#                       short_attempt_pair; the modelling sample).
+# 92_short_attempt_check.R shows which short attempts match wiki-Elec.
+pairs$negative_interval <- (pairs$days_between < 0) %in% TRUE
+pairs$short_attempt_pair <- (pairs$previous_short_attempt |
+  pairs$next_short_attempt) %in% TRUE
+pairs$in_chronological <- !pairs$negative_interval
+pairs$in_strict <- !pairs$negative_interval & !pairs$short_attempt_pair
 
 assert_condition(!anyDuplicated(pairs$pair_id), "Pair IDs are not unique.")
 assert_condition(

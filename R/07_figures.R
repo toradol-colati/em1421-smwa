@@ -34,7 +34,7 @@ if (any(!file.exists(required))) {
 }
 
 pairs <- readRDS(file.path(DIR_PROCESSED, "attempt_pairs.rds"))
-pairs <- pairs[!pairs$fragment_pair, ]   # fragments: see 05_measure_change.R
+pairs <- pairs[pairs$in_chronological, ]   # Figures 2-3: chronological sample (05_measure_change.R)
 network_objects <- readRDS(file.path(DIR_PROCESSED, "network_objects.rds"))
 model_objects <- readRDS(file.path(DIR_PROCESSED, "model_objects.rds"))
 
@@ -208,8 +208,9 @@ p2 <- ggplot(
     x = "Outcome of previous request",
     y = "Observed supporter overlap minus random expectation",
     fill = NULL,
-    title = "Repeat support is uncommon, but rises before later success",
-    subtitle = "Each point is a pair of consecutive requests"
+    title = "Supporter overlap above random expectation",
+    subtitle = sprintf("Each point is a pair of consecutive requests (chronological sample, %d pairs)",
+                       nrow(plot_pairs))
   ) +
   theme_minimal(base_size = 11) +
   theme(legend.position = "top")

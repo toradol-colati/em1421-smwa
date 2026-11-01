@@ -37,10 +37,15 @@ pairs <- readRDS(file.path(DIR_PROCESSED, "attempt_pairs.rds"))
 attempts <- readRDS(file.path(DIR_PROCESSED, "attempts_analysis.rds"))
 network_objects <- readRDS(file.path(DIR_PROCESSED, "network_objects.rds"))
 
-# Fragment pairs are flagged in 05_measure_change.R; all comparisons and
-# models below use the remaining pairs.
+# Three populations of pairs are defined in 05_measure_change.R. Descriptive
+# comparisons are reported for all three; the outcome model uses the strict
+# sample (at least 5 votes in both attempts) with the others as sensitivity.
 pairs_all <- pairs
-pairs <- pairs_all[!pairs_all$fragment_pair, ]
+samples <- list(
+  "All valid outcomes" = pairs_all,
+  "Chronological" = pairs_all[pairs_all$in_chronological, ],
+  "Strict" = pairs_all[pairs_all$in_strict, ]
+)
 
 cliff_delta <- function(failure_values, success_values) {
   failure_values <- failure_values[is.finite(failure_values)]
@@ -98,18 +103,22 @@ compare_groups <- function(data, group, comparison_label) {
   result
 }
 
-group_comparison <- rbind(
-  compare_groups(
-    pairs,
-    ifelse(pairs$previous_outcome == 1L, "success", "failure"),
-    "Previous attempt outcome"
-  ),
-  compare_groups(
-    pairs,
-    ifelse(pairs$next_outcome == 1L, "success", "failure"),
-    "Next attempt outcome"
+group_comparison <- do.call(rbind, lapply(names(samples), function(label) {
+  d <- samples[[label]]
+  out <- rbind(
+    compare_groups(
+      d,
+      ifelse(d$previous_outcome == 1L, "success", "failure"),
+      "Previous attempt outcome"
+    ),
+    compare_groups(
+      d,
+      ifelse(d$next_outcome == 1L, "success", "failure"),
+      "Next attempt outcome"
+    )
   )
-)
+  cbind(sample = label, sample_pairs = nrow(d), out)
+}))
 write.csv(
   group_comparison,
   file.path("output", "results", "group_comparison.csv"),
@@ -139,7 +148,7 @@ model_data_all$log2_days_between <-
   log2(1 + pmax(model_data_all$days_between, 0))
 model_data_all$year_centered <- model_data_all$next_attempt_year -
   min(model_data_all$next_attempt_year)
-model_data <- model_data_all[!model_data_all$fragment_pair, ]
+model_data <- model_data_all[model_data_all$in_strict, ]
 
 base_model_formula <- next_success ~
   previous_success +
@@ -327,29 +336,26 @@ write.csv(
   row.names = FALSE, fileEncoding = "UTF-8"
 )
 
-all_base_evaluation <- evaluate_model(model_data_all, base_model_formula)
-all_network_evaluation <- evaluate_model(model_data_all, network_model_formula)
-performance_sensitivity <- data.frame(
-  sample = rep(c("Excluding fragment pairs", "All complete pairs"), each = 2L),
-  model = rep(c("Vote shares and timing", "Network-augmented"), 2L),
-  observations = c(
-    nrow(model_data), nrow(model_data),
-    nrow(model_data_all), nrow(model_data_all)
-  ),
-  auc = c(
-    auc_value(model_data$next_success, base_evaluation$prediction),
-    auc_value(model_data$next_success, network_evaluation$prediction),
-    auc_value(model_data_all$next_success, all_base_evaluation$prediction),
-    auc_value(model_data_all$next_success, all_network_evaluation$prediction)
-  ),
-  brier_score = c(
-    mean((base_evaluation$prediction - model_data$next_success)^2),
-    mean((network_evaluation$prediction - model_data$next_success)^2),
-    mean((all_base_evaluation$prediction - model_data_all$next_success)^2),
-    mean((all_network_evaluation$prediction - model_data_all$next_success)^2)
-  ),
-  stringsAsFactors = FALSE
+sensitivity_sets <- list(
+  "Strict" = model_data,
+  "Chronological" = model_data_all[model_data_all$in_chronological, ],
+  "All valid outcomes" = model_data_all
 )
+performance_sensitivity <- do.call(rbind, lapply(names(sensitivity_sets), function(label) {
+  d <- sensitivity_sets[[label]]
+  eb <- evaluate_model(d, base_model_formula)
+  en <- evaluate_model(d, network_model_formula)
+  data.frame(
+    sample = label,
+    model = c("Vote shares and timing", "Network-augmented"),
+    observations = nrow(d),
+    auc = c(auc_value(d$next_success, eb$prediction),
+            auc_value(d$next_success, en$prediction)),
+    brier_score = c(mean((eb$prediction - d$next_success)^2),
+                    mean((en$prediction - d$next_success)^2)),
+    stringsAsFactors = FALSE
+  )
+}))
 write.csv(
   performance_sensitivity,
   file.path("output", "results", "model_performance_sensitivity.csv"),
@@ -361,13 +367,14 @@ sample_flow <- data.frame(
   stage = c(
     "Reconstructed attempts", "Repeat candidates",
     "All consecutive attempt pairs", "Pairs with valid outcomes",
-    "Fragment pairs excluded",
-    "Pairs used in descriptive comparisons", "Pairs used in outcome models"
+    "Negative-interval pairs", "Short-attempt pairs (not negative-interval)",
+    "Chronological sample", "Strict sample", "Pairs used in outcome models"
   ),
   count = c(
     nrow(attempts), sum(table(attempts$candidate) >= 2L),
-    all_pair_count, nrow(pairs_all), sum(pairs_all$fragment_pair),
-    nrow(pairs), nrow(model_data)
+    all_pair_count, nrow(pairs_all), sum(pairs_all$negative_interval),
+    sum(pairs_all$short_attempt_pair & !pairs_all$negative_interval),
+    sum(pairs_all$in_chronological), sum(pairs_all$in_strict), nrow(model_data)
   ),
   stringsAsFactors = FALSE
 )
@@ -380,11 +387,12 @@ write.csv(
 summary_lines <- c(
   paste("All consecutive attempt pairs:", all_pair_count),
   paste("Pairs with valid outcomes:", nrow(pairs_all)),
-  paste("Fragment pairs excluded:", sum(pairs_all$fragment_pair)),
-  paste("Pairs analysed:", nrow(pairs)),
-  paste("Pairs after prior success:", sum(pairs$previous_outcome == 1L)),
-  paste("Pairs after prior rejection:", sum(pairs$previous_outcome == -1L)),
-  paste("Next-attempt successes:", sum(pairs$next_success == 1L)),
+  paste("Chronological sample:", sum(pairs_all$in_chronological),
+        "| strict sample:", sum(pairs_all$in_strict)),
+  paste("Pairs after prior success (all / chronological / strict):",
+        sum(pairs_all$previous_outcome == 1L), "/",
+        sum(pairs_all$previous_outcome == 1L & pairs_all$in_chronological), "/",
+        sum(pairs_all$previous_outcome == 1L & pairs_all$in_strict)),
   paste(
     "Attempts matched to wikiElec by voter set:",
     sum(attempts$elec_matched, na.rm = TRUE)
