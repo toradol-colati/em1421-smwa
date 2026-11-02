@@ -1,5 +1,7 @@
 "sample","model","observations","auc","brier_score"
-"Excluding short attempts","Vote shares and timing",528,0.715786991318702,0.209641324572406
-"Excluding short attempts","Network-augmented",528,0.715359559007767,0.209472305071644
-"All complete pairs","Vote shares and timing",609,0.754223330143115,0.195824978127149
-"All complete pairs","Network-augmented",609,0.75303256248748,0.195647501110357
+"Strict","Vote shares and timing",513,0.697226526675311,0.215241718626334
+"Strict","Network-augmented",513,0.698491508807438,0.21485062280774
+"Chronological","Vote shares and timing",592,0.741299276328318,0.199766488749271
+"Chronological","Network-augmented",592,0.742977528089888,0.199086845999116
+"All valid outcomes","Vote shares and timing",609,0.751251975338868,0.197192399804241
+"All valid outcomes","Network-augmented",609,0.751775022813773,0.196578280371236

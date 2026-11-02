@@ -1,20 +1,19 @@
 All consecutive attempt pairs: 621
 Pairs with valid outcomes: 609
-Pairs after prior success: 54
-Pairs after prior rejection: 555
-Next-attempt successes: 251
+Chronological sample: 592 | strict sample: 513
+Pairs after prior success (all / chronological / strict): 54 / 52 / 27
 Attempts matched to wikiElec by voter set: 2175
 Validated outcome agreements: 2163 of 2175
 Network snapshots: 10
-Model observations: 528
-Model candidates: 424
-Vote/timing model AUC: 0.716
-Network-augmented model AUC: 0.715
-Vote/timing model Brier score: 0.210
-Network-augmented model Brier score: 0.209
-Prevalence-only Brier score: 0.244
+Model observations: 513
+Model candidates: 409
+Vote/timing model AUC: 0.697
+Network-augmented model AUC: 0.698
+Vote/timing model Brier score: 0.215
+Network-augmented model Brier score: 0.215
+Prevalence-only Brier score: 0.241
 Network snapshots use same-direction co-voting before the target year.
-Louvain is the main method; Girvan-Newman is checked only on the first snapshot and is method-sensitive.
+Louvain is the main method; Girvan-Newman is compared on the three smallest snapshots in 97_community_method_check.R.
 Network measures showed no material improvement in held-out prediction; AUC and Brier differences were negligible and mixed.
 Model predictors use only information available before the next attempt.
 All estimates describe association, not a causal effect.
