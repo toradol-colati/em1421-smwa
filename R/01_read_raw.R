@@ -1,14 +1,13 @@
-# 01 - Read the two raw files. No substantive cleaning here.
+# 01 - Read the two raw files into tables.
 # Input : data/raw/wiki-RfA.txt.gz, data/raw/wikiElec.ElecBs3.txt.gz
 # Output: data/processed/votes_raw.rds, data/processed/elec_raw.rds,
 #         data/processed/username_case_variants.csv
 # Packages: none (base R).
 #
-# The two parsers live in R/00_lib_data.R so the independent verification
-# (R/99_verify_data.R) can use them too.
-# This script only turns the text formats into tables and normalises username
-# spelling (see NOTE 1 in the library). It does not deduplicate and decides
-# nothing substantive: that is step 02.
+# The reading functions are in R/00_lib_data.R, so the check script
+# R/99_verify_data.R can use the same ones.
+# This script only reads the files and cleans the spelling of usernames.
+# Removing duplicates and building elections happens in step 02.
 
 source(file.path("R", "00_paths.R"))
 source(file.path("R", "00_lib_data.R"))
@@ -23,45 +22,44 @@ saveRDS(elec, file.path(DIR_PROCESSED, "elec_raw.rds"))
 cv <- case_variants(votes_raw)
 write.csv(cv, file.path(DIR_PROCESSED, "username_case_variants.csv"), row.names = FALSE, fileEncoding = "UTF-8")
 
-# Control counts against the totals published by SNAP.
-n_votes  <- nrow(votes_raw)
-n_users  <- length(unique(c(votes_raw$SRC, votes_raw$TGT)))
+# Check our counts against the totals published by SNAP.
+# check() prints a count, the expected value, and OK or MISMATCH.
+check <- function(label, got, expected) {
+  cat(label, got, " (expected ", expected, ")",
+      if (got == expected) " OK" else " MISMATCH", "\n", sep = "")
+}
+users <- c(votes_raw$SRC, votes_raw$TGT)
 cat("--- wiki-RfA ---\n")
-cat("votes:                 ", n_votes, " (SNAP: 198275)",
-    if (n_votes == 198275) " OK" else " MISMATCH", "\n", sep = "")
-cat("distinct users:        ", n_users,
-    " (expected 11380; SNAP reports 11381 because it does not merge one double",
-    " internal space and one invisible character, see NOTE 1)",
-    if (n_users == 11380) " OK" else " MISMATCH", "\n", sep = "")
-# NOTE - distinct pairs are 189,001 after normalisation and 189,004 without it:
-# a couple of pairs appear under two spellings. The SNAP totals are therefore
-# not consistent with each other: 11,381 users is a post-trim count, 189,004
-# pairs is a pre-trim one. This belongs in the data section of the report.
-cat("voter-candidate pairs: ", nrow(unique(votes_raw[, c("SRC", "TGT")])),
-    " (SNAP: 189004, pre-normalisation)\n", sep = "")
-cat("users after merging the first letter: ",
-    length(unique(capitalise_first(c(votes_raw$SRC, votes_raw$TGT)))), "\n", sep = "")
-cat("spelling groups differing only in the first letter: ",
-    length(unique(cv$merged_name)),
-    " (listed in data/processed/username_case_variants.csv)\n", sep = "")
-cat("  of which the person is a candidate under at least one spelling: ",
-    length(unique(cv$merged_name[cv$n_votes_received > 0])), "\n", sep = "")
-cat("  of which the CANDIDATE appears under two spellings: ",
-    length(unique(cv$merged_name[ave(cv$n_votes_received > 0, cv$merged_name,
-                                     FUN = sum) > 1])),
-    "  <- destructive for attempt reconstruction\n", sep = "")
+check("votes: ", nrow(votes_raw), 198275)
+# SNAP reports 11,381 users. We expect 11,380 because our cleaning merges two
+# spellings that SNAP counts separately: one name with a double space inside
+# and one with an invisible character (see NOTE 1 in 00_lib_data.R).
+check("distinct users: ", length(unique(users)), 11380)
+# SNAP reports 189,004 voter-candidate pairs, counted before cleaning. After
+# cleaning we get 189,001, because a few pairs were written in two spellings.
+check("voter-candidate pairs: ", nrow(unique(votes_raw[, c("SRC", "TGT")])), 189001)
 
+# On Wikipedia the first letter of a username is always a capital, so names
+# that differ only in the first letter (iMatthew / IMatthew) are one person.
+# The key case is a candidate whose votes are split across two spellings:
+# without merging, one election would look like two candidates.
+is_candidate <- cv$n_votes_received > 0
+cat("users after merging the first letter: ", length(unique(capitalise_first(users))), "\n",
+    "name groups differing only in the first letter: ", length(unique(cv$merged_name)), "\n",
+    "  of which the person is a candidate: ", length(unique(cv$merged_name[is_candidate])), "\n",
+    "  of which the candidate appears under two spellings: ",
+    length(unique(cv$merged_name[ave(is_candidate, cv$merged_name, FUN = sum) > 1])), "\n",
+    sep = "")
+
+el <- elec$elections
 cat("\n--- wiki-Elec ---\n")
-cat("elections: ", nrow(elec$elections), " (SNAP: 2794)",
-    if (nrow(elec$elections) == 2794) " OK" else " MISMATCH", "\n", sep = "")
-cat("votes: ", nrow(elec$votes), "\n", sep = "")
-cat("promotions: ", sum(elec$elections$outcome == 1),
-    "   rejections: ", sum(elec$elections$outcome == 0),
-    "   (SNAP: about 1200 / 1500)\n", sep = "")
-cat("declared closing times from ", format(min(elec$elections$closed_at), "%Y-%m-%d"),
-    " to ", format(max(elec$elections$closed_at), "%Y-%m-%d"),
-    "  -- but field T is unreliable, see 03\n", sep = "")
-cat("distinct candidates: ", length(unique(elec$elections$candidate)),
-    "   with more than one election: ",
-    sum(table(elec$elections$candidate) > 1), "\n", sep = "")
-cat("missing closing times: ", sum(is.na(elec$elections$closed_at)), "\n", sep = "")
+check("elections: ", nrow(el), 2794)
+# SNAP gives only rounded figures for promotions and rejections (about 1200 /
+# 1500). The closing time (field T) is not reliable; see step 03.
+cat("votes: ", nrow(elec$votes), "\n",
+    "promotions: ", sum(el$outcome == 1), "   rejections: ", sum(el$outcome == 0), "\n",
+    "declared closing times from ", format(min(el$closed_at), "%Y-%m-%d"),
+    " to ", format(max(el$closed_at), "%Y-%m-%d"), "\n",
+    "distinct candidates: ", length(unique(el$candidate)),
+    "   with more than one election: ", sum(table(el$candidate) > 1), "\n",
+    "missing closing times: ", sum(is.na(el$closed_at)), "\n", sep = "")

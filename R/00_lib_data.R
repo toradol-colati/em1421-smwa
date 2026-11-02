@@ -1,5 +1,6 @@
-# Shared functions of the data workstream. Sourced by 01, 02, 03 and by the two
-# verification scripts. Base R only: no dependencies.
+# Toolbox: functions shared by several scripts. The data functions (used by
+# 01, 02, 03, 99, 99b) need only base R; the network functions at the end
+# (used by 04, 05, 94-97) need igraph and Matrix.
 
 # --- parsers for the two files ------------------------------------------------
 FIELDS <- c("SRC", "TGT", "VOT", "RES", "YEA", "DAT", "TXT")
@@ -10,9 +11,8 @@ read_rfa <- function(path) {
   keys  <- sub(":.*$", "", lines)
   vals  <- sub("^[A-Z]{3}:", "", lines)
   keep  <- keys %in% FIELDS
-  # Sanity check: the discarded lines must be the blank separators only. If any
-  # non-empty line is dropped, TXT comments span several lines and the parser
-  # would be losing text without noticing.
+  # Safety check: the only lines we skip should be the blank lines between
+  # records. If a non-empty line is skipped, some text would be lost.
   dropped_non_empty <- sum(!keep & lines != "")
   if (dropped_non_empty > 0) {
     warning("non-empty lines discarded: ", dropped_non_empty,
@@ -27,34 +27,32 @@ read_rfa <- function(path) {
   }
   out <- as.data.frame(tapply(vals, list(rec, keys), identity),
                        stringsAsFactors = FALSE)
-  # NOTE 1 - the spelling of a username is NOT its identity. Three fixes, each
-  # forced by a defect measured in the file:
-  #  - 43 spellings carry a leading or trailing blank, and 21 of those collide
-  #    with the clean form already present: without trimming, distinct names are
-  #    11,402 instead of 11,381, the figure published by SNAP;
-  #  - one name has a double internal space ("Salvio  giuliano") and collides
-  #    with the single-space form, which is already present;
-  #  - one name carries an invisible marker at the front (U+200E, LEFT-TO-RIGHT
-  #    MARK: "<U+200E>Jetijonez"), which would make it a node of its own.
-  # After normalisation the distinct names are 11,380.
+  # NOTE 1 - clean the spelling of usernames, because the file has three
+  # problems:
+  #  - 43 names have a space at the start or end (21 of them then look like a
+  #    different person from the clean spelling);
+  #  - one name has a double space inside ("Salvio  giuliano");
+  #  - one name starts with an invisible character ("<U+200E>Jetijonez").
+  # After cleaning there are 11,380 distinct names (SNAP reports 11,381).
   out$SRC <- clean_name(out$SRC)
   out$TGT <- clean_name(out$TGT)
   out$vote_id <- seq_len(nrow(out))
   out[, c("vote_id", FIELDS)]
 }
 
-# NOTE 2 - first-letter case variants. On Wikipedia the first letter of a
-# username is always capitalised, so "harej" and "Harej" are the same account.
-# The SNAP total of 11,381 does NOT merge them; merging brings the count down to
-# 11,243. OPEN DECISION (it concerns both roles): merge or not. If they are not
-# merged, 8 candidates look like two different people with one attempt each and
-# fall outside the repeat-candidate population. This function lists the cases so
-# the decision can be made on data rather than by intuition.
+# NOTE 2 - names that differ only in the first letter. On Wikipedia the first
+# letter of a username is always a capital, so "harej" and "Harej" are the same
+# person. Merging them brings the number of names from 11,381 to 11,243.
+# Without merging, 8 candidates would look like two different people, each with
+# one election. case_variants() lists all such names so the choice can be
+# checked (the setting is MERGE_FIRST_LETTER in 00_paths.R).
 capitalise_first <- function(s) {
   ifelse(s == "" | is.na(s), s,
          paste0(toupper(substr(s, 1, 1)), substr(s, 2, nchar(s))))
 }
 
+# Table of every name that has more than one spelling of the first letter,
+# with how many votes each spelling cast and received.
 case_variants <- function(d) {
   names_all <- unique(c(d$SRC, d$TGT))
   groups <- split(names_all, capitalise_first(names_all))
@@ -81,29 +79,23 @@ case_variants <- function(d) {
 #   U <id> <username>                                candidate
 #   N <id> <username>                                nominator (may be missing)
 #   V <vote> <id> <YYYY-MM-DD HH:MM:SS> <username>   one vote per line
-# NOTE 3 - three traps in this file, all about node identity:
-#  (a) usernames are ALL LOWERCASE here, while wiki-RfA keeps the original
-#      spelling, and wiki-Elec uses an UNDERSCORE where wiki-RfA uses a SPACE
-#      (408 names with an underscore and 0 with a space, against 0 and 606 in
-#      wiki-RfA). Normalising the names raises the share of wiki-Elec candidates
-#      found again in wiki-RfA from 74.9% to 89.8%: see norm_user() below;
-#  (b) the file is UTF-8 but contains corrupt bytes: 19 lines out of 128,016 are
-#      not valid UTF-8, and all of them belong to the same user (a truncated
-#      sequence, "eivind_f_<c3>yangen"). Without intervention substr() stops
-#      with "invalid multibyte string". Invalid bytes are dropped with
-#      iconv(sub = ""): converting the whole file from ISO-8859-1, which the
-#      success of 'iconv -f ISO-8859-1' would seem to suggest, is WRONG, because
-#      it ruins the names that were correct UTF-8 (anarion -> anÃ¡rion);
-#  (c) lines end in CRLF. R's readLines() already strips the terminator, so the
-#      sub() below is a safety net that does nothing here; it would matter when
-#      reading the file with readBin, with scan(sep = "\n"), or on a connection
-#      opened in binary mode.
+# NOTE 3 - three problems in the wiki-Elec file:
+#  (a) names are all lowercase and use "_" where wiki-RfA uses a space
+#      ("dream_focus" vs "Dream Focus"); norm_user() below fixes this when the
+#      two files are compared;
+#  (b) 19 lines contain broken characters (all from one user). They are removed
+#      with iconv(sub = ""). Reading the whole file as ISO-8859-1 instead would
+#      break the names that are correct (anárion would become anÃ¡rion);
+#  (c) lines end with Windows line endings (CRLF); the sub() below removes them
+#      just in case (readLines() already does).
 read_elec <- function(path) {
   stop_if_missing(path)
   lines <- iconv(readLines(gzfile(path), warn = FALSE, skipNul = TRUE),
                  from = "UTF-8", to = "UTF-8", sub = "")   # (b)
   lines <- sub("\r$", "", lines)                           # (c)
   lines <- lines[!startsWith(lines, "#") & nzchar(lines)]
+  # The first letter of each line says what it is (E, T, U, N, V). A new
+  # election starts at every "E" line, so cumsum() numbers the elections.
   tag   <- substr(lines, 1, 1)
   block <- cumsum(tag == "E")
   field_rows <- function(t) {
@@ -112,6 +104,7 @@ read_elec <- function(path) {
                stringsAsFactors = FALSE)
   }
   e <- field_rows("E"); tt <- field_rows("T"); u <- field_rows("U"); n <- field_rows("N")
+  # One row per election (outcome, closing time, candidate, nominator).
   part_of <- function(x, k) vapply(strsplit(x, "\t", fixed = TRUE),
                                  function(p) if (length(p) >= k) p[k] else NA_character_,
                                  character(1))
@@ -124,6 +117,7 @@ read_elec <- function(path) {
     nominator   = trimws(part_of(n$rest[match(e$block, n$block)], 2)),
     stringsAsFactors = FALSE
   )
+  # One row per vote (election, vote, voter, date).
   iv <- which(tag == "V")
   pv <- strsplit(sub("^V\t", "", lines[iv]), "\t", fixed = TRUE)
   elec_votes <- data.frame(
@@ -140,9 +134,8 @@ read_elec <- function(path) {
 }
 
 # --- user identity ------------------------------------------------------------
-# Spelling normalisation WITHIN a single file: strips invisible characters,
-# collapses repeated blanks and trims the edges. It does not touch letter case:
-# that is an open decision (MERGE_FIRST_LETTER in 02).
+# Clean spelling within one file: remove invisible characters, turn repeated
+# spaces into one, and trim spaces at the ends. Letter case is not changed here.
 clean_name <- function(x) {
   for (code_point in c(0x200B:0x200F, 0xFEFF)) {
     x <- gsub(intToUtf8(code_point), "", x, fixed = TRUE)
@@ -151,32 +144,21 @@ clean_name <- function(x) {
   trimws(x)
 }
 
-# Comparison key ACROSS the two files. Three normalisations, each forced by a
-# measured defect, not by generic caution:
-#  - clean_name, for the reasons in NOTE 1;
-#  - underscore -> space: wiki-Elec writes "dream_focus", wiki-RfA "Dream Focus";
-#  - tolower: wiki-Elec is entirely lowercase. On Wikipedia the first letter of a
-#    username is always capitalised, so "harej" and "Harej" are the same account:
-#    for COMPARING the two files, tolower is correct. Whether to apply it WITHIN
-#    wiki-RfA as well, merging 137 groups of spellings, is an open decision (see
-#    the documentation): it changes the node count and the study population.
+# Make names comparable between the two files: clean them, turn "_" into a
+# space, and make everything lowercase (wiki-Elec is all lowercase).
 norm_user <- function(x, lower = TRUE) {
   x <- clean_name(gsub("_", " ", x))
   if (lower) tolower(x) else x
 }
 
 # --- dates --------------------------------------------------------------------
-# NOTE 4 - the DAT field of wiki-RfA has the shape "HH:MM, DD Month YYYY", but:
-#  - 9,367 records have DAT empty, and 1,661 of those are the voter-less phantom
-#    records removed in 02, so the real figure among actual votes is 7,707;
-#  - 7,077 use the abbreviated month (Jan, Feb, ...). "May" is identical in both
-#    forms and is therefore not a problem case;
-#  - 3 have the month misspelled in the source: "Janry", "Julu", "Mya";
-#  - 1 has an impossible value: "31:29, 24 May 2008", hour 31.
-# A parser built on format = "%d %B %Y" would depend on LC_TIME (so it would
-# give different results on another machine) and would silently turn 7,080 dates
-# into NA. Here the month is translated with an explicit, locale-independent
-# table.
+# NOTE 4 - reading the DAT field ("HH:MM, DD Month YYYY"). Problems in the file:
+#  - 7,707 real votes have no date;
+#  - 7,077 dates use short month names (Jan, Feb, ...);
+#  - 3 months are misspelled ("Janry", "Julu", "Mya");
+#  - 1 date has an impossible hour ("31:29, 24 May 2008").
+# Month names are translated with our own table, so the result is the same on
+# every computer, whatever its language settings.
 MONTHS <- c(
   january = 1, february = 2, march = 3, april = 4, may = 5, june = 6,
   july = 7, august = 8, september = 9, october = 10, november = 11, december = 12,
@@ -187,6 +169,8 @@ MONTHS <- c(
 
 parse_dat <- function(x) {
   x <- trimws(x)
+  # Split "HH:MM, DD Month YYYY" into its parts and build a date in UTC.
+  # Values that do not have this format stay NA.
   m <- regmatches(x, regexec(
     "^([0-9]{1,2}):([0-9]{2}), ([0-9]{1,2}) ([A-Za-z]+) ([0-9]{4})$", x))
   ok <- lengths(m) == 6L
@@ -200,11 +184,8 @@ parse_dat <- function(x) {
     out[ok] <- as.numeric(as.POSIXct(iso, format = "%Y-%m-%d %H:%M:%S", tz = "UTC"))
   }
   res <- as.POSIXct(out, origin = "1970-01-01", tz = "UTC")
-  # Careful: passing the format check is not enough. One record reads
-  # "31:29, 24 May 2008": hour 31 satisfies the regex but as.POSIXct rejects it
-  # and returns NA. The diagnostic must count the NAs produced AFTER the date is
-  # built, not just the unrecognised formats, otherwise it reports zero when the
-  # true figure is one (it used to).
+  # Count problems after building the dates: a value like "31:29" has the right
+  # format but is still not a real time, so it becomes NA.
   attr(res, "n_bad_format") <- sum(!ok & nzchar(x))
   attr(res, "n_impossible") <- sum(ok & is.na(res))
   attr(res, "n_unparsed")        <- sum(!ok & nzchar(x)) + sum(ok & is.na(res))
@@ -212,46 +193,31 @@ parse_dat <- function(x) {
   res
 }
 
-# NOTE ON ORDERING - every order() call on usernames below passes
-# method = "radix". Without it, order() sorts character vectors using the
-# machine's collation locale, so the SAME data produces a DIFFERENT attempt_id
-# numbering on a different machine: measured, 3,763 of 4,081 attempt_id values
-# differed between a Windows run and a macOS run of identical code on identical
-# data. The attempts themselves were identical - same set, same attempt_no, all
-# 19 substantive columns equal - but the ids were permuted, which breaks any
-# cross-reference between a committed CSV (03_match_wikielec.csv carries
-# my_attempt, output/results/attempt_pairs.csv carries previous_attempt_id and
-# next_attempt_id) and a locally regenerated table. "radix" sorts by byte, which
-# is locale-independent, and makes the whole pipeline byte-reproducible: checked
-# by running it under LC_COLLATE=it_IT and LC_COLLATE=C.
+# NOTE ON SORTING - every order() on usernames uses method = "radix". Without
+# it, R sorts names according to the computer's language settings, and the same
+# data got different attempt_id numbers on Windows and on macOS. "radix" sorts
+# the same way on every computer.
 
 # --- attempt reconstruction ---------------------------------------------------
-# Three rules are compared against wiki-Elec in 03 instead of being picked by
-# feel.
+# Three ways to split a candidate's votes into elections. Script 03 compares
+# all three against wiki-Elec.
 #
-# "gap_then_res": sort by date within the candidate and open a new attempt when
-#   the gap exceeds the threshold or RES changes. DISCARDED after testing: a
-#   single vote carrying a different RES, sitting inside an election, splits it
-#   in three. It produced 1,420 single-vote attempts concentrated on 95
-#   candidates (e.g. ABCD: four attempts in one week with outcomes alternating
-#   -1, 1, -1, 1). It is kept implemented because the comparison between the two
-#   rules is itself a result.
+# "res_then_gap" (the one we use): first group the votes by candidate and
+#   result (RES), then start a new election when there is a gap of more than
+#   threshold_days without votes. Two elections with different results stay
+#   apart because of RES, and a single stray vote cannot split an election.
 #
-# "res_then_gap": group by (candidate, RES) and, within each group, open a new
-#   attempt when the gap exceeds the threshold. The votes of two nearby
-#   elections with different outcomes separate through RES, and a stray vote
-#   does no damage. This is also the rule of the published precedent
-#   (Kolczynska), which groups by candidate, year and outcome. The year is NOT
-#   used here: YEA is unreliable, 1,875 votes carry a date in a different year
-#   from the declared one, in coherent blocks (e.g. Scienceman123, YEA 2008,
-#   votes dated March 2006).
+# "gap_then_res" (rejected): sort by date, and start a new election when the
+#   gap is too long or the result changes. One stray vote with a different
+#   result inside an election splits it into pieces (candidate ABCD got four
+#   elections in one week).
 #
-# Undated votes cannot be ordered: they stay out and are attached afterwards,
-# only where the attribution is unambiguous (see 02).
+# "gap_only" (sensitivity check): use only the date gap; an election with
+#   mixed results gets an unknown result.
 #
-# "gap_only": group only by candidate and date gap, and mark an attempt with
-#   mixed RES values as outcome-unknown. This is the sensitivity rule that avoids
-#   using the potentially inconsistent RES field to define boundaries.
+# We do not use YEA: 1,875 votes have a date in a different year from YEA.
+# Undated votes cannot be sorted by date, so they are left out here and added
+# later in 02, only when their election is certain.
 reconstruct_attempts <- function(d, threshold_days, mode = "res_then_gap") {
   stopifnot(all(c("tgt", "vot", "res", "yea", "dat") %in% names(d)))
   stopifnot(mode %in% c("res_then_gap", "gap_then_res", "gap_only"))
@@ -270,6 +236,8 @@ reconstruct_attempts <- function(d, threshold_days, mode = "res_then_gap") {
     n <- nrow(d)
     group_change <- c(TRUE, d$tgt[-1] != d$tgt[-n])
   }
+  # Days since the previous vote. A new election starts when the group changes
+  # or the gap is longer than threshold_days; cumsum() then numbers them.
   gap_days <- c(NA_real_, as.numeric(difftime(d$dat[-1], d$dat[-n], units = "days")))
   is_new <- group_change | (!group_change & gap_days > threshold_days)
   is_new[is.na(is_new)] <- TRUE
@@ -285,11 +253,8 @@ reconstruct_attempts <- function(d, threshold_days, mode = "res_then_gap") {
 }
 
 # --- deduplication ------------------------------------------------------------
-# A voter may appear more than once within the same attempt: a changed vote, or
-# a duplicated row. Rule: keep that voter's most recent vote in that attempt.
-# The most plausible reading is that the voter changed their mind, in which case
-# the duplicate is signal rather than noise. Returns the cleaned table and the
-# number of rows removed.
+# Remove duplicate votes: if a voter appears more than once in the same
+# election (a changed vote or a repeated row), keep their most recent vote.
 dedup_votes <- function(d) {
   o <- order(d$attempt_id, d$src, d$dat, method = "radix")
   d <- d[o, ]
@@ -311,8 +276,7 @@ build_attempts <- function(v) {
   a$yea        <- v$yea[idx]
   spl <- split(seq_len(nrow(v)), v$attempt_id)
   spl <- spl[as.character(a$attempt_id)]
-  # opening and closing come from DATED votes only: imputed votes carry no date
-  # and must not move the boundaries of the attempt
+  # start and end dates use dated votes only (undated votes have no date)
   a$opened_at    <- as.POSIXct(vapply(spl, function(i) min(as.numeric(v$dat[i]), na.rm = TRUE), 0),
                                origin = "1970-01-01", tz = "UTC")
   a$closed_at    <- as.POSIXct(vapply(spl, function(i) max(as.numeric(v$dat[i]), na.rm = TRUE), 0),
@@ -321,24 +285,51 @@ build_attempts <- function(v) {
   a$n_support    <- vapply(spl, function(i) sum(v$vot[i] ==  1), 0L)
   a$n_oppose     <- vapply(spl, function(i) sum(v$vot[i] == -1), 0L)
   a$n_neutral    <- vapply(spl, function(i) sum(v$vot[i] ==  0), 0L)
-  # self-votes: the candidate voting in their own RfA. There are 103 in the raw
-  # file and they are loops in the voting network; they stay in the table, flagged.
+  # self-votes: the candidate voting in their own election (kept, counted)
   a$n_self_votes <- vapply(spl, function(i) sum(v$src[i] == v$tgt[i]), 0L)
-  # support share over support and oppose votes only: neutrals are left out of
-  # the denominator. This is a stated convention, not the only possible one.
+  # support share = support / (support + oppose); neutral votes are not counted
   a$support_share <- ifelse(a$n_support + a$n_oppose > 0,
                             a$n_support / (a$n_support + a$n_oppose), NA_real_)
   a$duration_days <- as.numeric(difftime(a$closed_at, a$opened_at, units = "days"))
-  # ambiguity flags
-  a$flag_short      <- a$n_votes < 5          # few votes: possibly a fragment
+  # flags for possible problems (rows are kept, only marked)
+  a$flag_short      <- a$n_votes < 5          # very few votes
   a$flag_long       <- a$duration_days > 14   # longer than a normal RfA
-  # two attempts of the same candidate, in the same year, with the same outcome:
-  # suspected of being a single attempt split by the threshold. The year is read
-  # from the opening DATE, not from YEA: YEA is unreliable (1,875 votes carry a
-  # date in a different year), and using it here would contradict the decision
-  # not to use it in the reconstruction.
+  # two elections of the same candidate in the same year with the same result
+  # might be one election split in two. The year comes from the first vote's
+  # date, not from YEA, which is sometimes wrong.
   a$year_from_date <- as.integer(format(a$opened_at, "%Y"))
   key <- paste(a$candidate, a$year_from_date, a$outcome)
   a$flag_year_clash <- key %in% key[duplicated(key)]
   a[order(a$candidate, a$attempt_no, method = "radix"), ]
+}
+
+# --- co-voting networks (used by 04, 05, 94-97) --------------------------------
+# Votes used in the network analysis: assigned to an election, support or
+# oppose (neutral votes left out), no self-votes; with the year of the election.
+network_votes <- function(votes, attempts) {
+  v <- votes[!is.na(votes$attempt_id) & votes$vot %in% c(-1L, 1L) & !votes$self_vote, ]
+  v$year <- attempts$year_from_date[match(v$attempt_id, attempts$attempt_id)]
+  v
+}
+
+# Co-voting network built from the votes before cutoff_year (Lab 5b projection).
+# Bipartite network: one row per side of an election (supporters of election
+# 12, opposers of election 12, ...), one column per voter. crossprod() projects
+# it onto voters: cell (A, B) = number of elections in which A and B voted the
+# same way (same result as bipartite.projection(), but fast on a large sparse
+# matrix). Pairs with 2+ agreements become edges weighted by that number.
+# The calling script must load Matrix (library(Matrix)). NULL if no edges.
+covoting_graph <- function(votes, cutoff_year, all_voters) {
+  h <- votes[votes$year < cutoff_year, ]
+  if (nrow(h) == 0L) return(NULL)
+  side <- paste(h$attempt_id, h$vot, sep = "|")
+  incidence <- Matrix::sparseMatrix(i = match(side, unique(side)),
+                                    j = match(h$src, all_voters), x = 1,
+                                    dims = c(length(unique(side)), length(all_voters)))
+  e <- summary(crossprod(incidence))      # needs library(Matrix) loaded
+  e <- e[e$i < e$j & e$x >= 2, ]          # each pair once, 2+ agreements
+  if (nrow(e) == 0L) return(NULL)
+  igraph::graph_from_data_frame(
+    data.frame(from = all_voters[e$i], to = all_voters[e$j], weight = e$x),
+    directed = FALSE)
 }

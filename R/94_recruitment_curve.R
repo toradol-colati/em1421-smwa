@@ -1,55 +1,41 @@
-# 94 - Membership closure in repeat RfAs: the T(k) curve.
+# 94 - Membership closure: are voters recruited through the old coalition?
 #
 #   Rscript R/94_recruitment_curve.R
 #
-# WHY THIS EXISTS
-# Lecture 4, "Networks in their Surrounding Contexts", section "Tracking Link
-# Formation: Membership Closure", asks: "What is the probability that a person
-# becomes involved with a particular focus as a function of the number of
-# friends who are already involved in it?" Its Wikipedia example plots the
-# "probability a person edits a Wikipedia article as a function of the number
-# of prior editors with whom they have communicated".
+# Lecture 4 ("Networks in their Surrounding Contexts", membership closure) asks
+# how likely a person is to join a group as a function of how many of their
+# friends are already in it. Here the group is a candidate's supporters.
 #
-# TRANSPOSED HERE
-#   The focus is a candidate's support coalition. For consecutive attempts t
-#   and t+1 of the same candidate:
-#     - S_t is the set of voters who SUPPORTED the candidate at attempt t;
-#     - for a voter v who did NOT vote at t, k is the number of v's co-voters
-#       (historical co-voting network) who belong to S_t;
-#     - T(k) is the fraction of such voters who support the candidate at t+1.
+# For two consecutive elections t and t+1 of the same candidate:
+#   - S_t = the voters who supported the candidate at t;
+#   - for each voter who did not vote at t, k = how many of their co-voters
+#     are in S_t;
+#   - T(k) = the share of these voters who support the candidate at t+1.
 #
-# THE DESIGN POINT THAT MAKES IT MEANINGFUL
-# The co-voting network is built only from attempts in years STRICTLY BEFORE
-# the year of attempt t. It therefore shares no vote with S_t, and none with
-# the outcome at t+1. Without that separation the relation would be partly
-# mechanical: two voters would count as co-voters because both supported this
-# candidate at t, which is the very thing being predicted.
+# The co-voting network uses only elections from years before t, so the
+# election being studied cannot create its own connections.
 #
-# BASELINE
-# The lecture compares T(k) with "an intentionally simplified baseline model"
-# in which each connection gives "an independent probability p", so
-# T_baseline(k) = 1 - (1 - p)^k. That form assumes T(0) is close to 0 ("T(0) is
-# very close to 0" in the Kossinets-Watts data). Here T(0) is not 0, so the
-# baseline below keeps the background rate T(0) and adds an independent p per
-# connection (see the computation at the end of the script). Observed above the
-# baseline means connections reinforce each other; below means the
-# "diminishing returns" the lecture reports for focal closure.
+# Baseline: as in Lecture 4, each connection is assumed to act independently.
+# Observed above the baseline means connections reinforce each other; below
+# means "diminishing returns" (see the formula at the end of the script).
 #
 # Output: output/results/recruitment_curve.csv
 
 suppressPackageStartupMessages({library(igraph); library(Matrix)})
 source(file.path("R", "00_paths.R"))
+source(file.path("R", "00_lib_data.R"))
 
 K_MAX <- 12   # k values reported separately; above this they are pooled
 
+# Read data.
 votes <- readRDS(file.path(DIR_PROCESSED, "votes.rds"))
 attempts <- readRDS(file.path(DIR_PROCESSED, "attempts_analysis.rds"))
 pairs <- readRDS(file.path(DIR_PROCESSED, "attempt_pairs.rds"))
 pairs_all <- pairs   # populations: see 05_measure_change.R
 
-v2 <- votes[!is.na(votes$attempt_id) & votes$vot %in% c(-1L, 1L) & !votes$self_vote, ]
-ai <- match(v2$attempt_id, attempts$attempt_id)
-v2$year <- attempts$year_from_date[ai]
+# Real votes only (support or oppose, no self-votes), with year and a number
+# for each voter so voters can be used as matrix rows.
+v2 <- network_votes(votes, attempts)       # as in 04
 v2$candidate <- v2$tgt
 all_voters <- sort(unique(v2$src))
 n_v <- length(all_voters)
@@ -75,6 +61,7 @@ adjacency_before <- local({
   }
 })
 
+# Voter numbers of the supporters / of everyone who voted in one election.
 supporters_of <- function(attempt_id) {
   v2$voter_id[v2$attempt_id == attempt_id & v2$vot == 1L]
 }
@@ -82,6 +69,12 @@ voters_of <- function(attempt_id) {
   v2$voter_id[v2$attempt_id == attempt_id]
 }
 
+# T(k) curve for a set of pairs. For each pair:
+#   - network = voters' co-voting ties before the year of the FIRST election;
+#   - k = how many of a voter's network neighbours supported the first election;
+#   - the voter counts as "recruited" if they support the SECOND election.
+# Only voters who did not vote in the first election are counted, so we look
+# at new people joining. T(k) = recruited / eligible voters with that k.
 tk_curve <- function(pairs) {
   k_hits <- numeric(K_MAX + 1); k_n <- numeric(K_MAX + 1)
   used_pairs <- 0L
@@ -95,23 +88,25 @@ tk_curve <- function(pairs) {
     s_prev <- supporters_of(prev_id)
     if (length(s_prev) == 0L) next
     s_vec <- numeric(n_v); s_vec[s_prev] <- 1
-    k_all <- as.numeric(A %*% s_vec)              # co-voters of v who supported at t
+    k_all <- as.numeric(A %*% s_vec)              # for each voter: neighbours who supported the first election              # co-voters of v who supported at t
 
     # eligible: voters with at least one co-voting tie before t, who did NOT vote
     # at t, and who are not the candidate
-    # rowSums, not diff(A@p): crossprod() returns a symmetric matrix that stores
-    # only its upper triangle, so diff(A@p) would count only co-voters with an
-    # alphabetically earlier username and drop about 7% of eligible voters.
+    # rowSums() counts all co-voters. (diff(A@p) would miss about 7% of voters,
+    # because this matrix type stores only half of the symmetric matrix.)
     has_tie <- Matrix::rowSums(A) > 0
     excluded <- unique(c(voters_of(prev_id), match(pairs$candidate[r], all_voters)))
     elig <- which(has_tie)
     elig <- elig[!(elig %in% excluded)]
     if (length(elig) == 0L) next
 
+    # Outcome (1 = supports the second election) and k, with k above K_MAX
+    # put in one "12+" group.
     sup_next <- supporters_of(next_id)
     y_vec <- as.integer(elig %in% sup_next)
     k_vec <- pmin(k_all[elig], K_MAX + 1)
 
+    # Add this pair's counts to the totals for each k.
     for (kk in 0:(K_MAX + 1)) {
       sel <- k_vec == kk
       if (!any(sel)) next
@@ -124,6 +119,7 @@ tk_curve <- function(pairs) {
   list(hits = k_hits, n = k_n, used = used_pairs)
 }
 
+# Run the curve on each sample and compare it with the baseline.
 curves <- list()
 for (smp in c("all", "chronological", "strict")) {
   d <- switch(smp, all = pairs_all,
@@ -133,14 +129,11 @@ for (smp in c("all", "chronological", "strict")) {
   k_hits <- tk$hits; k_n <- tk$n
   k_labels <- c(as.character(0:(K_MAX - 1)), paste0(K_MAX, "+"))
   observed <- k_hits / k_n
-  # Baseline. Lecture 4 ("Networks in their Surrounding Contexts") compares T(k)
-  # with 1 - (1 - p)^k, where each of the k connections independently produces
-  # the event with probability p. That form assumes T(0) is close to 0, as in the
-  # Kossinets-Watts data. Here voters with no connection into the coalition still
-  # support the candidate (T(0) > 0), so the baseline keeps that background rate
-  # p0 and lets each connection add an independent chance p on top of it:
-  #   T_baseline(k) = 1 - (1 - p0) * (1 - p)^k,   with p fitted so that the
-  #   baseline equals the observed T(1).
+  # Baseline. Lecture 4 uses 1 - (1 - p)^k, which assumes T(0) is about 0.
+  # Here voters with no connection still sometimes support the candidate
+  # (T(0) > 0), so we keep that background rate p0 and let each connection add
+  # an independent chance p:  T_baseline(k) = 1 - (1 - p0) * (1 - p)^k,
+  # with p chosen so the baseline equals the observed T(1).
   p0    <- observed[1]                                # T(0)
   p_hat <- 1 - (1 - observed[2]) / (1 - p0)           # per-connection effect
   baseline <- 1 - (1 - p0) * (1 - p_hat) ^ (0:K_MAX)

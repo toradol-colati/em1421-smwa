@@ -1,60 +1,32 @@
-# 97 - Does the course's community-detection method work on these networks?
+# 97 - Girvan-Newman (from the course) compared with Louvain (used in 04).
 #
 #   Rscript R/97_community_method_check.R
 #
-# WHY THIS EXISTS
-# The course teaches one community-detection algorithm, Girvan-Newman
-# (cluster_edge_betweenness), and the analysis uses Louvain
-# (cluster_louvain). That substitution has to be defended, not assumed, so this
-# script measures it instead of asserting it: it rebuilds the co-voting
-# snapshots with the same rule as 04_build_networks.R and runs both methods on
-# the three smallest ones, recording communities found, modularity, running
-# time, and how much the two partitions agree (adjusted Rand index).
-#
-# Lecture 3, "Strong and Weak Ties" (section "General Approaches to Graph
-# Partitioning"), points the way. It classifies partitioning methods as
-# divisive and agglomerative, presents Girvan-Newman as the divisive example,
-# and states that it "works well for networks of moderate size (few thousands
-# nodes)" while beyond that recomputing betweenness at each step is expensive -
-# citing as the alternatives either approximating betweenness or using
-# agglomerative methods. Louvain is the standard agglomerative method, so this
-# is not a departure from the syllabus but the remedy the syllabus names.
+# Lecture 3 presents Girvan-Newman as a divisive method that "works well for
+# networks of moderate size (few thousands nodes)"; for larger networks it
+# names agglomerative methods as the alternative. Louvain is agglomerative.
+# This script runs both on the three smallest co-voting networks and records
+# the number of communities, modularity, running time and how much the two
+# partitions agree (adjusted Rand index).
 #
 # Output: output/results/community_method_check.csv
-# Expected running time: about 30 minutes, nearly all of it Girvan-Newman
-# (two variants, each stopped after GN_TIMEOUT_S on a snapshot).
+# Takes about 30 minutes, mostly Girvan-Newman (stopped after GN_TIMEOUT_S
+# seconds on a snapshot).
 
 suppressPackageStartupMessages({library(igraph); library(Matrix)})
 source(file.path("R", "00_paths.R"))
+source(file.path("R", "00_lib_data.R"))
 
 CUTOFFS      <- c(2004, 2005, 2006)   # the three smallest snapshots
 GN_TIMEOUT_S <- 600                   # give-up time for Girvan-Newman
 
-votes <- readRDS(file.path(DIR_PROCESSED, "votes.rds"))
 attempts <- readRDS(file.path(DIR_PROCESSED, "attempts_analysis.rds"))
-votes <- votes[!is.na(votes$attempt_id) & votes$vot %in% c(-1L, 1L) & !votes$self_vote, ]
-ai <- match(votes$attempt_id, attempts$attempt_id)
-votes$voter <- votes$src
-votes$vote  <- votes$vot
-votes$year  <- attempts$year_from_date[ai]
-all_voters  <- sort(unique(votes$voter))
+votes <- network_votes(readRDS(file.path(DIR_PROCESSED, "votes.rds")), attempts)
+all_voters <- sort(unique(votes$src))
+build_snapshot <- function(cutoff_year) covoting_graph(votes, cutoff_year, all_voters)  # as in 04
 
-# Same construction as 04_build_networks.R: two voters are linked when they cast
-# the same direction in at least two historical attempts, weighted by how often.
-build_snapshot <- function(cutoff_year) {
-  h <- votes[votes$year < cutoff_year, c("attempt_id", "voter", "vote")]
-  gk <- paste(h$attempt_id, h$vote, sep = "|")
-  inc <- sparseMatrix(i = match(gk, unique(gk)), j = match(h$voter, all_voters),
-                      x = 1, dims = c(length(unique(gk)), length(all_voters)))
-  pr <- crossprod(inc); diag(pr) <- 0
-  e <- summary(pr); e <- e[e$i < e$j & e$x >= 2, ]
-  graph_from_data_frame(
-    data.frame(from = all_voters[e$i], to = all_voters[e$j],
-               weight = e$x, stringsAsFactors = FALSE),
-    directed = FALSE)
-}
-
-# Adjusted Rand index, computed directly to avoid another dependency.
+# Adjusted Rand index: how similar two community splits are.
+# 1 = identical, about 0 = no more similar than random splits.
 adjusted_rand <- function(a, b) {
   tb <- table(a, b); n <- sum(tb)
   s_ij <- sum(choose(tb, 2)); s_i <- sum(choose(rowSums(tb), 2)); s_j <- sum(choose(colSums(tb), 2))
@@ -63,10 +35,9 @@ adjusted_rand <- function(a, b) {
 }
 
 
-# Girvan-Newman in a separate R process, killed after `timeout_s` seconds.
-# setTimeLimit() inside this process does not reliably interrupt igraph's C
-# code: on the 2006 snapshot the time-limit error escaped tryCatch and stopped
-# the whole pipeline. Returns the membership vector, or NULL on timeout.
+# Run Girvan-Newman in a separate R process that is stopped after timeout_s
+# seconds. (A time limit inside this process failed on the 2006 network and
+# stopped the whole run.) Returns the community of each voter, or NULL.
 run_gn_with_timeout <- function(g, weights, timeout_s) {
   graph_file <- tempfile(fileext = ".rds")
   result_file <- tempfile(fileext = ".rds")
@@ -85,6 +56,8 @@ run_gn_with_timeout <- function(g, weights, timeout_s) {
   readRDS(result_file)
 }
 
+# For each of the three networks: run Louvain and time it, then run both
+# Girvan-Newman versions and compare.
 rows <- list()
 for (cut in CUTOFFS) {
   g <- build_snapshot(cut)
@@ -96,19 +69,18 @@ for (cut in CUTOFFS) {
   cat(sprintf("  Louvain       : %d communities, modularity %.3f, %.2f s\n",
               length(sizes(lv)), modularity(lv), t_lv))
 
-  # Two ways to give Girvan-Newman the edges, both valid. In edge betweenness
-  # igraph reads weights as edge LENGTHS, so co-vote counts must never be
-  # passed as they are: that makes the strongest ties the longest.
-  #   - "unweighted": weights = NA, as in the course lab ("Networks in R":
-  #     edge_betweenness(net, directed=T, weights=NA));
+  # Girvan-Newman is run two ways. igraph treats weights as edge lengths here,
+  # so co-vote counts cannot be used directly (strong ties would look long):
+  #   - "unweighted": weights = NA, as in the course lab (Lab 5a);
   #   - "inverse weight": length = 1 / co-vote count, so strong ties are short.
-  # Both partitions are scored with the same weighted modularity as Louvain.
+  # Both results are scored with the same weighted modularity as Louvain.
   variants <- list(unweighted = NA, `inverse weight` = 1 / E(g)$weight)
   for (variant in names(variants)) {
     t0 <- Sys.time()
     gn <- run_gn_with_timeout(g, variants[[variant]], GN_TIMEOUT_S)
     t_gn <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
 
+    # If Girvan-Newman finished: its modularity and its similarity to Louvain.
     done <- !is.null(gn)
     gn_q <- if (done) modularity(g, gn, weights = E(g)$weight) else NA_real_
     ar   <- if (done) adjusted_rand(membership(lv), gn) else NA_real_
@@ -130,9 +102,10 @@ for (cut in CUTOFFS) {
   }
 }
 
+# Save the table.
 out <- do.call(rbind, rows)
 dir.create(file.path("output", "results"), showWarnings = FALSE, recursive = TRUE)
 write.csv(out, file.path("output", "results", "community_method_check.csv"), row.names = FALSE, fileEncoding = "UTF-8")
 cat("\nwritten: output/results/community_method_check.csv\n")
-cat("For reference, the largest snapshot in the analysis has 6,228 nodes and\n")
-cat("771,356 edges, 11.6 times the edges of the 2006 snapshot.\n")
+# For comparison: the largest network in the analysis (2013) has 6,228 voters
+# and 771,356 edges, 11.6 times the edges of the 2006 network.

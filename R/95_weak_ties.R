@@ -1,68 +1,42 @@
-# 95 - The strength of weak ties, tested on the co-voting network.
+# 95 - The strength of weak ties (Lecture 3, Granovetter; Onnela et al.).
 #
 #   Rscript R/95_weak_ties.R
 #
-# WHY THIS EXISTS
-# Lecture 3, "Strong and Weak Ties", is built on Granovetter's hypothesis and on the two measurements
-# Onnela et al. used to test it on a large network. Both are directly
-# computable here, and both yield a statement about RfA rather than a
-# coefficient. The co-voting edge has a natural strength - the number of
-# attempts in which two voters took the same side - so the course's test
-# transfers without adaptation.
+# Tie strength = the number of elections in which two voters took the same side.
 #
-# TEST 1 - neighbourhood overlap against tie strength.
-#   Overlap of an edge A-B is
-#     (number of nodes that neighbour both A and B) / (number that neighbour at
-#     least one of them), the course's definition, which is 0 exactly when the
-#     edge is a local bridge. Granovetter's prediction, confirmed by Onnela on
-#     mobile-phone data, is that overlap GROWS with tie strength: strong ties
-#     sit inside dense groups, weak ties reach across them.
+# Test 1 - neighborhood overlap against tie strength.
+#   Neighborhood overlap of an edge A-B = (voters linked to both A and B) /
+#   (voters linked to A or B). It is 0 when the edge is a local bridge.
+#   Granovetter's idea: strong ties sit inside tight groups (high overlap),
+#   weak ties connect different groups (low overlap).
+#   Baseline: the same network with the weights shuffled at random.
+#   For speed, a random sample of EDGE_SAMPLE edges is used.
 #
-# TEST 2 - which ties hold the network together.
-#   Onnela removed edges one at a time, first in decreasing order of strength
-#   and then in increasing order, and watched the giant component. Removing the
-#   weakest first made it break apart abruptly; removing the strongest first
-#   shrank it gradually. That is the sense in which weak ties are the
-#   connective tissue. Here the same is done in two per cent steps.
-#
-# Test 1 has a comparison point: the same graph with the weights reshuffled,
-# which keeps the degree sequence and the weight distribution but destroys any
-# relation between tie strength and neighborhood overlap. For speed it uses a
-# random sample of EDGE_SAMPLE edges. Test 2 uses all edges and has no
-# reshuffled comparison; note that many edges share the minimum weight (2), so
-# the order of removal among them is arbitrary.
+# Test 2 - which ties hold the network together.
+#   As in Onnela et al., edges are removed in steps of 2%, weakest first and
+#   then strongest first, and the size of the giant component is recorded.
+#   This test uses all edges and has no shuffled baseline. Many edges have the
+#   minimum weight (2), so the order among them is arbitrary.
 #
 # Output: output/results/weak_ties_overlap.csv
 #         output/results/weak_ties_percolation.csv
 
 suppressPackageStartupMessages({library(igraph); library(Matrix)})
 source(file.path("R", "00_paths.R"))
+source(file.path("R", "00_lib_data.R"))
 
 SNAPSHOTS    <- c(2008, 2013)   # a mid-sized and the final snapshot
 EDGE_SAMPLE  <- 60000           # edges sampled for the overlap test
 N_BINS       <- 20              # strength percentile bins
 STEP         <- 0.02            # removal step for the percolation test
 
-votes <- readRDS(file.path(DIR_PROCESSED, "votes.rds"))
 attempts <- readRDS(file.path(DIR_PROCESSED, "attempts_analysis.rds"))
-v2 <- votes[!is.na(votes$attempt_id) & votes$vot %in% c(-1L, 1L) & !votes$self_vote, ]
-ai <- match(v2$attempt_id, attempts$attempt_id)
-v2$year <- attempts$year_from_date[ai]
+v2 <- network_votes(readRDS(file.path(DIR_PROCESSED, "votes.rds")), attempts)
 all_voters <- sort(unique(v2$src))
+build_snapshot <- function(cutoff_year) covoting_graph(v2, cutoff_year, all_voters)  # as in 04
 
-build_snapshot <- function(cutoff_year) {
-  h <- v2[v2$year < cutoff_year, c("attempt_id", "src", "vot")]
-  gk <- paste(h$attempt_id, h$vot, sep = "|")
-  inc <- sparseMatrix(i = match(gk, unique(gk)), j = match(h$src, all_voters),
-                      x = 1, dims = c(length(unique(gk)), length(all_voters)))
-  pr <- crossprod(inc); diag(pr) <- 0
-  e <- summary(pr); e <- e[e$i < e$j & e$x >= 2, ]
-  graph_from_data_frame(
-    data.frame(from = all_voters[e$i], to = all_voters[e$j], weight = e$x,
-               stringsAsFactors = FALSE), directed = FALSE)
-}
-
-# Neighbourhood overlap for a sample of edges, from adjacency lists.
+# Neighborhood overlap of each edge A-B: shared neighbours of A and B divided
+# by all neighbours of A or B (not counting A and B themselves).
 overlap_of_edges <- function(g, edge_ids) {
   nb <- adjacent_vertices(g, V(g))
   ends_m <- ends(g, E(g)[edge_ids], names = FALSE)
@@ -86,7 +60,11 @@ for (cut in SNAPSHOTS) {
   g_null <- g
   E(g_null)$weight <- sample(E(g)$weight)
 
-  # ---- TEST 1 ----
+  # ---- TEST 1: neighborhood overlap against tie strength ----
+  # Sort the sampled edges by weight into N_BINS equal groups (bin 1 = weakest
+  # 5%, bin 20 = strongest 5%) and take the mean overlap in each group. Done
+  # on the real network and on the shuffled one. Spearman rho = rank
+  # correlation of weight and overlap.
   for (lab in c("observed", "weights reshuffled")) {
     gg <- if (lab == "observed") g else g_null
     set.seed(95 + cut)
@@ -110,7 +88,11 @@ for (cut in SNAPSHOTS) {
                 lab, agg[1], N_BINS, agg[length(agg)], rho))
   }
 
-  # ---- TEST 2 ----
+  # ---- TEST 2: remove edges and watch the giant component ----
+  # Remove 0%, 2%, 4%, ... up to 90% of the edges, weakest first and then
+  # strongest first, and record the size of the largest component as a share
+  # of its starting size. If removing weak ties breaks the network faster,
+  # weak ties are the bridges between groups (Onnela et al.).
   n0 <- max(components(g)$csize)
   for (ordering in c("weakest first", "strongest first")) {
     ord <- order(E(g)$weight, decreasing = (ordering == "strongest first"))
@@ -130,6 +112,7 @@ for (cut in SNAPSHOTS) {
   }
 }
 
+# Save both tables.
 dir.create(file.path("output", "results"), showWarnings = FALSE, recursive = TRUE)
 write.csv(do.call(rbind, overlap_rows),
           file.path("output", "results", "weak_ties_overlap.csv"), row.names = FALSE, fileEncoding = "UTF-8")

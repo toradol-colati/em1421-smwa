@@ -1,4 +1,4 @@
-# 02 - Attempt reconstruction: one row per (candidate, attempt).
+# 02 - Rebuild the elections ("attempts"): one row per candidate and attempt.
 # Input : data/processed/votes_raw.rds
 # Output: data/processed/votes.rds              one row per validated vote
 #         data/processed/attempts.rds           one row per attempt
@@ -6,32 +6,24 @@
 #         data/processed/02_log.txt             every quantity, for the report
 # Packages: none (base R).
 #
-# PRINCIPLE: do not filter, flag. Every problematic row stays in the table with
-# a flag column, so whoever analyses decides what to exclude, not whoever
-# cleans. Only two kinds of row are dropped, and both are counted in the log:
-# the voter-less phantom records, which are not votes at all, and the undated
-# votes that cannot be attributed to a single attempt.
+# Rule: flag problems instead of deleting rows. Problem rows stay in the table
+# with a flag column, so the analysis decides what to exclude. Only two kinds
+# of row are removed, and both are counted in the log: records with no voter
+# (not real votes) and undated votes that cannot be placed in one election.
 #
-# The threshold is a PARAMETER, not an assumption: 03_validate_outcomes.R picks
-# it by comparing the reconstruction against the real elections of wiki-Elec.
-# The value set here is the published precedent (Kolczynska) and the nominal
-# length of an RfA.
+# The 7-day threshold is set in 00_paths.R. Script 03 tests other values
+# against the real elections of wiki-Elec. Seven days is the length of an RfA.
 
 source(file.path("R", "00_paths.R"))
 source(file.path("R", "00_lib_data.R"))
 
-MODE               <- "res_then_gap"  # grouping rule, see 00_lib_data.R
-                                      # variants (harej/Harej). FALSE keeps the
-                                      # SNAP convention of 11,381 nodes.
+MODE <- "res_then_gap"  # grouping rule, see reconstruct_attempts() in 00_lib_data.R
 
+# note() prints a line and also saves it to data/processed/02_log.txt
 log_lines <- character(0)
-note <- function(...) {
-  s <- paste0(...)
-  log_lines <<- c(log_lines, s)
-  cat(s, "\n", sep = "")
-}
+note <- function(...) { s <- paste0(...); log_lines <<- c(log_lines, s); cat(s, "\n", sep = "") }
 
-# --- 1. raw votes, columns renamed in lowercase ------------------------------
+# --- 1. raw votes, with lowercase column names ------------------------------
 raw <- readRDS(file.path(DIR_PROCESSED, "votes_raw.rds"))
 d <- data.frame(
   vote_id = raw$vote_id,
@@ -40,17 +32,14 @@ d <- data.frame(
   yea = as.integer(raw$YEA),
   stringsAsFactors = FALSE
 )
-d$self_vote <- d$src == d$tgt
 note("incoming records: ", nrow(d))
 
+# Merge names that differ only in the first letter (setting in 00_paths.R).
 if (MERGE_FIRST_LETTER) {
   d$src <- capitalise_first(d$src); d$tgt <- capitalise_first(d$tgt)
-  note("usernames: first letter merged -> distinct nodes: ",
-       length(unique(c(d$src, d$tgt))))
-} else {
-  note("usernames: SNAP spelling kept -> distinct nodes: ",
-       length(unique(c(d$src, d$tgt))))
 }
+note("usernames: ", if (MERGE_FIRST_LETTER) "first letter merged" else "SNAP spelling kept",
+     " -> distinct nodes: ", length(unique(c(d$src, d$tgt))))
 d$self_vote <- d$src == d$tgt
 
 # --- 2. dates ----------------------------------------------------------------
@@ -63,28 +52,24 @@ note("DAT present but not interpretable: ", attr(dd, "n_unparsed"),
      "  (unrecognised format: ", attr(dd, "n_bad_format"),
      " | impossible value, e.g. hour 31: ", attr(dd, "n_impossible"), ")")
 
-# --- 3. phantom records, with no voter ---------------------------------------
-# 1,661 records have SRC empty, and ALL of them also have TXT and DAT empty:
-# they are phantom records of the file, not votes. They touch 926 candidates,
-# concentrated in 2006 (800 of them). Left in the table they would become a
-# SINGLE NODE with 1,661 outgoing edges towards 926 candidates: a hub that does
-# not exist, which would distort every centrality measure and the whole
-# co-voting projection. They cannot be "flagged": a vote with no voter is not an
-# edge. They are removed and written out separately so that nothing disappears
-# silently.
+# --- 3. records with no voter -----------------------------------------------
+# 1,661 records have no voter, no comment and no date: they are not real votes.
+# Kept, they would become one fake voter with 1,661 votes and distort every
+# network measure. They are removed, and saved to records_without_voter.csv so
+# nothing disappears without a trace.
 no_voter <- d[d$src == "", ]
 write.csv(no_voter[, c("vote_id", "tgt", "vot", "res", "yea")],
           file.path(DIR_PROCESSED, "records_without_voter.csv"), row.names = FALSE, fileEncoding = "UTF-8")
 note("phantom records with an empty SRC, removed: ", nrow(no_voter),
      " of ", nrow(d), sprintf("  (%.2f%%)", 100 * nrow(no_voter) / nrow(d)))
-note("  candidates touched: ", length(unique(no_voter$tgt)),
-     " | listed in records_without_voter.csv")
+note("  candidates touched: ", length(unique(no_voter$tgt)))
 d <- d[d$src != "", ]
 note("votes with an identifiable voter: ", nrow(d))
 
 # --- 4. self-votes -----------------------------------------------------------
-note("self-votes (the candidate voting in their own RfA): ", sum(d$src == d$tgt),
-     "  -> kept in the table, flagged by the self_vote column")
+# A self-vote is the candidate voting in their own election. They stay in the
+# table, marked in the self_vote column, and are left out of the networks.
+note("self-votes: ", sum(d$src == d$tgt))
 
 # --- 5. where the undated votes fall -----------------------------------------
 undated <- d[d$dat_missing, ]
@@ -107,15 +92,15 @@ note("candidates with at least one attempt: ", length(unique(v$tgt)))
 
 # --- 8. deduplication within the attempt -------------------------------------
 v <- dedup_votes(v)
-note("votes removed because the same voter appears more than once in the same ",
-     "attempt (most recent kept): ", attr(v, "n_rows_removed"))
+# If a voter appears twice in one election, their most recent vote is kept.
+note("votes removed as duplicates: ", attr(v, "n_rows_removed"))
 note("validated votes: ", nrow(v))
 
-# --- 9. attribution of the undated votes -------------------------------------
-# They are attached only where the attribution is unambiguous: the candidate has
-# a single attempt with that year and that outcome. The rest stay out, counted.
-# A provisional attempt table, built on dated votes only, is needed just to know
-# which (candidate, year, outcome) keys are unique.
+# --- 9. place the undated votes ----------------------------------------------
+# An undated vote is added to an election only when there is exactly one
+# possible election: the candidate has one attempt with that year and that
+# result. The others are left out and counted. A first attempt table, built
+# from dated votes only, tells us which (candidate, year, result) are unique.
 a <- build_attempts(v)
 a$key <- paste(a$candidate, a$yea, a$outcome)
 unique_keys <- a$key[!duplicated(a$key) & !(a$key %in% a$key[duplicated(a$key)])]
@@ -128,12 +113,10 @@ note("undated votes that cannot be attributed (dropped): ",
      sum(is.na(undated$attempt_id)))
 a$key <- NULL
 
-# --- 10. attempt table, built on the COMPLETE vote table ---------------------
-# ORDER MATTERS: the per-attempt counts (n_votes, n_support, ..., support_share)
-# must be computed AFTER the attributed undated votes are put back, otherwise
-# attempts.rds and votes.rds disagree and support_share silently excludes
-# thousands of votes. That was a bug, caught by the invariant checks in
-# R/99b_verify_output.R.
+# --- 10. final attempt table, built from all placed votes ---------------------
+# The counts per election (n_votes, n_support, support_share, ...) must be
+# computed after the undated votes are added back. Otherwise attempts.rds and
+# votes.rds would disagree. (This was a real bug, found by R/99b_verify_output.R.)
 v$dat_imputed <- FALSE
 if (any(!is.na(undated$attempt_id))) {
   extra <- undated[!is.na(undated$attempt_id), ]
@@ -143,15 +126,12 @@ if (any(!is.na(undated$attempt_id))) {
   common_cols <- intersect(names(v), names(extra))
   v <- rbind(v[, common_cols], extra[, common_cols])
 }
-# Second deduplication: within one attempt a voter may hold both a dated vote
-# and an undated one that was attributed to them. The DATED vote is kept,
-# because it can be checked. The first deduplication (step 8) could not see
-# these, because the undated votes only enter here: another bug caught by the
-# invariant checks.
+# Second duplicate check: a voter may now have both a dated vote and an undated
+# one in the same election. We keep the dated one, because its date can be
+# checked. Step 8 could not catch these, because undated votes are added here.
 v <- v[order(v$attempt_id, v$src, v$dat_imputed, v$dat, method = "radix"), ]
 dup_second <- duplicated(v[, c("attempt_id", "src")])
-note("votes removed in the second deduplication (same voter, one dated and one ",
-     "imputed within the same attempt): ", sum(dup_second))
+note("votes removed in the second duplicate check: ", sum(dup_second))
 v <- v[!dup_second, ]
 v <- v[order(v$attempt_id, v$src, method = "radix"), ]
 
@@ -160,7 +140,7 @@ a <- build_attempts(v)
 a$n_votes_dated   <- a_dated$n_votes[match(a$attempt_id, a_dated$attempt_id)]
 a$n_votes_imputed <- a$n_votes - a$n_votes_dated
 
-# the previous outcome has to be recomputed on the final table
+# result of each candidate's previous election, from the final table
 repeats <- table(a$candidate)
 a$prev_outcome <- NA_integer_
 for (cand in names(repeats)[repeats > 1]) {
@@ -168,8 +148,8 @@ for (cand in names(repeats)[repeats > 1]) {
   a$prev_outcome[i[-1]] <- a$outcome[i[-length(i)]]
 }
 note("attempts: ", nrow(a))
-note("repeat candidates (2+ attempts): ", sum(repeats > 1),
-     "   (the project brief states 414)")
+# The project brief said 414; the cleaned data give a different number.
+note("repeat candidates (2+ attempts): ", sum(repeats > 1))
 note("  of which with 3+ attempts: ", sum(repeats > 2))
 note("consecutive attempt pairs: ", sum(repeats[repeats > 1] - 1))
 note("flagged attempts: few votes (<5): ", sum(a$flag_short),

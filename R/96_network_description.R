@@ -1,32 +1,26 @@
-# 96 - Structural description of the two networks, against baselines.
+# 96 - Describe the networks and compare them with random baselines.
 #
 #   Rscript R/96_network_description.R
 #
-# WHY THIS EXISTS
-# The analysis computes per-node measures and feeds them to a model, but it
-# never says what the networks ARE. The course spends two lectures on exactly
-# that vocabulary - size, degree and its distribution, density and sparsity,
-# connected components and the giant component, shortest paths, average path
-# length and diameter, the small-world phenomenon, the clustering coefficient
-# and triadic closure - and the instructor's criterion 04 asks for the node,
-# edge, direction and weight to be stated before any metric, while criterion 07
-# asks every result to carry a comparison point.
+# The terms come from Lectures 2 and 3: size, degree distribution, density,
+# connected components and giant component, average path length and diameter,
+# small world, clustering coefficient and triadic closure.
 #
-# A density of 0.09 or a transitivity of 0.45 on their own are not results.
-# This script therefore reports each structural quantity NEXT TO the value a
-# comparable random graph would give:
-#   - observed clustering against a DEGREE-PRESERVING rewiring of the same
-#     graph, which keeps every node's degree and destroys everything else, so
-#     the excess is attributable to triadic closure rather than to degree;
-#   - observed average path length against the small-world expectation for a
-#     random graph of the same size and mean degree, log(N) / log(<k>).
+# A number like a clustering of 0.45 means little alone, so each is shown next
+# to what a random network would give:
+#   - clustering: compared with the same network rewired at random while every
+#     voter keeps the same degree, so any extra clustering comes from triadic
+#     closure, not from degree;
+#   - average path length: compared with log(N) / log(mean degree), the value
+#     for a random network of the same size.
 #
 # Output: output/results/network_description.csv
 #         output/results/degree_distribution.csv
-# Runtime: about 10 minutes, almost all of it average path length.
+# Takes about 10 minutes, mostly for the average path length.
 
 suppressPackageStartupMessages({library(igraph); library(Matrix)})
 source(file.path("R", "00_paths.R"))
+source(file.path("R", "00_lib_data.R"))
 
 NULL_REPLICATES <- 20     # rewirings per snapshot for the clustering baseline
 PATH_SAMPLE     <- 1000   # source nodes sampled for average path length
@@ -35,10 +29,10 @@ votes <- readRDS(file.path(DIR_PROCESSED, "votes.rds"))
 attempts <- readRDS(file.path(DIR_PROCESSED, "attempts_analysis.rds"))
 
 # ---------------------------------------------------------------- 1. voting --
-# Node: a user. Edge: a vote, directed from voter to candidate. Signed by `vot`
-# (support, oppose; neutral votes carry no direction of sentiment). Unweighted
-# per attempt; a repeat candidate can receive several votes from one voter
-# across attempts, so parallel edges exist and are collapsed with a weight.
+# Node: a user. Edge: one vote, from the voter to the candidate, with its
+# sign (+1 support, -1 oppose, 0 neutral). Self-votes are removed. A voter who
+# voted on several elections of the same candidate gives several parallel
+# edges; they are kept, so edges = votes.
 cat("=== voting network (voter -> candidate) ===\n")
 vt <- votes[!votes$self_vote, ]
 gv <- graph_from_data_frame(
@@ -57,9 +51,11 @@ voting <- data.frame(
   reciprocity = reciprocity(gv),
   stringsAsFactors = FALSE
 )
+# Reciprocity = share of votes that go both ways (A voted on B and B on A).
 print(t(voting))
 
-# Degree distribution of the voting network: the course's p_k.
+# Degree distribution p_k (Lecture 2) summarised by quantiles.
+# In-degree = votes received, out-degree = votes cast.
 deg_in  <- degree(gv, mode = "in")
 deg_out <- degree(gv, mode = "out")
 dd <- rbind(
@@ -76,30 +72,16 @@ dd <- rbind(
 )
 
 # ------------------------------------------------------------- 2. co-voting --
-# Node: a voter. Edge: the two voters cast the same direction in at least two
-# historical attempts. Undirected, weighted by how many attempts they agreed on.
-# This is the projection onto voters of the bipartite affiliation network of
-# voters and attempts - the attempt is a focus in Feld's sense - so it is dense
-# by construction and must be read against a baseline.
-v2 <- votes[!is.na(votes$attempt_id) & votes$vot %in% c(-1L, 1L) & !votes$self_vote, ]
-ai <- match(v2$attempt_id, attempts$attempt_id)
-v2$year <- attempts$year_from_date[ai]
+# Node: a voter. Edge: the two voters voted the same way in at least two
+# earlier elections. Undirected, weighted by the number of agreements.
+# This is the projection of the bipartite network of voters and elections
+# (Lab 5b), so it is dense by construction and needs a baseline.
+v2 <- network_votes(votes, attempts)       # support/oppose votes, no self-votes, with year
 all_voters <- sort(unique(v2$src))
+build_snapshot <- function(cutoff_year) covoting_graph(v2, cutoff_year, all_voters)  # as in 04
 
-build_snapshot <- function(cutoff_year) {
-  h <- v2[v2$year < cutoff_year, c("attempt_id", "src", "vot")]
-  if (nrow(h) == 0L) return(NULL)
-  gk <- paste(h$attempt_id, h$vot, sep = "|")
-  inc <- sparseMatrix(i = match(gk, unique(gk)), j = match(h$src, all_voters),
-                      x = 1, dims = c(length(unique(gk)), length(all_voters)))
-  pr <- crossprod(inc); diag(pr) <- 0
-  e <- summary(pr); e <- e[e$i < e$j & e$x >= 2, ]
-  if (nrow(e) == 0L) return(NULL)
-  graph_from_data_frame(
-    data.frame(from = all_voters[e$i], to = all_voters[e$j], weight = e$x,
-               stringsAsFactors = FALSE), directed = FALSE)
-}
-
+# One network per year (the first year has no earlier votes). For each:
+# size, mean degree, components, and global clustering (transitivity).
 cutoffs <- sort(unique(v2$year)); cutoffs <- cutoffs[cutoffs > min(cutoffs)]
 rows <- list()
 for (cut in cutoffs) {
@@ -109,13 +91,16 @@ for (cut in cutoffs) {
   comp <- components(g)
   tr_obs <- transitivity(g, type = "global")
 
-  # degree-preserving null: same degree sequence, everything else destroyed
+  # Clustering baseline: rewire the edges NULL_REPLICATES times, keeping every
+  # voter's degree. If the real clustering is higher, triadic closure is
+  # stronger than the degrees alone would give.
   set.seed(1421 + cut)
   tr_null <- vapply(seq_len(NULL_REPLICATES), function(i)
     transitivity(rewire(g, keeping_degseq(loops = FALSE, niter = m)),
                  type = "global"), 0)
 
-  # average path length on the giant component; sampled when the graph is large
+  # Average path length on the giant component. For large networks, distances
+  # are measured from a random sample of PATH_SAMPLE voters to save time.
   gc <- induced_subgraph(g, which(comp$membership == which.max(comp$csize)))
   t0 <- Sys.time()
   if (vcount(gc) > PATH_SAMPLE) {
@@ -131,6 +116,8 @@ for (cut in cutoffs) {
   }
   t_path <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
 
+  # One row per year. random_graph_expectation = log(n) / log(mean degree),
+  # the path length of a random network of the same size (small-world check).
   rows[[length(rows) + 1]] <- data.frame(
     cutoff_year = cut, nodes = n, edges = m,
     mean_degree = k_mean,
@@ -153,11 +140,12 @@ for (cut in cutoffs) {
               d_mean, log(n) / log(k_mean), t_path))
 }
 
+# Save the table.
 out <- do.call(rbind, rows)
 dir.create(file.path("output", "results"), showWarnings = FALSE, recursive = TRUE)
 write.csv(out, file.path("output", "results", "network_description.csv"), row.names = FALSE, fileEncoding = "UTF-8")
 
-# degree distribution of the last co-voting snapshot as well
+# Add the degree distribution of the last co-voting network and save.
 g_last <- build_snapshot(max(cutoffs))
 d_last <- degree(g_last)
 dd <- rbind(dd, data.frame(

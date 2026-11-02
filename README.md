@@ -213,6 +213,6 @@ in all three samples (`model_performance_sensitivity.csv`).
 - `report/build_pdf.py`: rebuilds the PDF from the manuscript and figures
   (`python report/build_pdf.py`, needs reportlab).
 
-The report must not contain code. The processed data, result tables and figures
+The processed data, result tables and figures
 are included as a validated snapshot and can also be recreated with
 `R/00_run_all.R`.

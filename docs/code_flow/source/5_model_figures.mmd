@@ -1,0 +1,24 @@
+flowchart TB
+  subgraph S6a["06_model_outcome.R — part 1: group comparisons"]
+    direction LR
+    a0[("attempt_pairs.rds")]:::inp --> a1["3 samples: all ·<br/>chronological · strict"]:::step --> a2["13 measures: success vs failure,<br/>by earlier and by later result"]:::step --> a3["Wilcoxon + BH-adjusted p<br/>Cliff's delta"]:::chk --> a4[/"group_comparison.csv"/]:::out
+  end
+  subgraph S6b["06_model_outcome.R — part 2: predicting the next election"]
+    direction LR
+    b1["Model data: per 10 pp,<br/>per doubling, year from 0"]:::step --> b2["Folds by candidate<br/>(5 folds, fixed seed)"]:::code --> b3["Logistic regression on strict sample:<br/>base model · + network measures"]:::step --> b4["5-fold CV: AUC 0.697 / 0.698<br/>Brier 0.215"]:::chk --> b5["Same on the other<br/>two samples"]:::chk --> b6[/"model_coefficients · model_performance<br/>sample_flow · model_objects.rds"/]:::out
+  end
+  subgraph S7["07_figures.R — the four report figures"]
+    direction LR
+    c1["Fig 1: communities of the latest<br/>network + modularity over time"]:::step
+    c2["Fig 2: overlap minus chance<br/>(chronological sample)"]:::step
+    c3["Fig 3: change in number of<br/>supporter communities"]:::step
+    c4["Fig 4: odds ratios with 95% CI"]:::step
+    c1 & c2 & c3 & c4 --> c5[/"output/figures/fig1-fig4.png"/]:::out
+  end
+  S6a --> S6b --> S7
+  classDef inp fill:#E8E8E8,stroke:#777,color:#222
+  classDef step fill:#DCEBFA,stroke:#3A78B5,color:#10324F
+  classDef chk fill:#FBE3C9,stroke:#C9781E,color:#4A2A05
+  classDef out fill:#DDF2DD,stroke:#3C8D3C,color:#123812
+  classDef grp fill:#FFFFFF,stroke:#999,color:#222
+  classDef code fill:#F3E8FD,stroke:#7B4BB7,color:#2E1452

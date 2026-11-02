@@ -1,12 +1,15 @@
-# 99 - Independent verification of the claims made in docs/DATA.md.
-# Recomputes every figure STARTING FROM THE RAW FILES, without using any
-# intermediate output, and compares it with what is stated. Prints OK or MISMATCH.
-# It is there for anyone who wants to check the work rather than trust it.
+# 99 - Check the numbers in docs/DATA.md against the raw files.
+# It reads the raw files again with its own simple code (not the pipeline's)
+# and compares each count with the number written in DATA.md.
+# Prints OK or MISMATCH for each line.
 # Input : data/raw/*.gz    Output: data/processed/99_verification.txt
 
 source(file.path("R", "00_paths.R"))
 source(file.path("R", "00_lib_data.R"))
 
+# ko counts the mismatches. chk() compares one number with the expected one
+# (tol = allowed difference), prints the line and saves it to the log.
+# sect() prints a section title.
 ko <- 0L; log_lines <- character(0)
 chk <- function(label, got, expected, tol = 0) {
   verdict <- if (is.na(got) || is.na(expected)) "?" else
@@ -146,12 +149,11 @@ chk("wiki-Elec candidates found in wiki-RfA, direct match (%)",
 chk("wiki-Elec candidates found after normalisation (%)",
     round(100*mean(norm_user(ec) %in% norm_user(rc)), 1), 89.8, tol = 0.2)
 
-# ---------------------------------------- igiene: le trappole classiche -----
-# This section does not verify claims: it actively looks for the category of
-# "basic" problems that are easy to miss. Each line is a defect that, if
-# present and untreated, produces phantom nodes, invented edges or wrong
-# counts. The expected values are the ones measured and handled; if they
-# change, something in the data or in the code has changed and needs a look.
+# ------------------------------------------------- common data problems -----
+# This part looks for simple problems that are easy to miss: empty names,
+# duplicates, self-votes, odd characters. Untreated, they create fake nodes,
+# fake edges or wrong counts. The expected values are the ones we found and
+# handled; if one changes, the data or the code has changed.
 sect("HYGIENE: the classic traps")
 uu_raw <- unique(c(D$SRC, D$TGT))            # original spelling in the file
 uu     <- unique(c(Dt$SRC, Dt$TGT))          # after clean_name()
@@ -191,33 +193,34 @@ chk("empty usernames among the voters", sum(E$votes$voter == "" | is.na(E$votes$
 chk("two elections with the same candidate and closing time",
     sum(duplicated(paste(E$elections$candidate, E$elections$closed_at))), 0)
 
-# ------------------------------------------------ assunzioni del metodo -----
+# ------------------------------------------------ method assumptions --------
 sect("ASSUMPTION: RES is a property of the election, not of the vote")
-# Grouping by (candidate, RES) rests on this assumption, so it is tested here.
-# TWO tests, and only the second one is valid.
+# Our grouping by (candidate, RES) assumes that all votes of one election
+# have the same RES. Two tests; only the second is valid.
 #
-# (1) Across ALL candidates: for each wiki-Elec election, take the wiki-RfA
-#     votes of that election's voters for that candidate and check whether RES
-#     is constant. This gives 15.0% non-constant, and that figure is an
-#     ARTEFACT: a candidate with several elections shares voters between their
-#     own elections, so selecting votes by voter membership pulls in the votes
-#     of the OTHER election, which legitimately carry a different RES. Reported
-#     only to show why it must not be quoted.
+# (1) All candidates: for each wiki-Elec election, take that election's voters
+#     and their wiki-RfA votes for the candidate, and check if RES is the same.
+#     Result 15.0% mixed, but this is misleading: a candidate with several
+#     elections has the same voters in more than one, so votes from the OTHER
+#     election (with a different RES) get pulled in. Shown only to explain why
+#     it is not used.
 #
-# (2) Restricted to candidates who have a SINGLE election in wiki-Elec, where
-#     there is no ambiguity about which election is meant. This is the valid
-#     test: 2.3% non-constant. In those cases the rule splits one election in
-#     two, and that is the residual error of the method.
+# (2) Only candidates with ONE election in wiki-Elec, so there is no mix-up.
+#     Result 2.3% mixed. In those cases our rule splits one election in two;
+#     this is the remaining error of the method.
 #
-# The exposure is bounded independently: the gap_only rule in 03 does not use
-# RES to set boundaries at all, and at a 7-day threshold it yields 4,063
-# attempts against 4,081, so the whole question moves 18 attempts out of 4,081.
+# Also: the gap_only rule in 03 does not use RES at all and gives 4,063
+# elections against our 4,081, so this issue affects at most 18 elections.
+# Normalised names in both files, voters of each wiki-Elec election, and the
+# number of wiki-Elec elections per candidate.
 Dt$kc <- norm_user(Dt$TGT); Dt$kv <- norm_user(Dt$SRC)
 ev <- E$votes; ev$kv <- norm_user(ev$voter)
 ele <- E$elections; ele$kc <- norm_user(ele$candidate)
 set_el <- split(ev$kv, ev$election_id)
 n_el <- table(ele$kc)
 idx_c <- split(seq_len(nrow(Dt)), Dt$kc)
+# Count elections (with at least 10 matched votes) whose votes have more
+# than one RES value.
 run_res_test <- function(single_election_only) {
   sel <- if (single_election_only) which(n_el[ele$kc] == 1) else seq_len(nrow(ele))
   mixed <- 0L; examined <- 0L

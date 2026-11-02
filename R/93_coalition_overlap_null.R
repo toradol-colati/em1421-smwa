@@ -1,33 +1,29 @@
-# 93 - Does a coalition persist more than chance? Overlap against a null model.
+# 93 - Do supporters come back more often than chance?
 #
 #   Rscript R/93_coalition_overlap_null.R
 #
-# WHY THIS EXISTS
-# Supporter overlap between consecutive attempts is already computed, but on
-# its own a Jaccard of 0.3 says nothing: criterion 06 asks whether the result
-# would appear even with random data, and criterion 07 asks for a comparison
-# point. The course supplies the shape of the answer in its homophily test -
-# reassign the labels at random, keeping the observed proportions, and see
-# whether the observed quantity departs from what chance gives.
+# An overlap of, say, 0.3 means nothing on its own: we need to know what chance
+# would give. Like the homophily test in Lecture 4, we compare the real value
+# with random draws.
 #
-# THE NULL
-# For each consecutive pair, the set of supporters at t+1 is replaced by a
-# random set of the SAME SIZE drawn from the voters who were active that year,
-# with probability proportional to how often each of them voted that year.
-# The activity weighting matters: without it the null is dominated by occasional
-# voters, who are unlikely to appear in any coalition, so almost any observed
-# overlap looks enormous and the test proves nothing.
+# For each pair of consecutive elections, the supporters of the second election
+# are replaced 200 times by a random group of the same size, drawn from the
+# voters active that year. Voters who vote more often are more likely to be
+# drawn; otherwise the random groups would be full of rare voters and almost
+# any real overlap would look large.
 #
-# Overlap is the Jaccard index between the supporter sets of t and t+1, which
-# is the same quantity the course calls neighbourhood overlap.
+# Overlap is the share of supporters in both elections out of supporters in
+# either (Jaccard), which Lecture 4 calls neighborhood overlap.
 #
 # Output: output/results/coalition_overlap_null.csv  (one row per pair)
-#         printed summary, overall and split by the previous outcome
+#         output/results/coalition_overlap_tests.csv (Fisher tests by group)
 
 source(file.path("R", "00_paths.R"))
 
-B <- 200   # null replicates per pair
+B <- 200   # random draws per pair
 
+# Read data. Keep votes assigned to an election, without self-votes, and
+# add the year of each vote's election.
 votes <- readRDS(file.path(DIR_PROCESSED, "votes.rds"))
 attempts <- readRDS(file.path(DIR_PROCESSED, "attempts_analysis.rds"))
 pairs <- readRDS(file.path(DIR_PROCESSED, "attempt_pairs.rds"))
@@ -36,9 +32,11 @@ v2 <- votes[!is.na(votes$attempt_id) & !votes$self_vote, ]
 ai <- match(v2$attempt_id, attempts$attempt_id)
 v2$year <- attempts$year_from_date[ai]
 
+# Supporters (+1 votes) of one election.
 supporters_of <- function(id) unique(v2$src[v2$attempt_id == id & v2$vot == 1L])
 
-# voters active in a given year, with their vote counts as weights
+# Voters active in a given year, with the number of votes they cast as weight
+# (very active voters are more likely to show up in any election).
 activity_by_year <- local({
   tb <- table(v2$year, v2$src)
   function(y) {
@@ -47,11 +45,17 @@ activity_by_year <- local({
   }
 })
 
+# Jaccard overlap = shared supporters / all supporters of either election.
 jaccard <- function(a, b) {
   u <- length(union(a, b))
   if (u == 0) NA_real_ else length(intersect(a, b)) / u
 }
 
+# For each pair: keep the real supporters of the first election, and replace
+# the supporters of the second election with a random draw of the same size
+# from the voters active that year (not the candidate). Repeat B times.
+# If the real overlap is above the 95th percentile of the random overlaps,
+# the same people came back more than chance would predict.
 rows <- list()
 set.seed(93)
 for (r in seq_len(nrow(pairs))) {
@@ -87,6 +91,8 @@ for (r in seq_len(nrow(pairs))) {
 }
 out <- do.call(rbind, rows)
 
+# Print one summary line for a group of pairs: median real overlap, median
+# random overlap, % with zero overlap, % above their own 95th percentile.
 report <- function(sel, label) {
   o <- out[sel, ]
   fin <- o$null_mean > 0
@@ -97,8 +103,9 @@ report <- function(sel, label) {
 }
 
 cat(sprintf("pairs tested: %d of %d consecutive pairs\n", nrow(out), nrow(pairs)))
-cat("(a pair is tested when both attempts have at least three supporters and the\n")
-cat(" pool of voters active that year is larger than the coalition being drawn)\n\n")
+# A pair is tested only when both elections have at least 3 supporters and
+# there are more active voters that year than supporters to draw.
+# Results for each sample, overall and by earlier and later result.
 for (smp in c("all", "chronological", "strict")) {
   keep <- switch(smp, all = rep(TRUE, nrow(out)),
                  chronological = out$in_chronological, strict = out$in_strict)
@@ -113,6 +120,25 @@ for (smp in c("all", "chronological", "strict")) {
            sprintf("  next outcome %+d", o_val))
   }
 }
+# Fisher's exact test: is the share of pairs above chance different between
+# pairs after a success and after a rejection (and, separately, before a
+# success and before a rejection)? These are the p-values quoted in the report.
+fisher_tests <- do.call(rbind, lapply(c("all", "chronological", "strict"), function(smp) {
+  d <- switch(smp, all = out, chronological = out[out$in_chronological, ],
+              strict = out[out$in_strict, ])
+  do.call(rbind, lapply(c("previous_outcome", "next_outcome"), function(g) {
+    success <- d[[g]] == 1L
+    data.frame(sample = smp, grouped_by = g,
+               above_chance_success = mean(d$above_null_p95[success]),
+               above_chance_rejection = mean(d$above_null_p95[!success]),
+               fisher_p = fisher.test(table(success, d$above_null_p95))$p.value)
+  }))
+}))
+cat("\nFisher's exact test, share of pairs above chance:\n")
+print(fisher_tests, row.names = FALSE, digits = 3)
+
 dir.create(file.path("output", "results"), showWarnings = FALSE, recursive = TRUE)
 write.csv(out, file.path("output", "results", "coalition_overlap_null.csv"), row.names = FALSE, fileEncoding = "UTF-8")
-cat("\nwritten: output/results/coalition_overlap_null.csv\n")
+write.csv(fisher_tests, file.path("output", "results", "coalition_overlap_tests.csv"),
+          row.names = FALSE, fileEncoding = "UTF-8")
+cat("\nwritten: output/results/coalition_overlap_null.csv and coalition_overlap_tests.csv\n")

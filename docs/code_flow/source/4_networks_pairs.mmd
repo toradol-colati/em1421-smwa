@@ -1,0 +1,17 @@
+flowchart TB
+  subgraph S4["04_build_networks.R — one co-voting network per year"]
+    direction LR
+    a0[("votes.rds<br/>attempts_analysis.rds")]:::inp --> a1["network_votes()<br/>support/oppose, no self-votes"]:::step --> a2["For each year 2004-2013:<br/>covoting_graph() from earlier votes"]:::code --> a3["Louvain communities<br/>(fixed seed per year)"]:::step --> a4["Per voter: strength, PageRank,<br/>eigenvector, local clustering"]:::step --> a5["Edges between communities;<br/>modularity, density, transitivity"]:::step --> a6[/"network_objects.rds<br/>network_summary.csv"/]:::out
+  end
+  subgraph S5["05_measure_change.R — 609 pairs of consecutive elections"]
+    direction LR
+    b1["Each candidate's<br/>consecutive elections<br/>(both outcomes known)"]:::step --> b2["Supporters both times:<br/>Jaccard overlap"]:::step --> b3["Chance baseline:<br/>size 1 x size 2 / earlier voters"]:::code --> b4["Both supporter groups in the<br/>network of the 2nd election's year:<br/>effective communities,<br/>Jensen-Shannon, centrality"]:::step --> b5{"Flags"}:::chk
+    b5 --> b6["negative_interval (17)<br/>short_attempt_pair (&lt;5 votes)"]:::chk --> b7["Samples: all 609<br/>chronological 592 · strict 513"]:::out --> b8[/"attempt_pairs.rds / .csv<br/>outcome_validation.csv"/]:::out
+  end
+  S4 --> S5
+  classDef inp fill:#E8E8E8,stroke:#777,color:#222
+  classDef step fill:#DCEBFA,stroke:#3A78B5,color:#10324F
+  classDef chk fill:#FBE3C9,stroke:#C9781E,color:#4A2A05
+  classDef out fill:#DDF2DD,stroke:#3C8D3C,color:#123812
+  classDef grp fill:#FFFFFF,stroke:#999,color:#222
+  classDef code fill:#F3E8FD,stroke:#7B4BB7,color:#2E1452

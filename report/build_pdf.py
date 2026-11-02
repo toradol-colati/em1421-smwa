@@ -9,6 +9,7 @@ Needs Python 3 with reportlab (pip install reportlab). The source is plain
 markdown with three extensions used by this report: "# " title, "## " and
 "### " headings, and [[FIGURE:<path>|<caption>]] lines for figures.
 """
+import os
 import re
 import sys
 from pathlib import Path
@@ -17,6 +18,9 @@ from reportlab.lib.enums import TA_JUSTIFY
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
+from reportlab.lib.fonts import addMapping
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import Image, KeepTogether, Paragraph, SimpleDocTemplate, Spacer
 
 SRC = Path("report/report_source.md")
@@ -24,18 +28,38 @@ OUT = Path("report/EM1421_Repeat_RfA_Report.pdf")
 HEADER = "EM1421 | Social Media and Web Analytics"
 SHORT_TITLE = "Repeat Requests for Adminship"
 
+# Times New Roman, embedded from the Windows font files (times.ttf etc.).
+# Looked for in TNR_DIR (if set) and in C:/Windows/Fonts. If they are not
+# found, the PDF falls back to the standard PDF Times font.
+def register_times_new_roman():
+    files = {"TNR": "times.ttf", "TNR-Bold": "timesbd.ttf",
+             "TNR-Italic": "timesi.ttf", "TNR-BoldItalic": "timesbi.ttf"}
+    for folder in [os.environ.get("TNR_DIR", ""), "C:/Windows/Fonts"]:
+        if folder and all((Path(folder) / f).exists() for f in files.values()):
+            for name, f in files.items():
+                pdfmetrics.registerFont(TTFont(name, str(Path(folder) / f)))
+            for bold, italic, name in [(0, 0, "TNR"), (1, 0, "TNR-Bold"),
+                                       (0, 1, "TNR-Italic"), (1, 1, "TNR-BoldItalic")]:
+                addMapping("TNR", bold, italic, name)
+            return "TNR", "TNR-Bold"
+    print("Times New Roman files not found; using the standard PDF Times font")
+    return "Times-Roman", "Times-Bold"
+
+
+FONT, FONT_BOLD = register_times_new_roman()
+
 styles = getSampleStyleSheet()
-body = ParagraphStyle("body", parent=styles["BodyText"], fontName="Times-Roman", fontSize=10.5,
+body = ParagraphStyle("body", parent=styles["BodyText"], fontName=FONT, fontSize=10.5,
                       leading=14, alignment=TA_JUSTIFY, spaceAfter=6)
-title = ParagraphStyle("title", parent=styles["Title"], fontName="Times-Bold", fontSize=17,
+title = ParagraphStyle("title", parent=styles["Title"], fontName=FONT_BOLD, fontSize=17,
                        leading=21, spaceAfter=8)
 meta = ParagraphStyle("meta", parent=body, alignment=0, spaceAfter=2)
-h2 = ParagraphStyle("h2", parent=styles["Heading2"], fontName="Times-Bold", fontSize=13,
-                    spaceBefore=10, spaceAfter=4)
-h3 = ParagraphStyle("h3", parent=styles["Heading3"], fontName="Times-Bold", fontSize=11.5,
-                    spaceBefore=8, spaceAfter=3)
+h2 = ParagraphStyle("h2", parent=styles["Heading2"], fontName=FONT_BOLD, fontSize=13,
+                    spaceBefore=10, spaceAfter=4, keepWithNext=1)   # never alone at a page end
+h3 = ParagraphStyle("h3", parent=styles["Heading3"], fontName=FONT_BOLD, fontSize=11.5,
+                    spaceBefore=8, spaceAfter=3, keepWithNext=1)
 caption = ParagraphStyle("caption", parent=body, fontSize=9, leading=11.5, spaceAfter=10)
-ref = ParagraphStyle("ref", parent=body, fontSize=9.5, leading=12, leftIndent=14, firstLineIndent=-14,
+ref = ParagraphStyle("ref", parent=body, fontName="Times-Roman", fontSize=9.5, leading=12, leftIndent=14, firstLineIndent=-14,
                      alignment=0)
 
 
@@ -55,10 +79,10 @@ def figure(path, cap, width):
 
 def page(canvas, doc):
     canvas.saveState()
-    canvas.setFont("Times-Roman", 8.5)
+    canvas.setFont(FONT, 8.5)
     w, h = A4
-    canvas.drawString(doc.leftMargin, h - 1.2 * cm, HEADER)
-    canvas.drawString(doc.leftMargin, 1.0 * cm, SHORT_TITLE)
+    canvas.drawString(doc.leftMargin, h - 1.2 * cm, SHORT_TITLE)   # header: report title
+    canvas.drawString(doc.leftMargin, 1.0 * cm, HEADER)            # footer: course
     canvas.drawRightString(w - doc.rightMargin, 1.0 * cm, str(doc.page))
     canvas.restoreState()
 
@@ -67,7 +91,8 @@ def build():
     lines = SRC.read_text(encoding="utf-8").splitlines()
     doc = SimpleDocTemplate(str(OUT), pagesize=A4, leftMargin=2.2 * cm, rightMargin=2.2 * cm,
                             topMargin=2.0 * cm, bottomMargin=1.8 * cm,
-                            title=SHORT_TITLE, author="Mihretab Worku Morka and Umberto Toraldo")
+                            title=SHORT_TITLE, author="Mihretab Worku Morka and Umberto Toraldo",
+                            initialFontName=FONT)
     width = A4[0] - doc.leftMargin - doc.rightMargin
     story, para, in_refs, n_meta = [], [], False, 0
 

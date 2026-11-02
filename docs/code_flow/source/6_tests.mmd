@@ -1,0 +1,42 @@
+flowchart TB
+  subgraph T92["92 — short elections: real or split?"]
+    direction LR
+    a1["Short elections (&lt;5 votes)<br/>by result"]:::step --> a2["How many match wiki-Elec;<br/>next success; days between"]:::chk --> a3[/"short_attempt_check.csv<br/>→ evidence for the strict sample"/]:::out
+  end
+  subgraph T93["93 — overlap vs chance (homophily test)"]
+    direction LR
+    b1["Real supporter overlap"]:::step --> b3{"Above 95th<br/>percentile?"}:::chk
+    b2["200 random supporter lists<br/>from voters active that year"]:::code --> b3
+    b3 --> b5["Fisher test: share above chance,<br/>after success vs rejection"]:::chk --> b4[/"coalition_overlap_null.csv<br/>coalition_overlap_tests.csv"/]:::out
+  end
+  subgraph T94["94 — membership closure T(k)"]
+    direction LR
+    c1["k = neighbours who supported<br/>the 1st election"]:::step --> c2["T(k) = share who support<br/>the 2nd election"]:::step --> c3["vs 1 − (1−T(0))(1−p)^k"]:::code --> c4[/"recruitment_curve.csv"/]:::out
+  end
+  subgraph T95["95 — strength of weak ties"]
+    direction LR
+    d1["Networks 2008, 2013"]:::inp --> d2["Neighborhood overlap vs tie strength<br/>(vs shuffled weights)"]:::chk --> d3["Remove edges weakest / strongest<br/>first → giant component"]:::chk --> d4[/"weak_ties_overlap.csv<br/>weak_ties_percolation.csv"/]:::out
+  end
+  subgraph T96["96 — network description vs random"]
+    direction LR
+    e1["Voting network: size, density,<br/>reciprocity, degree distribution"]:::step --> e2["Co-voting per year: clustering vs<br/>20 rewirings; path length vs log n / log k"]:::chk --> e3[/"network_description.csv<br/>degree_distribution.csv"/]:::out
+  end
+  subgraph T97["97 — Girvan-Newman vs Louvain"]
+    direction LR
+    f1["Networks 2004-2006"]:::inp --> f2["GN in a separate process,<br/>10-minute limit"]:::code --> f3["Modularity, adjusted Rand<br/>vs Louvain"]:::chk --> f4[/"community_method_check.csv"/]:::out
+  end
+  subgraph T98["98 — code appendix (helper, not run by 00_run_all)"]
+    direction LR
+    g1["Read the R scripts"]:::step --> g2["Paste them between the markers<br/>in docs/DATA_FULL.md"]:::step
+  end
+  subgraph T99["99 / 99b — independent checks (not run by 00_run_all)"]
+    direction LR
+    h1["99: re-read the raw files with<br/>separate code; compare every count<br/>with docs/DATA.md"]:::chk --> h2["99b: outputs agree with each other<br/>(vote counts add up, one result per<br/>election, dates in order)"]:::chk --> h3[/"99_verification.txt<br/>99b_verification.txt: OK / MISMATCH"/]:::out
+  end
+  T92 --> T93 --> T94 --> T95 --> T96 --> T97 --> T98 --> T99
+  classDef inp fill:#E8E8E8,stroke:#777,color:#222
+  classDef step fill:#DCEBFA,stroke:#3A78B5,color:#10324F
+  classDef chk fill:#FBE3C9,stroke:#C9781E,color:#4A2A05
+  classDef out fill:#DDF2DD,stroke:#3C8D3C,color:#123812
+  classDef grp fill:#FFFFFF,stroke:#999,color:#222
+  classDef code fill:#F3E8FD,stroke:#7B4BB7,color:#2E1452

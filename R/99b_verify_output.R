@@ -1,13 +1,16 @@
-# 99b - Second verification round: the INTERNAL INVARIANTS of the tables produced
-# and the derived figures quoted in docs/DATA.md.
-# While 99_verify_data.R checks the claims about the RAW files, this one checks
-# that the output is internally consistent: if one of these conditions fails
-# there is a bug in the pipeline, not an inaccuracy in the text.
+# 99b - Check that the tables made by 01-03 are consistent with each other.
+# 99 checks the raw files; this script checks the outputs. Examples: every
+# election has one candidate and one result, vote counts add up, dates are in
+# order, and the counts in docs/DATA.md are right. A FAILED line means a bug
+# in the code, not a wrong sentence in the text.
 # Input : data/processed/*.rds   Output: data/processed/99b_verification.txt
 
 source(file.path("R", "00_paths.R"))
 source(file.path("R", "00_lib_data.R"))
 
+# ko counts the failures. inv() checks a TRUE/FALSE condition, chk() compares
+# a number with the expected one (tol = allowed difference). Both print the
+# line and save it to the log. sect() prints a section title.
 ko <- 0L; log_lines <- character(0)
 inv <- function(label, condition, detail = "") {
   ok <- isTRUE(all(condition))
@@ -89,6 +92,8 @@ inv("flag_long == (duration_days > 14)", all(a$flag_long == (a$duration_days > 1
 inv("attempt_no agrees across the two tables",
     all(v$attempt_no == a$attempt_no[match(v$attempt_id, a$attempt_id)]))
 
+# Every raw record is accounted for: kept, or removed for a known reason
+# (empty records, duplicates, undated votes that could not be placed).
 sect("VOTE CONSERVATION")
 raw_n <- 198275L
 phantom <- 1661L; removed <- 630L + 100L; lost <- 632L
@@ -117,9 +122,9 @@ chk("of which the outcome agrees", sum(av$outcome_agrees, na.rm = TRUE), 2175 - 
 chk("attempts with no external match", sum(!av$elec_matched), 4081 - 2175)
 
 sect("NETWORK STRUCTURE, ON THE DELIVERED TABLE (not on the raw file)")
-# NB: the raw-file figures (10,417 voters, 3,497 candidates, 2,533 both) are NOT
-# these: thousands of records leave the pipeline and with them some users
-# disappear entirely. The document must report both.
+# These counts are lower than the raw-file ones (10,417 voters, 3,497
+# candidates, 2,533 both), because some users only appear in records that
+# were removed. DATA.md reports both.
 chk("distinct voters in votes.rds", length(unique(v$src)), 10300, tol = 30)
 chk("distinct candidates in votes.rds", length(unique(v$tgt)), 3460, tol = 10)
 chk("users who are both voters and candidates", length(intersect(v$src, v$tgt)), 2549, tol = 10)

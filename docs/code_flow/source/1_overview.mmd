@@ -1,0 +1,36 @@
+flowchart TD
+  RAW[("Raw files from SNAP<br/>wiki-RfA · wiki-Elec")]:::inp
+  subgraph PREP["1. Data preparation (run_data_prep.R)"]
+    direction LR
+    S01["01 read_raw<br/>read files,<br/>clean usernames"]:::step --> S02["02 build_attempts<br/>votes → elections<br/>(7-day rule)"]:::step --> S03["03 validate_outcomes<br/>check against<br/>wiki-Elec"]:::chk
+  end
+  RAW --> S01
+  S03 --> D1[("votes · attempts_analysis")]:::out
+  subgraph MAIN["2. Main analysis"]
+    direction LR
+    S04["04 build_networks<br/>co-voting network per year,<br/>communities, centrality"]:::step --> S05["05 measure_change<br/>609 pairs of consecutive<br/>elections"]:::step --> S06["06 model_outcome<br/>comparisons + model,<br/>cross-validation"]:::step --> S07["07 figures<br/>Figures 1-4"]:::step
+  end
+  D1 --> S04
+  S05 --> D2[("attempt_pairs")]:::out
+  subgraph TA["3. Tests on the pairs"]
+    direction LR
+    T92["92 short elections:<br/>real or split?"]:::chk ~~~ T93["93 overlap vs chance<br/>(homophily test)"]:::chk ~~~ T94["94 membership<br/>closure T(k)"]:::chk
+  end
+  subgraph TB["3. Tests on the networks"]
+    direction LR
+    T95["95 strength of<br/>weak ties"]:::chk ~~~ T96["96 network description<br/>vs random baselines"]:::chk ~~~ T97["97 Girvan-Newman<br/>vs Louvain"]:::chk
+  end
+  D2 --> TA
+  D1 --> TB
+  S06 --> R1[/"Tables and numbers<br/>output/results"/]:::out
+  TA --> R1
+  TB --> R1
+  S07 --> R2[/"Figures<br/>output/figures"/]:::out
+  R1 & R2 --> REP[["Report"]]:::out
+  NOTE["Every script uses the shared settings (00_paths.R)<br/>and toolbox (00_lib_data.R).<br/>00_run_all.R runs everything in this order."]:::grp
+  classDef inp fill:#E8E8E8,stroke:#777,color:#222
+  classDef step fill:#DCEBFA,stroke:#3A78B5,color:#10324F
+  classDef chk fill:#FBE3C9,stroke:#C9781E,color:#4A2A05
+  classDef out fill:#DDF2DD,stroke:#3C8D3C,color:#123812
+  classDef grp fill:#FFFFFF,stroke:#999,color:#222
+  classDef code fill:#F3E8FD,stroke:#7B4BB7,color:#2E1452

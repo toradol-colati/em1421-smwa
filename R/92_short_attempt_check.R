@@ -1,27 +1,29 @@
-# 92 - Which short attempts are real early-closed requests?
+# 92 - Short elections (fewer than 5 votes): real or pieces of a split?
 #
 #   Rscript R/92_short_attempt_check.R
 #
-# An attempt with fewer than 5 votes (flag_short) can be a real request that
-# was closed early, or one request split in two by the date-based
-# reconstruction (for example a late vote counted as a new attempt). This
-# script reports the evidence for each, so the choice of population in
-# 05_measure_change.R can be judged from the data:
-#   - short attempts by recorded outcome, and how many match a wiki-Elec
-#     election by voter set (independent confirmation that they were real);
-#   - short-attempt pairs by previous outcome: how many of their short attempts
-#     match wiki-Elec, how often the next attempt succeeds, and the median
-#     number of days between the two attempts.
+# A short election can be a real request that was closed early, or a piece of
+# one election that our 7-day rule split in two (for example a late vote).
+# This script collects the evidence used to define the three samples in 05:
+#   - short elections by result, and how many match a wiki-Elec election
+#     (which confirms they really happened);
+#   - pairs that contain a short election: how many of those elections match
+#     wiki-Elec, how often the next election succeeds, and the median number
+#     of days between the two.
 #
 # Output: output/results/short_attempt_check.csv
 
 source(file.path("R", "00_paths.R"))
 
+# Read the elections and pairs; mark which elections matched wiki-Elec and
+# which are short (fewer than 5 votes).
 attempts <- readRDS(file.path(DIR_PROCESSED, "attempts_analysis.rds"))
 pairs <- readRDS(file.path(DIR_PROCESSED, "attempt_pairs.rds"))
 matched <- attempts$elec_matched %in% TRUE
 short <- attempts$flag_short %in% TRUE
 
+# Table 1 - short elections, split by recorded result: how many match a
+# wiki-Elec election, and how many have just one vote.
 rows <- list()
 for (o in c(-1L, 1L)) {
   sel <- short & attempts$outcome == o
@@ -33,6 +35,11 @@ for (o in c(-1L, 1L)) {
     next_success = NA_integer_, median_days_between = NA_real_)
 }
 
+# Table 2 - pairs that contain a short election (overlapping pairs left
+# out), split by the earlier result: how many short elections match
+# wiki-Elec, how often the next election is a success, and the median gap.
+# A short "success" followed days later by another success looks like one
+# election that was split in two.
 sp <- pairs[pairs$short_attempt_pair & !pairs$negative_interval, ]
 for (o in c(-1L, 1L)) {
   g <- sp[sp$previous_outcome == o, ]
@@ -46,6 +53,7 @@ for (o in c(-1L, 1L)) {
     median_days_between = median(g$days_between))
 }
 
+# Table 3 - the strict sample, for comparison.
 clean <- pairs[pairs$in_strict, ]
 for (o in c(-1L, 1L)) {
   g <- clean[clean$previous_outcome == o, ]
@@ -56,6 +64,7 @@ for (o in c(-1L, 1L)) {
     median_days_between = median(g$days_between))
 }
 
+# Print the three tables and save them.
 out <- do.call(rbind, rows)
 print(out, row.names = FALSE)
 dir.create(file.path("output", "results"), showWarnings = FALSE, recursive = TRUE)

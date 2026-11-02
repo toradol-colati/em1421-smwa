@@ -1,40 +1,53 @@
-# 03 - Validation of the reconstruction against wiki-Elec, and choice of the
-#      separation threshold.
+# 03 - Check our elections against wiki-Elec, and test the 7-day threshold.
 # Input : data/processed/votes_raw.rds, data/processed/elec_raw.rds,
 #         data/processed/votes.rds, data/processed/attempts.rds
 # Output: data/processed/03_threshold_sweep.csv, data/processed/03_match_wikielec.csv,
 #         data/processed/attempts_validated.rds, data/processed/03_log.txt
 # Packages: none (base R).
 #
-# HOW A REAL ELECTION IS MATCHED TO A RECONSTRUCTED ATTEMPT
-# By voter set, not by date. Two elections of the same person have very
-# different voter sets, so the overlap (Jaccard) tells them apart, and the
-# criterion does not depend on any date field.
+# How an election in wiki-Elec is matched to one of our elections:
+# by who voted, not by date. Two elections of the same person have different
+# voters, so the voter overlap (Jaccard) tells them apart.
 #
-# The first version of this script matched by proximity between the declared
-# closing time T of wiki-Elec and the last vote of the attempt. That is WRONG,
-# because T is unreliable: the difference between T and the last vote OF THE
-# SAME ELECTION, inside wiki-Elec itself, has a median of 102 days, and 54% of
-# elections have T more than 30 days after their own last vote (1,217 more than
-# 180 days; some have T BEFORE their own last vote). The same is visible in the
-# fact that 78% of elections are declared closed in 2007 while the votes are
-# spread over 2005-2007. Consequences of that error, all corrected here: the
-# measured coverage was 36% instead of 78%, 23 under-splits appeared instead of
-# 1, and the wrong conclusion was drawn that wiki-RfA did not contain the
-# elections of wiki-Elec.
+# Dates cannot be used: the closing time (field T) in wiki-Elec is wrong by a
+# median of 102 days compared with the election's own last vote, and in 54% of
+# elections by more than 30 days. An earlier version of this script matched by
+# date and wrongly found that only 36% of elections matched (the true figure is
+# 78%).
 
 source(file.path("R", "00_paths.R"))
 source(file.path("R", "00_lib_data.R"))
 
+# Settings: the thresholds (days) and the three grouping rules to test, and
+# the minimum voter overlap to call two elections the same.
 GRID           <- c(1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 14, 18, 21, 28, 35, 45, 60)
 MODES          <- c("res_then_gap", "gap_then_res", "gap_only")
 J_MIN          <- 0.5   # minimum voter overlap to call it the same election
 CHOSEN_THRESHOLD <- THRESHOLD_DAYS
 
 log_lines <- character(0)
+# note() prints a line and also saves it to data/processed/03_log.txt
 note <- function(...) { s <- paste0(...); log_lines <<- c(log_lines, s); cat(s, "\n", sep = "") }
+# Jaccard overlap of two voter lists.
 jac <- function(x, y) length(intersect(x, y)) / length(union(x, y))
 
+# For each wiki-Elec election, find the election of the same candidate with
+# the most similar voter list. set_at = voters of each of our elections,
+# per = our election ids for each candidate. Returns the best Jaccard and the
+# id of the best election (NA when the candidate is not in our data).
+best_match <- function(set_at, per) {
+  best <- rep(NA_real_, nrow(ele)); bid <- rep(NA_integer_, nrow(ele))
+  for (r in seq_len(nrow(ele))) {
+    ids <- per[[ele$cand_k[r]]]; if (is.null(ids)) next
+    s <- set_el[[as.character(ele$election_id[r])]]
+    jj <- vapply(ids, function(k) jac(s, set_at[[as.character(k)]]), 0)
+    best[r] <- max(jj); bid[r] <- ids[which.max(jj)]
+  }
+  list(best = best, bid = bid)
+}
+
+# Read the raw wiki-RfA votes and the wiki-Elec file (from 01), with the
+# same cleaning of names and dates as in 02.
 raw  <- readRDS(file.path(DIR_PROCESSED, "votes_raw.rds"))
 elec <- readRDS(file.path(DIR_PROCESSED, "elec_raw.rds"))
 d <- data.frame(src = raw$SRC, tgt = raw$TGT,
@@ -46,6 +59,8 @@ if (MERGE_FIRST_LETTER) {
   d$tgt <- capitalise_first(d$tgt)
 }
 
+# wiki-Elec: the voter list of each election, the candidate, and the date
+# of the last vote (votes dated after 2008 are ignored as errors).
 ev <- elec$votes; ev$voter_k <- norm_user(ev$voter)
 set_el <- split(ev$voter_k, ev$election_id)
 ele <- elec$elections
@@ -55,22 +70,24 @@ ele$last_vote <- as.POSIXct(vapply(
   function(x) max(x[x < as.numeric(as.POSIXct("2009-01-01", tz = "UTC"))]), 0),
   origin = "1970-01-01", tz = "UTC")
 
-# --- diagnostic: the T field is unreliable -----------------------------------
+# --- check: how far the closing time T is from the last vote -------------------
+# This is why matching below uses voters, not dates.
 dT <- as.numeric(difftime(ele$closed_at, ele$last_vote, units = "days"))
 note("wiki-Elec: ", nrow(ele), " elections, declared closing times from ",
      format(min(ele$closed_at), "%Y-%m-%d"), " to ",
      format(max(ele$closed_at), "%Y-%m-%d"),
-     ". Earliest last-vote of an election: ",
-     format(min(ele$last_vote), "%Y-%m-%d"), ".")
-note("Field T (closing time) is UNRELIABLE: the gap between T and the last vote")
-note("  of the same election has a median of ", round(median(dT), 1),
-     " days; it exceeds 30 days in ", sprintf("%.0f%%", 100 * mean(dT > 30)),
-     " of cases; it exceeds 180 days in ", sum(dT > 180),
-     " elections; the minimum is ", round(min(dT), 1),
-     " days (T before the last vote).")
-note("  This is why matching uses VOTER SETS, not dates.\n")
+     "; earliest last vote: ", format(min(ele$last_vote), "%Y-%m-%d"))
+note("closing time T minus last vote, median days: ", round(median(dT), 1))
+note("  share over 30 days: ", sprintf("%.0f%%", 100 * mean(dT > 30)),
+     " | elections over 180 days: ", sum(dT > 180),
+     " | minimum days: ", round(min(dT), 1), "\n")
 
 # --- evaluate one rule and one threshold -------------------------------------
+# Rebuild the elections with one rule and one threshold, then match each
+# wiki-Elec election to the rebuilt election of the same candidate with the
+# most similar voter list. Returns: how many match, how well, whether the
+# outcomes agree, and how often the number of elections per candidate is the
+# same as in wiki-Elec.
 evaluate <- function(mode, threshold) {
   v <- reconstruct_attempts(d, threshold, mode)
   v$src_k <- norm_user(v$src)
@@ -84,21 +101,14 @@ evaluate <- function(mode, threshold) {
                      cand_k = norm_user(v$tgt[idx]),
                      outcome = as.integer(outcome_by_attempt[names(set_at)]),
                      n_votes = lengths(set_at), stringsAsFactors = FALSE)
-  per <- split(info$attempt_id, info$cand_k)
-  best <- rep(NA_real_, nrow(ele)); bid <- rep(NA_integer_, nrow(ele))
-  for (r in seq_len(nrow(ele))) {
-    ids <- per[[ele$cand_k[r]]]; if (is.null(ids)) next
-    s <- set_el[[as.character(ele$election_id[r])]]
-    jj <- vapply(ids, function(k) jac(s, set_at[[as.character(k)]]), 0)
-    best[r] <- max(jj); bid[r] <- ids[which.max(jj)]
-  }
+  m <- best_match(set_at, split(info$attempt_id, info$cand_k))
+  best <- m$best; bid <- m$bid
   ok <- !is.na(best) & best > J_MIN
   mo <- info$outcome[match(bid[ok], info$attempt_id)]
-  # Agreement on the NUMBER of attempts per candidate is computed only on
-  # candidates whose wiki-Elec elections are ALL matched. Computing it on every
-  # candidate inflates the figure with accidental agreement: a candidate whose
-  # correct election is missing from wiki-RfA, but who has another one, scores
-  # "1 against 1" and counts as agreeing.
+  # Agreement on the number of elections per candidate is counted only for
+  # candidates whose wiki-Elec elections are all matched. Otherwise a candidate
+  # with one missing and one extra election would look like "1 against 1" and
+  # count as agreeing by accident.
   per_c <- split(seq_len(nrow(ele)), ele$cand_k)
   full <- names(per_c)[vapply(per_c, function(ii) all(ok[ii]), TRUE)]
   n_true <- table(ele$cand_k[ele$cand_k %in% full])
@@ -122,6 +132,7 @@ evaluate <- function(mode, threshold) {
              stringsAsFactors = FALSE)
 }
 
+# Try every rule with every threshold and save the table.
 note("sweep: ", length(MODES), " rules x ", length(GRID), " thresholds...")
 res <- do.call(rbind, lapply(MODES, function(m)
   do.call(rbind, lapply(GRID, function(s) evaluate(m, s)))))
@@ -133,33 +144,31 @@ print(pr, row.names = FALSE)
 
 rtg <- res[res$mode == "res_then_gap", ]
 g <- function(s, col) rtg[[col]][rtg$threshold == s]
+# Choice of the threshold. Both measures below are almost flat between 4 and
+# 21 days, so the result does not depend on the exact value. We keep 7 days,
+# the length of an RfA (Kolczynska's blog post on this dataset also notes that
+# voting takes a week).
 note("\nCHOICE OF THE THRESHOLD")
 note("  matched elections: ", g(4, "matched"), " at 4 days, ", g(7, "matched"),
-     " at 7, ", g(21, "matched"), " at 21, ", g(60, "matched"), " at 60.")
-note("  exact attempt count: ", sprintf("%.1f%%", 100 * g(4, "count_agreement")),
+     " at 7, ", g(21, "matched"), " at 21, ", g(60, "matched"), " at 60")
+note("  exact election count: ", sprintf("%.1f%%", 100 * g(4, "count_agreement")),
      " at 4 days, ", sprintf("%.1f%%", 100 * g(7, "count_agreement")), " at 7, ",
-     sprintf("%.1f%%", 100 * g(60, "count_agreement")), " at 60.")
-note("  Both measures are flat between 4 and 21 days: the choice is NOT driven")
-note("  by the data, and that flatness is itself the robustness result. 7 days")
-note("  is kept, the value of the published precedent (Kolczynska) and the")
-note("  nominal length of an RfA.")
-note("  Discarded rule (gap_then_res): at 7 days it produces ",
+     sprintf("%.1f%%", 100 * g(60, "count_agreement")), " at 60")
+# The other rule (split by date first, then by result) is rejected because it
+# creates many tiny pieces: a single stray vote can split an election.
+note("  elections with fewer than 5 votes at 7 days: ",
      res$fragments_lt5[res$mode == "gap_then_res" & res$threshold == 7],
-     " attempts with fewer than 5 votes against ", g(7, "fragments_lt5"), ".")
+     " (rejected rule gap_then_res) vs ", g(7, "fragments_lt5"), " (rule used)")
 
 # --- final pass --------------------------------------------------------------
 note("\n--- VALIDATION with res_then_gap and a ", CHOSEN_THRESHOLD, "-day threshold ---")
+# Final check on the elections actually built by 02 (same matching as above).
 v <- readRDS(file.path(DIR_PROCESSED, "votes.rds"))
 a <- readRDS(file.path(DIR_PROCESSED, "attempts.rds"))
 v$src_k <- norm_user(v$src); set_at <- split(v$src_k, v$attempt_id)
-a$cand_k <- norm_user(a$candidate); per <- split(a$attempt_id, a$cand_k)
-best <- rep(NA_real_, nrow(ele)); bid <- rep(NA_integer_, nrow(ele))
-for (r in seq_len(nrow(ele))) {
-  ids <- per[[ele$cand_k[r]]]; if (is.null(ids)) next
-  s <- set_el[[as.character(ele$election_id[r])]]
-  jj <- vapply(ids, function(k) jac(s, set_at[[as.character(k)]]), 0)
-  best[r] <- max(jj); bid[r] <- ids[which.max(jj)]
-}
+a$cand_k <- norm_user(a$candidate)
+m <- best_match(set_at, split(a$attempt_id, a$cand_k))
+best <- m$best; bid <- m$bid
 ele$jaccard <- best
 ele$my_attempt <- ifelse(!is.na(best) & best > J_MIN, bid, NA)
 ok <- !is.na(ele$my_attempt)
@@ -176,22 +185,24 @@ note("OUTCOME AGREEMENT: ",
      " of ", sum(ok), ")")
 note("distinct attempts matched: ", length(unique(ele$my_attempt[ok])), " of ", nrow(a),
      "; attempts absorbing two elections: ", sum(duplicated(ele$my_attempt[ok])))
+# For matched elections: voters found only in one of the two files.
 missing_from_me <- mapply(function(r, k)
   length(setdiff(set_el[[as.character(r)]], set_at[[as.character(k)]])),
   ele$election_id[ok], ele$my_attempt[ok])
 missing_from_them <- mapply(function(r, k)
   length(setdiff(set_at[[as.character(k)]], set_el[[as.character(r)]])),
   ele$election_id[ok], ele$my_attempt[ok])
-note("disagreement on individual voters (medians): wiki-Elec holds ",
-     median(missing_from_me), " that we do not, we hold ", median(missing_from_them),
-     " that it does not,")
-note("  out of a median of ",
+# The two files were collected separately, so their voter lists for the same
+# election are similar in size but not identical.
+note("voters only in wiki-Elec (median): ", median(missing_from_me),
+     " | voters only in ours (median): ", median(missing_from_them))
+note("  median voters per election: ",
      median(lengths(set_el)[as.character(ele$election_id[ok])]),
-     " voters per election. Similar sizes (identical in ",
+     " | elections with the same number of voters: ",
      sum(lengths(set_el)[as.character(ele$election_id[ok])] ==
-           a$n_votes[match(ele$my_attempt[ok], a$attempt_id)]),
-     " elections), different lists.")
+           a$n_votes[match(ele$my_attempt[ok], a$attempt_id)]))
 
+# Add the check results to each election and save.
 a$elec_matched  <- a$attempt_id %in% ele$my_attempt[ok]
 a$elec_outcome  <- ele$outcome[match(a$attempt_id, ele$my_attempt)]
 a$elec_jaccard  <- ele$jaccard[match(a$attempt_id, ele$my_attempt)]
@@ -200,9 +211,8 @@ saveRDS(a, file.path(DIR_PROCESSED, "attempts_validated.rds"))
 write.csv(ele[, c("election_id", "candidate", "outcome", "closed_at", "last_vote",
                   "jaccard", "my_attempt")],
           file.path(DIR_PROCESSED, "03_match_wikielec.csv"), row.names = FALSE, fileEncoding = "UTF-8")
-note("LIMIT: the validation covers ", sum(a$elec_matched), " attempts of ", nrow(a),
-     sprintf(" (%.0f%%)", 100 * mean(a$elec_matched)),
-     ". Outside the period covered by wiki-Elec, that is from 2008 to 2013,",
-     " no validation exists.")
+# Limit: wiki-Elec ends in January 2008, so later elections cannot be checked.
+note("attempts checked against wiki-Elec: ", sum(a$elec_matched), " of ", nrow(a),
+     sprintf(" (%.0f%%)", 100 * mean(a$elec_matched)))
 note("written: attempts_validated.rds, 03_match_wikielec.csv")
 writeLines(log_lines, file.path(DIR_PROCESSED, "03_log.txt"))

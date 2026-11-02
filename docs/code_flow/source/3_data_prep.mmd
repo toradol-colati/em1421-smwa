@@ -1,0 +1,30 @@
+flowchart TB
+  subgraph S1["01_read_raw.R — read the two files"]
+    direction LR
+    a0[("wiki-RfA.txt.gz<br/>wikiElec.ElecBs3.txt.gz")]:::inp --> a1["read_rfa() · read_elec()<br/>clean spelling of usernames"]:::step --> a2{"Counts match SNAP?<br/>198,275 votes · 11,380 users<br/>2,794 elections"}:::chk --> a3[/"votes_raw.rds · elec_raw.rds<br/>username_case_variants.csv"/]:::out
+  end
+  subgraph S2["02_build_attempts.R — votes into elections"]
+    direction LR
+    b1["Merge names differing only in<br/>the first letter; mark self-votes;<br/>read dates"]:::step --> b2{"Record with<br/>no voter?"}:::chk
+    b2 -- "yes: 1,661 removed" --> b2o[/"records_without_voter.csv"/]:::out
+    b2 -- "no" --> b3["reconstruct_attempts()<br/>candidate + result,<br/>new election after 7+ days"]:::code --> b4["One vote per voter<br/>per election"]:::step --> b5{"Undated vote: only one<br/>possible election?"}:::chk
+    b5 -- "yes" --> b6["Add it"]:::step --> b7["build_attempts()<br/>counts, flags, previous result"]:::step --> b8[/"votes.rds · attempts.rds<br/>02_log.txt"/]:::out
+    b5 -- "no" --> b9["Leave out<br/>(counted)"]:::chk
+  end
+  subgraph S3["03_validate_outcomes.R — check against wiki-Elec"]
+    direction LR
+    c1["3 rules x 17 thresholds<br/>(1-60 days)"]:::step --> c2["best_match(): same candidate,<br/>most similar voter list (Jaccard)"]:::code --> c3{"Jaccard > 0.5?"}:::chk --> c4["Choose res_then_gap, 7 days<br/>(flat from 4 to 21 days)"]:::chk --> c5["2,175 elections matched<br/>99.45% same outcome · 12 differ"]:::out --> c6[/"attempts_validated.rds<br/>03_threshold_sweep.csv · 03_log.txt"/]:::out
+  end
+  subgraph S4["run_data_prep.R — runs 01 → 02 → 03 safely"]
+    direction LR
+    d1["Clear old outputs"]:::step --> d2["Run each step in a<br/>clean environment"]:::step --> d3{"Error?"}:::chk
+    d3 -- "yes" --> d4["Move partial files aside, stop"]:::chk
+    d3 -- "no" --> d5["12 disagreeing outcomes → NA"]:::step --> d6[/"attempts_analysis.rds<br/>data_preparation_summary.txt"/]:::out
+  end
+  S1 --> S2 --> S3 --> S4
+  classDef inp fill:#E8E8E8,stroke:#777,color:#222
+  classDef step fill:#DCEBFA,stroke:#3A78B5,color:#10324F
+  classDef chk fill:#FBE3C9,stroke:#C9781E,color:#4A2A05
+  classDef out fill:#DDF2DD,stroke:#3C8D3C,color:#123812
+  classDef grp fill:#FFFFFF,stroke:#999,color:#222
+  classDef code fill:#F3E8FD,stroke:#7B4BB7,color:#2E1452

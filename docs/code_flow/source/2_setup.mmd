@@ -1,0 +1,27 @@
+flowchart TB
+  subgraph P["00_paths.R — settings (sourced by every script)"]
+    direction LR
+    p1["Folders<br/>data/raw · data/processed · output/figures"]:::step
+    p2["File names<br/>wiki-RfA.txt.gz · wikiElec.ElecBs3.txt.gz"]:::step
+    p3["Choices<br/><code>THRESHOLD_DAYS &lt;- 7</code><br/><code>MERGE_FIRST_LETTER &lt;- TRUE</code>"]:::code
+    p4["stop_if_missing()<br/>clear error if a raw file is absent"]:::chk
+  end
+  subgraph L1["00_lib_data.R — data toolbox (used by 01, 02, 03, 99, 99b)"]
+    direction LR
+    l1["read_rfa() · read_elec()<br/>read the two raw files"]:::step --> l2["clean_name() · norm_user()<br/>capitalise_first()<br/>make usernames comparable"]:::step --> l3["parse_dat()<br/>read dates, own month table<br/>(handles typos like 'Janry')"]:::step --> l4["reconstruct_attempts()<br/>votes → elections (7-day rule)"]:::code --> l5["dedup_votes() · build_attempts()<br/>one vote per voter; counts, flags"]:::step
+  end
+  subgraph L2["00_lib_data.R — network toolbox (used by 04, 05, 94-97)"]
+    direction LR
+    n1["network_votes()<br/>support/oppose only, no self-votes,<br/>add election year"]:::step --> n2["covoting_graph()<br/>votes before a year → <code>crossprod()</code><br/>→ edge if 2+ agreements"]:::code
+  end
+  subgraph R["00_run_all.R — runs the whole project"]
+    direction LR
+    r1["run_data_prep.R<br/>(01 → 02 → 03)"]:::step --> r2["04 → 05 → 06 → 07"]:::step --> r3["92 → 93 → 94 → 95 → 96 → 97"]:::chk --> r4["'Project pipeline completed<br/>successfully.'"]:::out
+  end
+  P --> L1 --> L2 --> R
+  classDef inp fill:#E8E8E8,stroke:#777,color:#222
+  classDef step fill:#DCEBFA,stroke:#3A78B5,color:#10324F
+  classDef chk fill:#FBE3C9,stroke:#C9781E,color:#4A2A05
+  classDef out fill:#DDF2DD,stroke:#3C8D3C,color:#123812
+  classDef grp fill:#FFFFFF,stroke:#999,color:#222
+  classDef code fill:#F3E8FD,stroke:#7B4BB7,color:#2E1452

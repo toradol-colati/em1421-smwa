@@ -1,43 +1,25 @@
-# run_data_prep.R - One command that runs the whole data workstream.
+# run_data_prep.R - Runs the data part of the project with one command:
 #
-#   Rscript R/run_data_prep.R
+#   Rscript R/run_data_prep.R      (from the project folder)
 #
-# Run it from the repository root. It executes the three steps in order:
-#   01_read_raw.R        parse both SNAP files
-#   02_build_attempts.R  reconstruct attempts, write votes.rds and attempts.rds
-#   03_validate_outcomes.R  validate against wiki-Elec, write attempts_validated.rds
+# It runs three steps in order:
+#   01_read_raw.R           read both SNAP files
+#   02_build_attempts.R     rebuild the elections; write votes.rds and attempts.rds
+#   03_validate_outcomes.R  check them against wiki-Elec; write attempts_validated.rds
 #
-# WHY A WRAPPER AND NOT ONE BIG SCRIPT
-# The three steps stay separate files because they are three different jobs and
-# because a failure in one must not be mistaken for a result of another. This
-# file only orchestrates them; it contains no analysis.
+# Why a separate runner instead of three source() calls:
+#  1. It deletes the old outputs first, so files from a previous run can never
+#     be mistaken for new results.
+#  2. It stops at the first error and says which step failed. Files the failed
+#     step had already written are moved to data/processed/failed_run_<time>/.
+#  3. Each step runs in its own environment, so an object left over from one
+#     step cannot be used by accident in the next.
+#  4. At the end it checks that every expected output file exists.
+#  5. Warnings are printed when they happen, next to the line that caused them.
 #
-# WHAT THIS WRAPPER GUARANTEES, which plain source() calls do not:
-#  1. STALE OUTPUTS CANNOT SURVIVE A FAILURE. The outputs of the whole chain are
-#     deleted before anything starts. Without this, a step that fails leaves the
-#     previous run's .rds on disk, and the next step - or the next person -
-#     silently works on data that does not correspond to the current code. That
-#     is exactly the "one part fails and misleads the other part" problem.
-#  2. IT STOPS AT THE FIRST ERROR, naming the step that failed, and exits with a
-#     non-zero status so a shell or CI notices. Any output the failed step had
-#     already written is moved aside into data/processed/failed_run_<time>/, so
-#     it stays available for debugging but cannot be mistaken for a result: a
-#     step that dies after writing some of its files is the worst case, and it
-#     is the one this handles.
-#  3. EACH STEP RUNS IN ITS OWN ENVIRONMENT. Steps 02 and 03 use several
-#     variables with the same names (a, v, d, raw, note, log_lines). They never
-#     pass anything to each other in memory - they communicate only through
-#     files - but isolating them means a leftover object can never be mistaken
-#     for a fresh one.
-#  4. IT CHECKS THE EXPECTED OUTPUTS EXIST at the end, so a partial success
-#     cannot pass for a complete run.
-#  5. Warnings are printed as they happen rather than collected at the end, so
-#     the line that produced them is visible.
-#
-# Expected total time: a few minutes, almost all of it in step 03, which sweeps
-# 3 rules x 17 thresholds over the whole dataset.
+# It takes a few minutes, mostly in step 03 (3 rules x 17 thresholds).
 
-options(warn = 1)
+options(warn = 1)   # print warnings immediately
 t_start <- Sys.time()
 source(file.path("R", "00_paths.R"))
 
@@ -64,6 +46,8 @@ for (i in seq_along(STEPS)) {
   cat(sprintf("\n=============== STEP %d of %d: %s ===============\n",
               i, length(STEPS), step))
   t0 <- Sys.time()
+  # Run the script in its own clean environment. If it fails, catch the
+  # error instead of crashing, so we can clean up below.
   ok <- tryCatch({
     sys.source(file.path("R", step), envir = new.env(parent = globalenv()))
     TRUE
@@ -84,19 +68,20 @@ for (i in seq_along(STEPS)) {
       cat(sprintf("\nMoved %d partial output file(s) into %s/\n",
                   length(left), quarantine))
     }
-    cat("\nThe chain stopped here. Nothing downstream was run, and no file from\n",
-        "this run is left where a result is expected, so nothing can be mistaken\n",
-        "for one. Fix the error and run this script again.\n", sep = "")
+    cat("\nStopped. Fix the error and run this script again.\n")
     quit(status = 1, save = "no")
   }
   cat(sprintf("--- %s finished in %.1f s ---\n", step,
               as.numeric(difftime(Sys.time(), t0, units = "secs"))))
 }
 
+# All three steps worked: read their results for the last step.
 v <- readRDS(file.path(DIR_PROCESSED, "votes.rds"))
 a <- readRDS(file.path(DIR_PROCESSED, "attempts_validated.rds"))
 
 # --- 3. create the analysis table used by stages 04-07 ----------------------
+# For the 12 elections where our result disagrees with wiki-Elec, the result
+# is set to NA so they are left out of the outcome analysis.
 outcome_mismatch <- !is.na(a$elec_matched) &
   a$elec_matched &
   !is.na(a$outcome_agrees) &
@@ -106,6 +91,7 @@ a$outcome_analysis[outcome_mismatch] <- NA_integer_
 a$year_analysis <- a$year_from_date
 saveRDS(a, file.path(DIR_PROCESSED, "attempts_analysis.rds"))
 
+# Short text summary of the main counts.
 repeat_counts <- table(a$candidate)
 summary_lines <- c(
   paste("Validated vote rows:", nrow(v)),
@@ -118,10 +104,11 @@ summary_lines <- c(
     sum(outcome_mismatch)
   ),
   paste("Self-votes retained in votes table:", sum(v$self_vote)),
-  paste("Neutral votes retained in votes table:", sum(v$vot == 0L)),
-  "First-letter username variants are merged.",
-  "Network analysis excludes self-votes and neutral votes."
+  paste("Neutral votes retained in votes table:", sum(v$vot == 0L))
 )
+# Names that differ only in the first letter are merged (see 00_lib_data.R).
+# Self-votes and neutral votes stay in the votes table; the network scripts
+# (04 onward) leave them out.
 writeLines(
   summary_lines,
   file.path(DIR_PROCESSED, "data_preparation_summary.txt")
@@ -143,7 +130,6 @@ cat(sprintf("attempts.rds           %7d attempts, %d repeat candidates\n",
             nrow(a), sum(table(a$candidate) > 1)))
 cat(sprintf("attempts_validated.rds %7d attempts with an external match\n",
             sum(av$elec_matched)))
-cat("\nFull documentation of what these tables contain: docs/DATA.md\n")
-cat("Optional verification rounds:\n")
-cat("  Rscript R/99_verify_data.R      claims recomputed from the raw files\n")
-cat("  Rscript R/99b_verify_output.R   internal invariants of the tables\n")
+# The tables are described in docs/DATA.md. Optional extra checks:
+#   Rscript R/99_verify_data.R      recomputes the numbers from the raw files
+#   Rscript R/99b_verify_output.R   checks the tables are consistent

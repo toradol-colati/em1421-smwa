@@ -12,8 +12,3 @@ Network-augmented model AUC: 0.698
 Vote/timing model Brier score: 0.215
 Network-augmented model Brier score: 0.215
 Prevalence-only Brier score: 0.241
-Network snapshots use same-direction co-voting before the target year.
-Louvain is the main method; Girvan-Newman is compared on the three smallest snapshots in 97_community_method_check.R.
-Network measures showed no material improvement in held-out prediction; AUC and Brier differences were negligible and mixed.
-Model predictors use only information available before the next attempt.
-All estimates describe association, not a causal effect.
