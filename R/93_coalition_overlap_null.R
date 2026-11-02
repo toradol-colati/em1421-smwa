@@ -70,10 +70,12 @@ for (r in seq_len(nrow(pairs))) {
     jaccard(s_prev, draw)
   }, 0)
   rows[[length(rows) + 1]] <- data.frame(
-    pair_id = r,
+    pair_id = pairs$pair_id[r],
     candidate = pairs$candidate[r],
     previous_outcome = pairs$previous_outcome[r],
     next_outcome = pairs$next_outcome[r],
+    in_chronological = pairs$in_chronological[r],
+    in_strict = pairs$in_strict[r],
     n_supporters_prev = length(s_prev),
     n_supporters_next = length(s_next),
     observed_overlap = obs,
@@ -97,20 +99,20 @@ report <- function(sel, label) {
 cat(sprintf("pairs tested: %d of %d consecutive pairs\n", nrow(out), nrow(pairs)))
 cat("(a pair is tested when both attempts have at least three supporters and the\n")
 cat(" pool of voters active that year is larger than the coalition being drawn)\n\n")
-report(rep(TRUE, nrow(out)), "all pairs")
-report(out$n_supporters_prev >= 30 & out$n_supporters_next >= 30,
-       "both coalitions 30+ supporters")
-cat("\nby the outcome of the previous attempt:\n")
-for (o_val in sort(unique(out$previous_outcome))) {
-  report(out$previous_outcome == o_val,
-         sprintf("  previous outcome %+d", o_val))
+for (smp in c("all", "chronological", "strict")) {
+  keep <- switch(smp, all = rep(TRUE, nrow(out)),
+                 chronological = out$in_chronological, strict = out$in_strict)
+  cat(sprintf("\n--- sample: %s ---\n", smp))
+  report(keep, "all pairs")
+  for (o_val in c(-1L, 1L)) {
+    report(keep & out$previous_outcome == o_val,
+           sprintf("  previous outcome %+d", o_val))
+  }
+  for (o_val in c(-1L, 1L)) {
+    report(keep & out$next_outcome == o_val,
+           sprintf("  next outcome %+d", o_val))
+  }
 }
-cat("\nHow to read this: the Jaccard overlap between the supporter set at t and at\n")
-cat("t+1 is small in absolute terms and near zero for a large share of pairs, but\n")
-cat("it sits above what an activity-weighted random draw of the same size gives.\n")
-cat("Coalitions are largely rebuilt between attempts, with a weak but detectable\n")
-cat("core that returns.\n\n")
-
 dir.create(file.path("output", "results"), showWarnings = FALSE, recursive = TRUE)
-write.csv(out, file.path("output", "results", "coalition_overlap_null.csv"), row.names = FALSE)
+write.csv(out, file.path("output", "results", "coalition_overlap_null.csv"), row.names = FALSE, fileEncoding = "UTF-8")
 cat("\nwritten: output/results/coalition_overlap_null.csv\n")
