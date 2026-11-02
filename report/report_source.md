@@ -80,9 +80,13 @@ The study is observational: a coalition change may reflect campaigning, changed 
 
 Repeat RfAs combine continuity and turnover. Most coalitions keep a returning core beyond chance, especially before success, while candidates who return after a success face a reshuffled mix of supporter communities, little returning support beyond chance and lower odds of a second success. The network shows triadic closure, weak ties holding the giant component together, and membership closure with diminishing returns, but prior network position does not improve prediction beyond vote share and timing.
 
-## Author contributions
+## Collaboration and contributions
 
-Umberto Toraldo led data preparation, identity cleanup, attempt reconstruction and external outcome validation. Mihretab Worku Morka led network construction, coalition measures, statistical modelling and figures. Both authors jointly developed the research question, reviewed the literature, interpreted the results and wrote the report. Both will present the project and answer questions in the oral discussion.
+**Data member, Umberto Toraldo.** Umberto prepared and documented the two SNAP datasets, cleaned the vote records, normalised usernames and resolved duplicates. He reconstructed the separate candidate attempts, validated their outcomes and delivered the final vote-level and attempt-level datasets ready for analysis.
+
+**Network member, Mihretab Worku Morka.** Mihretab built the voter and co-voting networks, identified voter communities and measured support overlap, diversity, centrality and brokerage. He compared consecutive attempts, analysed how the changes related to the later outcome, and produced the statistical results and four report figures.
+
+**Joint work.** Both authors agreed on the data structure and network definitions before implementation. They maintained the literature notes in Markdown, connected the references to the report, interpreted the results together and discussed the limitations. They jointly wrote the report, prepared the PDF, verified the final project package and will present the work and answer questions in the oral discussion.
 
 ## References
 
