@@ -74,7 +74,7 @@ note("DAT present but not interpretable: ", attr(dd, "n_unparsed"),
 # silently.
 no_voter <- d[d$src == "", ]
 write.csv(no_voter[, c("vote_id", "tgt", "vot", "res", "yea")],
-          file.path(DIR_PROCESSED, "records_without_voter.csv"), row.names = FALSE)
+          file.path(DIR_PROCESSED, "records_without_voter.csv"), row.names = FALSE, fileEncoding = "UTF-8")
 note("phantom records with an empty SRC, removed: ", nrow(no_voter),
      " of ", nrow(d), sprintf("  (%.2f%%)", 100 * nrow(no_voter) / nrow(d)))
 note("  candidates touched: ", length(unique(no_voter$tgt)),
