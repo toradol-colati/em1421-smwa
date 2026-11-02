@@ -164,7 +164,7 @@ outcome_validation$wiki_success <- as.integer(outcome_validation$elec_outcome ==
 write.csv(
   outcome_validation,
   file.path("output", "results", "outcome_validation.csv"),
-  row.names = FALSE
+  row.names = FALSE, fileEncoding = "UTF-8"
 )
 
 vote_maps <- split(setNames(votes$vote, votes$voter), votes$attempt_id)
@@ -335,6 +335,24 @@ pairs$next_group <- factor(
 )
 pairs$next_success <- as.integer(pairs$next_outcome == 1L)
 
+# Three named populations of pairs. None is chosen silently: 06, 07, 93 and 94
+# report results for each.
+#   negative_interval : the second attempt starts before the first ends, so the
+#                       two are not consecutive requests (17 pairs).
+#   short_attempt_pair: either attempt has fewer than 5 votes (flag_short in
+#                       00_lib_data.R). Such an attempt can be a real
+#                       early-closed request; with so few recorded votes,
+#                       supporter overlap is close to 0 by construction.
+#   sample            : "all" (all valid outcomes), "chronological" (excludes
+#                       negative_interval) and "strict" (also excludes
+#                       short_attempt_pair; the modelling sample).
+# 92_short_attempt_check.R shows which short attempts match wiki-Elec.
+pairs$negative_interval <- (pairs$days_between < 0) %in% TRUE
+pairs$short_attempt_pair <- (pairs$previous_short_attempt |
+  pairs$next_short_attempt) %in% TRUE
+pairs$in_chronological <- !pairs$negative_interval
+pairs$in_strict <- !pairs$negative_interval & !pairs$short_attempt_pair
+
 assert_condition(!anyDuplicated(pairs$pair_id), "Pair IDs are not unique.")
 assert_condition(
   all(is.na(pairs$supporter_jaccard) |
@@ -371,7 +389,7 @@ saveRDS(pairs, file.path(DIR_PROCESSED, "attempt_pairs.rds"))
 write.csv(
   pairs,
   file.path("output", "results", "attempt_pairs.csv"),
-  row.names = FALSE
+  row.names = FALSE, fileEncoding = "UTF-8"
 )
 
 cat("Attempt pairs written:", nrow(pairs), "\n")
