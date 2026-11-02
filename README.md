@@ -47,6 +47,13 @@ R/
   05_measure_change.R        measure coalition and network change
   06_model_outcome.R         descriptive tests and outcome models
   07_figures.R               generate the four report figures
+  93_coalition_overlap_null.R supporter overlap against a random baseline
+  94_recruitment_curve.R     membership closure, T(k)
+  95_weak_ties.R             strength of weak ties: neighborhood overlap, giant component
+  96_network_description.R   clustering coefficient, average path length, giant component
+  97_community_method_check.R Girvan-Newman compared with Louvain
+  92_short_attempt_check.R   which short attempts match wiki-Elec
+  98_generate_appendix.R     copies the code into docs/DATA_FULL.md
   99_verify_data.R           optional raw-data verification
   99b_verify_output.R        optional output-invariant verification
 
@@ -70,11 +77,12 @@ Data preparation uses base R only.
 
 From the repository root:
 
-```powershell
-$rscript = "C:\Program Files\R\R-4.5.2\bin\Rscript.exe"
-
-& $rscript R\00_run_all.R
+```bash
+Rscript R/00_run_all.R
 ```
+
+On Windows, if `Rscript` is not on the PATH, use its full path, for example
+`"C:\Program Files\R\R-4.5.2\bin\Rscript.exe" R/00_run_all.R`.
 
 `00_run_all.R` executes the decomposed pipeline in order:
 
@@ -84,15 +92,24 @@ run_data_prep.R
 05_measure_change.R
 06_model_outcome.R
 07_figures.R
+92_short_attempt_check.R
+93_coalition_overlap_null.R
+94_recruitment_curve.R
+95_weak_ties.R
+96_network_description.R
+97_community_method_check.R
 ```
+
+A full run took about 50 minutes on a laptop, most of it in 97 (Girvan-Newman).
+The log of the run that produced the committed outputs is `output/logs/run_all_log.txt`.
 
 The individual stages remain separately runnable for inspection and debugging.
 
 Optional verification:
 
-```powershell
-& $rscript R\99_verify_data.R
-& $rscript R\99b_verify_output.R
+```bash
+Rscript R/99_verify_data.R
+Rscript R/99b_verify_output.R
 ```
 
 `run_data_prep.R` runs the data steps in isolated environments, clears stale
@@ -102,8 +119,8 @@ intentionally separate so each stage can be inspected and rerun.
 
 To run only the data workstream:
 
-```powershell
-& $rscript R\run_data_prep.R
+```bash
+Rscript R/run_data_prep.R
 ```
 
 ## Final data counts
@@ -114,13 +131,14 @@ To run only the data workstream:
 | Reconstructed attempts | 4,081 |
 | Repeat candidates | 490 |
 | All consecutive attempt pairs | 621 |
-| Pairs with valid outcomes | 609 |
-| Pairs after prior rejection | 555 |
-| Pairs after prior success | 54 |
-| Successful next attempts | 251 |
+| Pairs with valid outcomes (all valid sample) | 609 |
+| Negative-interval pairs | 17 |
+| Chronological sample (main descriptive results) | 592 |
+| Strict sample (outcome model) | 513 |
+| Pairs after prior success (all / chronological / strict) | 54 / 52 / 27 |
 | Attempts matched to `wiki-Elec` | 2,175 |
 | Validated outcome agreements | 2,163 (99.45%) |
-| Reliable modelling pairs | 528 |
+| Modelling pairs (candidates) | 513 (409) |
 
 The final reconstruction:
 
@@ -129,34 +147,34 @@ The final reconstruction:
 - recovers abbreviated and misspelled month names;
 - attributes 6,975 undated votes only where attribution is unambiguous;
 - retains ambiguous and conflicting source information in diagnostic files;
-- excludes 12 high-confidence outcome disagreements from outcome analysis.
+- excludes 12 high-confidence outcome disagreements from outcome analysis;
+- reports every pair comparison for three samples: all 609 valid pairs; the
+  chronological sample (592), without pairs whose second attempt starts before
+  the first ends; and the strict sample (513), also without attempts of fewer
+  than five votes. `R/92_short_attempt_check.R` shows which short attempts
+  match wiki-Elec.
 
 ## Network construction
 
 Two voters are connected when they cast the same support/oppose direction in at
 least two historical candidate attempts. The graph is undirected and weighted
-by repeated co-voting. Neutral votes and self-votes are excluded from the signed
-co-voting network.
+by repeated co-voting. Neutral votes and self-votes are excluded from the co-voting
+network.
 
-Communities are detected with weighted Louvain. The course presents
-Girvan-Newman as its example of a *divisive* method and states that it suits
-networks of a few thousand nodes, naming *agglomerative* methods as the
-alternative beyond that; Louvain is the standard agglomerative method, so this
-follows the syllabus rather than departing from it.
+Communities are detected with weighted Louvain, an *agglomerative* method.
+Lecture 3 ("Strong and Weak Ties", General Approaches to Graph Partitioning)
+presents Girvan-Newman as the *divisive* example, suited to networks of moderate
+size, and names agglomerative methods as the alternative for larger ones.
 
-The substitution is measured, not assumed: `R/97_community_method_check.R` runs
-both methods on the three smallest snapshots and writes
-`output/results/community_method_check.csv`. Girvan-Newman needs 198 seconds on
-10,053 edges, does not finish within ten minutes on 66,698, and where it does
-finish it returns 247 communities among 375 voters with modularity 0.018, that
-is no community structure at all. Louvain finds 3 communities with modularity
-0.213 on the same graph in 0.01 seconds. The largest snapshot in the analysis
-has 6,228 voters and 771,356 edges.
-
-Community results are nonetheless treated as exploratory: the two methods could
-not be compared on a snapshot large enough to be representative, so the check
-shows that Girvan-Newman is unusable here, not that Louvain's partition is
-correct.
+`R/97_community_method_check.R` compares the two on the three smallest
+snapshots. Girvan-Newman is run twice: unweighted, as in the course lab, and
+with tie strength entered as closeness (1 / weight). igraph reads edge-betweenness
+weights as lengths, so co-vote counts must never be passed unchanged. On the
+2004 snapshot, the inverse-weight version reaches modularity 0.093 and the
+unweighted one 0.017, against 0.185 for Louvain; on 2005 the unweighted version
+returns 85 communities with modularity 0.000, and the other 2005 and 2006 runs do
+not finish within ten minutes. Each run is a separate R process with a hard
+timeout. Community results are treated as exploratory.
 
 The analysis measures supporter overlap, new and returning supporters,
 effective community breadth, community-mix change, weighted degree, PageRank,
@@ -170,19 +188,19 @@ The model compares:
 2. a model augmented with network position.
 
 Both use candidate-grouped five-fold cross-validation and only variables
-available before the next attempt. The final sample contains 528 reliable pairs
-from 424 candidates.
+available before the next attempt. The model sample is the strict sample, 513
+pairs from 409 candidates.
 
 | Model | AUC | Brier |
 |---|---:|---:|
-| Prevalence only | 0.500 | 0.244 |
-| Vote shares and timing | 0.716 | 0.210 |
-| Network-augmented | 0.715 | 0.209 |
+| Prevalence only | 0.500 | 0.241 |
+| Vote shares and timing | 0.697 | 0.215 |
+| Network-augmented | 0.698 | 0.215 |
 
 Network measures do not materially improve held-out prediction. They are
 therefore interpreted as descriptive measures of coalition composition rather
 than evidence of superior forecasting. The comparison is repeated with and
-without very short attempts.
+in all three samples (`model_performance_sensitivity.csv`).
 
 ## Documentation
 
@@ -192,6 +210,8 @@ without very short attempts.
 - `docs/DATA.md`: final data definitions, counts and limitations.
 - `report/EM1421_Repeat_RfA_Report.pdf`: submission-ready final report.
 - `report/report_source.md`: editable manuscript used to produce the report.
+- `report/build_pdf.py`: rebuilds the PDF from the manuscript and figures
+  (`python report/build_pdf.py`, needs reportlab).
 
 The report must not contain code. The processed data, result tables and figures
 are included as a validated snapshot and can also be recreated with
