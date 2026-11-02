@@ -1,0 +1,7 @@
+"table","group","n","short_attempts","matched_to_wiki_elec","one_vote","one_vote_matched","next_success","median_days_between"
+"short attempts","recorded rejection",241,241,66,47,15,NA,NA
+"short attempts","recorded success",56,56,0,27,0,NA,NA
+"short-attempt pairs","after rejection",54,61,13,NA,NA,5,102.940277777778
+"short-attempt pairs","after success",25,35,0,NA,NA,25,16.1243055555556
+"strict pairs","after rejection",486,0,NA,NA,NA,197,141.818402777778
+"strict pairs","after success",27,0,NA,NA,NA,9,497.326388888889
