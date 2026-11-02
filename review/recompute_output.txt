@@ -1,0 +1,106 @@
+
+========================================================================
+1. Sample after removing fragment pairs
+========================================================================
+  previously rejected   : 555 pairs, fragments  69, kept 486
+  previously successful :  54 pairs, fragments  27, kept  27
+  total kept: 513 of 609; candidates: 409
+  next-attempt successes among kept pairs: 206
+
+========================================================================
+2. Group comparisons (Mann-Whitney-Wilcoxon, Cliff's delta, BH)
+========================================================================
+  reproduces published group_comparison.csv on all 609 pairs: True
+
+  grouped by PREVIOUS result (rejected vs successful)
+                                  metric  failure_n  failure_median  success_n  success_median  cliffs_delta     p_bh
+                       supporter_jaccard        473          0.0484         27          0.0227        -0.142    0.228
+                          jaccard_excess        473          0.0448         27          0.0172        -0.230   0.0638
+                       new_support_share        452          0.9231         27          0.9576         0.142    0.228
+                 returning_support_share        452          0.0769         27          0.0424        -0.142    0.228
+  previous_support_effective_communities        486          1.7548         27          2.1560         0.333  0.00739
+   current_support_effective_communities        486          2.2726         27          2.5463         0.285   0.0235
+                community_breadth_change        486          0.3892         27          0.3428        -0.061    0.595
+                        community_mix_js        408          0.1057         27          0.4023         0.532 2.35e-05
+ previous_supporter_mean_weighted_degree        486       2416.9146         27       5636.3143         0.426 0.000621
+        previous_supporter_mean_pagerank        486          0.0007         27          0.0013         0.518  2.4e-05
+     previous_supporter_mean_eigenvector        486          0.0740         27          0.1601         0.553 1.63e-05
+previous_supporter_mean_local_clustering        486          0.4125         27          0.4595         0.266   0.0322
+      previous_community_bridge_exposure        486          2.5245         27          3.2365         0.391  0.00156
+
+  grouped by NEXT result (rejected vs successful)
+                                  metric  failure_n  failure_median  success_n  success_median  cliffs_delta     p_bh
+                       supporter_jaccard        294          0.0225        206          0.0736         0.355 4.82e-11
+                          jaccard_excess        294          0.0198        206          0.0698         0.337 5.44e-10
+                       new_support_share        273          0.9552        206          0.9042        -0.190 0.000528
+                 returning_support_share        273          0.0448        206          0.0958         0.190 0.000528
+  previous_support_effective_communities        307          1.5213        206          2.0000         0.327 9.93e-10
+   current_support_effective_communities        307          1.9877        206          2.5373         0.429 2.03e-15
+                community_breadth_change        307          0.3231        206          0.4445         0.057    0.271
+                        community_mix_js        236          0.1366        199          0.0876        -0.173  0.00251
+ previous_supporter_mean_weighted_degree        307       2257.8250        206       2890.3720         0.126   0.0177
+        previous_supporter_mean_pagerank        307          0.0006        206          0.0008         0.228 2.94e-05
+     previous_supporter_mean_eigenvector        307          0.0617        206          0.0887         0.221 4.57e-05
+previous_supporter_mean_local_clustering        307          0.3897        206          0.4441         0.161  0.00251
+      previous_community_bridge_exposure        307          2.5000        206          2.6720         0.104   0.0493
+
+========================================================================
+3. Outcome models (logistic regression, candidate-grouped 5-fold CV)
+========================================================================
+  reproduces published model: n = 528, coefficients match: True, AUC 0.716 / 0.715 (published 0.716 / 0.715)
+  new sample: 513 pairs from 409 candidates (folds missing: 0)
+  prevalence-only Brier 0.241
+  vote shares and timing : AUC 0.705  Brier 0.212
+  network-augmented      : AUC 0.706  Brier 0.211
+  all 609 complete pairs : AUC nan / nan
+
+  network-augmented model, odds ratios (95% Wald CI):
+    Prior success vs prior rejection            0.11  (0.04 to 0.31)  p = 4.94e-05
+    Prior support share (per 10 pp)             1.53  (1.24 to 1.90)  p = 8.13e-05
+    Prior supporters (per doubling)             0.84  (0.64 to 1.10)  p = 0.195
+    Days between attempts (per doubling)        1.11  (0.93 to 1.33)  p = 0.26
+    Calendar year                               0.90  (0.79 to 1.04)  p = 0.152
+    Prior effective supporter communities       1.27  (0.91 to 1.77)  p = 0.154
+    Supporter weighted degree (per doubling)    0.99  (0.92 to 1.07)  p = 0.84
+
+========================================================================
+4. Membership closure T(k) with the corrected baseline
+========================================================================
+  all pairs, corrected eligibility: T(0..2) = [0.00129 0.00351 0.00479]
+  without fragment pairs: pairs used 456; T(0) = 0.00124, per-connection p = 0.00219
+   k   eligible  supported  T(k)      corrected baseline  ratio   (old baseline ratio)
+    0    649108       804   0.00124   0.00124            1.00   (nan)
+    1    175947       603   0.00343   0.00343            1.00   (1.00)
+    2     93995       460   0.00489   0.00561            0.87   (0.72)
+    3     57486       330   0.00574   0.00779            0.74   (0.56)
+    4     40405       255   0.00631   0.00996            0.63   (0.46)
+    5     29373       209   0.00712   0.01213            0.59   (0.42)
+    6     23070       214   0.00928   0.01430            0.65   (0.45)
+    7     18313       199   0.01087   0.01646            0.66   (0.46)
+    8     14428       172   0.01192   0.01861            0.64   (0.44)
+    9     12010       174   0.01449   0.02076            0.70   (0.48)
+   10     10067       125   0.01242   0.02291            0.54   (0.37)
+   11      8353       114   0.01365   0.02505            0.54   (0.37)
+  12+     68351      2148   0.03143   0.02719            1.16   (0.78)
+
+========================================================================
+5. STALE FILE ONLY - coalition_overlap_null.csv as committed (29 Oct data; see null93.py for the rerun)
+========================================================================
+  published: 350 pairs tested, above 95th percentile 102, overlap exactly 0: 154
+  stale file filtered for fragments (NOT a valid result): 296 pairs, above 95th percentile 84 (28.4%), overlap exactly 0: 128 (43.2%)
+
+========================================================================
+6. Average path length, unweighted (2004 and 2005 snapshots)
+========================================================================
+  2004: 29 nodes, 87 edges (published 29, 87); diameter 4; mean path unweighted 1.919, with weights as lengths 4.510 (published 4.510)
+  2005: 375 nodes, 10053 edges (published 375, 10053); diameter 4; mean path unweighted 1.990, with weights as lengths 4.536 (published 4.536)
+
+========================================================================
+7. Girvan-Newman on the 2004 snapshot, three ways of entering weights
+========================================================================
+  weights as lengths (published script)   : best partition 11 communities, weighted modularity 0.052
+  unweighted (course lab)                 : best partition 2 communities, weighted modularity 0.017
+  inverse weight                          : best partition 10 communities, weighted modularity 0.093
+  Louvain (networkx, 20 seeds)            : modularity 0.183 (range 0.176-0.185); published R Louvain 0.185
+
+saved results.json
